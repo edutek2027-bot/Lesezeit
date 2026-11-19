@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesezeit – Leseförderung</title>
+  <meta name="description" content="Lesezeit: Leseförderung für Schülerinnen, Schüler und Erwachsene – Bücherregal, Lese-Timer, Lesesträhne, Tipps und Erfolge.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Schwebende Bücher im Hintergrund -->
+  <div class="sky" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#uebersicht" data-nav="uebersicht">
+      <svg class="brand-book" viewBox="0 0 64 48" aria-hidden="true">
+        <path class="page-l" d="M32 10 C22 4 10 4 4 7 V42 C10 39 22 39 32 45 Z"/>
+        <path class="page-r" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
+        <path class="page-flip" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
+      </svg>
+      <span>Lesezeit</span>
+    </a>
+    <nav class="tabs" aria-label="Hauptnavigation">
+      <button data-nav="uebersicht" class="active"><span class="ico">🏠</span><span class="lbl">Übersicht</span></button>
+      <button data-nav="regal"><span class="ico">📚</span><span class="lbl">Mein Regal</span></button>
+      <button data-nav="timer"><span class="ico">⏱️</span><span class="lbl">Lese-Timer</span></button>
+      <button data-nav="entdecken"><span class="ico">🔭</span><span class="lbl">Entdecken</span></button>
+      <button data-nav="erfolge"><span class="ico">🏅</span><span class="lbl">Erfolge</span></button>
+    </nav>
+    <button class="icon-btn" id="profileBtn" title="Profil &amp; Einstellungen" aria-label="Profil und Einstellungen">👤</button>
+  </header>
+
+  <main id="app">
+    <!-- ÜBERSICHT -->
+    <section class="view active" id="view-uebersicht">
+      <div class="hero">
+        <div>
+          <p class="eyebrow" id="todayLabel"></p>
+          <h1 id="greeting">Willkommen!</h1>
+          <p class="sub" id="motto"></p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn primary" data-nav="timer">▶ Jetzt lesen</button>
+          <button class="btn" id="quickAddBtn">＋ Buch hinzufügen</button>
+        </div>
+      </div>
+
+      <div class="grid-dash">
+        <article class="card goal-card">
+          <h2>Tagesziel</h2>
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" id="goalRing" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="ring-label">
+              <strong id="goalMinutes">0</strong>
+              <span id="goalOf">von 20 Min.</span>
+            </div>
+          </div>
+          <p class="muted center" id="goalHint"></p>
+        </article>
+
+        <article class="card streak-card">
+          <h2>Lesesträhne</h2>
+          <div class="flame" id="flame" aria-hidden="true">🔥</div>
+          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord">Tage</span></p>
+          <div class="week-dots" id="weekDots"></div>
+        </article>
+
+        <article class="card stats-card">
+          <h2>Deine Zahlen</h2>
+          <div class="stats">
+            <div class="stat"><strong id="statBooks">0</strong><span>Bücher beendet</span></div>
+            <div class="stat"><strong id="statPages">0</strong><span>Seiten gelesen</span></div>
+            <div class="stat"><strong id="statHours">0</strong><span>Lesezeit gesamt</span></div>
+            <div class="stat"><strong id="statSessions">0</strong><span>Lese-Einheiten</span></div>
+          </div>
+        </article>
+
+        <article class="card wide">
+          <div class="card-head">
+            <h2>Gerade lese ich</h2>
+            <button class="link" data-nav="regal">Ganzes Regal →</button>
+          </div>
+          <div class="current-list" id="currentList"></div>
+        </article>
+
+        <article class="card chart-card">
+          <h2>Die letzten 7 Tage</h2>
+          <div class="bars" id="weekChart"></div>
+        </article>
+
+        <article class="card tip-card">
+          <h2>Tipp des Tages</h2>
+          <div class="tip" id="tipOfDay"></div>
+          <button class="link" id="nextTip">Noch ein Tipp ↻</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- REGAL -->
+    <section class="view" id="view-regal">
+      <div class="section-head">
+        <h1>Mein Bücherregal</h1>
+        <button class="btn primary" id="addBookBtn">＋ Buch hinzufügen</button>
+      </div>
+      <div class="filters" role="tablist" id="shelfFilters">
+        <button class="chip active" data-filter="alle">Alle</button>
+        <button class="chip" data-filter="lesen">Lese ich gerade</button>
+        <button class="chip" data-filter="gelesen">Gelesen</button>
+        <button class="chip" data-filter="wunsch">Wunschliste</button>
+      </div>
+      <div class="shelf" id="shelf"></div>
+    </section>
+
+    <!-- TIMER -->
+    <section class="view" id="view-timer">
+      <div class="section-head">
+        <h1>Lese-Timer</h1>
+      </div>
+      <div class="timer-layout">
+        <article class="card timer-card">
+          <label class="field">
+            <span>Welches Buch liest du?</span>
+            <select id="timerBook"></select>
+          </label>
+          <div class="presets" id="timerPresets">
+            <button class="chip" data-min="0">Frei</button>
+            <button class="chip" data-min="10">10 Min.</button>
+            <button class="chip active" data-min="20">20 Min.</button>
+            <button class="chip" data-min="30">30 Min.</button>
+            <button class="chip" data-min="45">45 Min.</button>
+          </div>
+          <div class="clock">
+            <svg viewBox="0 0 220 220" class="clock-svg">
+              <circle class="clock-bg" cx="110" cy="110" r="96"/>
+              <circle class="clock-fg" id="clockRing" cx="110" cy="110" r="96"/>
+            </svg>
+            <div class="clock-face">
+              <div class="reader" id="reader" aria-hidden="true">
+                <span class="reader-book">📖</span>
+                <span class="z">z</span><span class="z">z</span>
+              </div>
+              <strong id="clockTime">20:00</strong>
+              <span id="clockMode" class="muted">Countdown</span>
+            </div>
+          </div>
+          <div class="timer-actions">
+            <button class="btn primary big" id="timerStart">▶ Start</button>
+            <button class="btn big" id="timerStop" disabled>■ Beenden</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Manuell eintragen</h2>
+          <p class="muted">Du hast ohne Timer gelesen? Kein Problem – trag es hier ein.</p>
+          <form id="manualForm" class="form">
+            <label class="field"><span>Buch</span><select id="manualBook"></select></label>
+            <div class="row">
+              <label class="field"><span>Minuten</span><input type="number" min="1" max="600" id="manualMin" required value="20"></label>
+              <label class="field"><span>Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
+            </div>
+            <label class="field"><span>Datum</span><input type="date" id="manualDate" required></label>
+            <button class="btn primary" type="submit">Eintragen</button>
+          </form>
+          <h2 class="mt">Letzte Lese-Einheiten</h2>
+          <ul class="log" id="sessionLog"></ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ENTDECKEN -->
+    <section class="view" id="view-entdecken">
+      <div class="section-head">
+        <h1>Entdecken</h1>
+      </div>
+      <div class="filters" id="recoFilters">
+        <button class="chip" data-group="kinder">Kinder (6–10)</button>
+        <button class="chip" data-group="jugend">Jugendliche (11–17)</button>
+        <button class="chip" data-group="erwachsene">Erwachsene</button>
+      </div>
+      <h2 class="mt">Buchempfehlungen</h2>
+      <div class="reco-grid" id="recoGrid"></div>
+      <h2 class="mt">So wird Lesen zur Gewohnheit</h2>
+      <div class="tips-grid" id="tipsGrid"></div>
+    </section>
+
+    <!-- ERFOLGE -->
+    <section class="view" id="view-erfolge">
+      <div class="section-head">
+        <h1>Erfolge</h1>
+        <p class="muted" id="badgeCount"></p>
+      </div>
+      <div class="level card" id="levelCard"></div>
+      <div class="badges" id="badges"></div>
+    </section>
+  </main>
+
+  <!-- Buch-Dialog -->
+  <dialog id="bookDialog" class="modal">
+    <form method="dialog" id="bookForm" class="form">
+      <h2 id="bookDialogTitle">Buch hinzufügen</h2>
+      <label class="field"><span>Titel *</span><input id="fTitle" required maxlength="120" autocomplete="off"></label>
+      <label class="field"><span>Autor/in</span><input id="fAuthor" maxlength="80" autocomplete="off"></label>
+      <div class="row">
+        <label class="field"><span>Seiten gesamt</span><input type="number" min="1" max="5000" id="fPages" placeholder="z. B. 240"></label>
+        <label class="field"><span>Aktuelle Seite</span><input type="number" min="0" id="fCurrent" value="0"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Status</span>
+          <select id="fStatus">
+            <option value="lesen">Lese ich gerade</option>
+            <option value="wunsch">Wunschliste</option>
+            <option value="gelesen">Gelesen</option>
+          </select>
+        </label>
+        <label class="field"><span>Gattung</span>
+          <select id="fGenre">
+            <option>Roman</option><option>Abenteuer</option><option>Fantasy</option><option>Krimi</option>
+            <option>Sachbuch</option><option>Comic</option><option>Klassiker</option><option>Jugendbuch</option>
+            <option>Kinderbuch</option><option>Biografie</option><option>Lyrik</option><option>Sonstiges</option>
+          </select>
+        </label>
+      </div>
+      <label class="field"><span>Lese ich seit</span><input type="date" id="fStart"></label>
+      <div class="field">
+        <span>Bewertung</span>
+        <div class="stars" id="fStars" role="radiogroup" aria-label="Bewertung"></div>
+      </div>
+      <label class="field"><span>Notizen &amp; Lieblingszitat</span><textarea id="fNotes" rows="3" maxlength="2000" placeholder="Was hat dich überrascht? Welche Figur magst du?"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="deleteBook" hidden>Löschen</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="cancelBook">Abbrechen</button>
+        <button type="submit" class="btn primary" value="save">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Profil-Dialog / Onboarding -->
+  <dialog id="profileDialog" class="modal">
+    <form method="dialog" id="profileForm" class="form">
+      <div class="onboard-art" aria-hidden="true">📚✨</div>
+      <h2 id="profileTitle">Willkommen bei Lesezeit!</h2>
+      <p class="muted" id="profileIntro">Ein paar Minuten am Tag machen den Unterschied. Lass uns kurz einrichten:</p>
+      <label class="field"><span>Wie heißt du?</span><input id="pName" maxlength="40" required autocomplete="given-name" placeholder="Vorname"></label>
+      <div class="field">
+        <span>Ich bin …</span>
+        <div class="seg" id="pGroup">
+          <label><input type="radio" name="group" value="kinder"><span>🧒 Kind<br><small>6–10 Jahre</small></span></label>
+          <label><input type="radio" name="group" value="jugend"><span>🧑‍🎓 Jugendlich<br><small>11–17 Jahre</small></span></label>
+          <label><input type="radio" name="group" value="erwachsene" checked><span>🧑 Erwachsen<br><small>18+</small></span></label>
+        </div>
+      </div>
+      <label class="field"><span>Tägliches Leseziel: <strong id="pGoalOut">20</strong> Minuten</span>
+        <input type="range" id="pGoal" min="5" max="90" step="5" value="20">
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="resetAll" hidden>Alle Daten löschen</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="demoData">Beispieldaten laden</button>
+        <button type="submit" class="btn primary">Los geht's!</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Seiten nach Timer -->
+  <dialog id="finishDialog" class="modal small">
+    <form method="dialog" id="finishForm" class="form">
+      <div class="onboard-art" aria-hidden="true">🎉</div>
+      <h2>Super gelesen!</h2>
+      <p id="finishText" class="muted"></p>
+      <label class="field"><span>Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
+      <div class="modal-actions">
+        <span class="spacer"></span>
+        <button type="submit" class="btn primary">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
