@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=5">
+  <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body class="intro-on">
   <!-- Intro-Animation -->
@@ -81,11 +81,14 @@
             <svg class="ring" viewBox="0 0 120 120">
               <circle class="ring-bg" cx="60" cy="60" r="52"/>
               <circle class="ring-fg" id="goalRing" cx="60" cy="60" r="52"/>
+              <circle class="ring-bg ring-in" cx="60" cy="60" r="38"/>
+              <circle class="ring-fg2" id="goalRing2" cx="60" cy="60" r="38"/>
             </svg>
-            <div class="ring-label">
-              <strong id="goalMinutes">0</strong>
-              <span id="goalOf">von 20 Min.</span>
-            </div>
+            <div class="ring-label" id="goalCheck" aria-hidden="true"></div>
+          </div>
+          <div class="goal-legend">
+            <div><i class="dot min"></i><span>Minuten</span><strong><span id="goalMinutes">0</span> / <span id="goalOf">20</span></strong></div>
+            <div><i class="dot pg"></i><span>Seiten</span><strong><span id="goalPages">0</span> / <span id="goalPagesOf">15</span></strong></div>
           </div>
           <p class="muted center" id="goalHint"></p>
         </article>
@@ -117,7 +120,13 @@
         </article>
 
         <article class="card chart-card">
-          <h2>Die letzten 7 Tage</h2>
+          <div class="card-head">
+            <h2>Die letzten 7 Tage</h2>
+            <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
+              <button class="active" data-mode="min" role="tab">Minuten</button>
+              <button data-mode="pg" role="tab">Seiten</button>
+            </div>
+          </div>
           <div class="bars" id="weekChart"></div>
         </article>
 
@@ -189,7 +198,7 @@
             <label class="field"><span>Buch</span><select id="manualBook"></select></label>
             <div class="row">
               <label class="field"><span>Minuten</span><input type="number" min="1" max="600" id="manualMin" required value="20"></label>
-              <label class="field"><span>Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
+              <label class="field"><span id="manualPageLbl">Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
             </div>
             <label class="field"><span>Datum</span><input type="date" id="manualDate" required></label>
             <button class="btn primary" type="submit">Eintragen</button>
@@ -283,8 +292,11 @@
           <label><input type="radio" name="group" value="erwachsene" checked><span>🧑 Erwachsen<br><small>18+</small></span></label>
         </div>
       </div>
-      <label class="field"><span>Tägliches Leseziel: <strong id="pGoalOut">20</strong> Minuten</span>
+      <label class="field"><span>Tägliches Ziel – Lesezeit: <strong id="pGoalOut">20</strong> Minuten</span>
         <input type="range" id="pGoal" min="5" max="90" step="5" value="20">
+      </label>
+      <label class="field"><span>Tägliches Ziel – Seiten: <strong id="pGoalPagesOut">15</strong> Seiten</span>
+        <input type="range" id="pGoalPages" min="5" max="100" step="5" value="15">
       </label>
       <div class="modal-actions">
         <button type="button" class="btn danger" id="resetAll" hidden>Alle Daten löschen</button>
@@ -301,7 +313,7 @@
       <div class="onboard-art" aria-hidden="true">🎉</div>
       <h2>Super gelesen!</h2>
       <p id="finishText" class="muted"></p>
-      <label class="field"><span>Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
+      <label class="field"><span id="finishPageLbl">Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
       <div class="modal-actions">
         <span class="spacer"></span>
         <button type="submit" class="btn primary">Speichern</button>
@@ -325,7 +337,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/data.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>

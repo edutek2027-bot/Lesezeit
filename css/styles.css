@@ -159,6 +159,22 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; paddin
 .ring-bg { stroke: var(--bg-2); }
 .ring-fg { stroke: var(--accent); stroke-dasharray: 326.7; stroke-dashoffset: 326.7; transition: stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1), stroke .4s; }
 .ring-fg.done { stroke: var(--accent-2); }
+.ring-in { stroke-width: 9 !important; }
+.ring-fg2 { fill: none; stroke: var(--gold); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 238.8; stroke-dashoffset: 238.8; transition: stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1) .15s; }
+.ring-label .check { font-size: 1.9rem; color: var(--accent); animation: leafIn .6s cubic-bezier(.3,1.5,.5,1) 1s both; }
+.ring-label .pct { font-family: var(--font-head); font-size: 1.5rem; line-height: 1; }
+.goal-legend { display: grid; gap: .35rem; margin: 0 auto .5rem; max-width: 230px; }
+.goal-legend div { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .5rem; font-size: .88rem; }
+.goal-legend strong { font-variant-numeric: tabular-nums; }
+.goal-legend .ok { color: var(--accent); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.min { background: var(--accent); }
+.dot.pg { background: var(--gold); }
+.seg-mini { display: inline-flex; background: var(--bg-2); border-radius: 99px; padding: 3px; }
+.seg-mini button { border: 0; background: none; font-size: .75rem; font-weight: 800; padding: .25rem .6rem; border-radius: 99px; color: var(--muted); }
+.seg-mini button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.bars.pg .bar .col { background: color-mix(in srgb, var(--gold) 75%, var(--surface)); }
+.bars.pg .bar.today .col { background: var(--gold); }
 .ring-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .ring-label strong { font-family: var(--font-head); font-size: 2.4rem; line-height: 1; }
 .ring-label span { font-size: .8rem; color: var(--muted); }
