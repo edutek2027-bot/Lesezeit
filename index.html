@@ -282,6 +282,19 @@
     </form>
   </dialog>
 
+  <!-- Bestätigung -->
+  <dialog id="confirmDialog" class="modal small">
+    <form method="dialog" class="form">
+      <h2>Bist du sicher?</h2>
+      <p id="confirmText" class="muted" style="margin:0"></p>
+      <div class="modal-actions">
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="confirmNo">Abbrechen</button>
+        <button type="button" class="btn danger" id="confirmYes">Löschen</button>
+      </div>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 

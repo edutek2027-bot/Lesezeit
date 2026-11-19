@@ -25,6 +25,12 @@
   }
 }
 
+:root[data-theme="dark"] {
+  --bg: #1c1916; --bg-2: #24201c; --surface: #2a2521; --ink: #f2e9dc; --muted: #b3a593;
+    --line: #3d362f; --accent: #f08a55; --accent-2: #5fb8a4; --accent-soft: #4a3226;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3); color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
@@ -58,7 +64,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ---------- Kopfzeile ---------- */
 .topbar {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   display: flex; align-items: center; gap: 1rem;
   padding: .7rem clamp(1rem, 3vw, 2rem);
   background: color-mix(in srgb, var(--bg) 85%, transparent);

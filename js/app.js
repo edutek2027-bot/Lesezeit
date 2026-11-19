@@ -345,9 +345,20 @@
     if (e.target.closest("#shelfAdd, #addBookBtn, #quickAddBtn")) openBook();
   });
   $("#cancelBook").addEventListener("click", () => bookDialog.close());
-  $("#deleteBook").addEventListener("click", () => {
+  function askConfirm(msg) {
+    const d = $("#confirmDialog");
+    $("#confirmText").textContent = msg;
+    return new Promise((res) => {
+      const done = (v) => { d.close(); $("#confirmYes").onclick = $("#confirmNo").onclick = d.oncancel = null; res(v); };
+      $("#confirmYes").onclick = () => done(true);
+      $("#confirmNo").onclick = () => done(false);
+      d.oncancel = (e) => { e.preventDefault(); done(false); };
+      d.showModal();
+    });
+  }
+  $("#deleteBook").addEventListener("click", async () => {
     const b = bookById(editingId);
-    if (!b || !confirm(`„${b.title}“ wirklich löschen? Die Lesezeiten bleiben in deiner Statistik.`)) return;
+    if (!b || !(await askConfirm(`„${b.title}“ wirklich löschen? Die Lesezeiten bleiben in deiner Statistik.`))) return;
     state.books = state.books.filter((x) => x.id !== editingId); save();
     bookDialog.close(); toast("Buch gelöscht."); render();
   });
@@ -529,8 +540,8 @@
     if (first) { confetti(); toast(`Schön, dass du da bist, ${state.profile.name}! 📚`); }
   });
   profileDialog.addEventListener("cancel", (e) => { if (!state.profile) e.preventDefault(); });
-  $("#resetAll").addEventListener("click", () => {
-    if (!confirm("Wirklich alle Bücher, Lesezeiten und Erfolge löschen?")) return;
+  $("#resetAll").addEventListener("click", async () => {
+    if (!(await askConfirm("Wirklich alle Bücher, Lesezeiten und Erfolge löschen?"))) return;
     state = defaultState(); save(); profileDialog.close(); render(); openProfile();
   });
   $("#demoData").addEventListener("click", () => {
