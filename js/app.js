@@ -19,7 +19,7 @@
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const fmtDate = (k) => parseKey(k).toLocaleDateString("de-DE", { day: "numeric", month: "short" });
 
-  const COVER_COLORS = ["#e0703a", "#2f7d6d", "#4b6cb7", "#b5487a", "#7a5cc2", "#c9862c", "#3a8fb7", "#5c8a3a", "#a8483b", "#2e5d73"];
+  const COVER_COLORS = ["#2d6a4f", "#40916c", "#1b4332", "#52796f", "#3a5a40", "#588157", "#2f5d62", "#5f7a3a", "#a1862f", "#35614f"];
   const coverColor = (t) => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COVER_COLORS[h % COVER_COLORS.length]; };
   const GENRE_EMOJI = { Roman: "📘", Abenteuer: "🗺️", Fantasy: "🐉", Krimi: "🔎", Sachbuch: "🔬", Comic: "💥", Klassiker: "🎩", Jugendbuch: "🎒", Kinderbuch: "🧸", Biografie: "👤", Lyrik: "🪶", Sonstiges: "📗" };
   const STATUS_LABEL = { lesen: "Lese ich", gelesen: "Gelesen ✓", wunsch: "Wunsch" };
@@ -172,7 +172,7 @@
     $("#currentList").innerHTML = cur.length
       ? cur.map((b) => `
         <button class="current" data-edit="${b.id}">
-          <div class="mini-cover" style="--c:${b.color}">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</div>
+          <div class="mini-cover" style="--c:${coverColor(b.title)}">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</div>
           <div>
             <h3>${esc(b.title)}</h3>
             <p>${esc(b.author || "Unbekannt")} · ${b.pages ? `Seite ${b.currentPage || 0} von ${b.pages}` : "Seitenzahl offen"} · ${fmtDuration(bookMinutes(b.id))} gelesen</p>
@@ -214,7 +214,7 @@
     list.sort((a, b) => order[a.status] - order[b.status] || (b.updated || 0) - (a.updated || 0));
     $("#shelf").innerHTML = list.map((b, i) => `
       <button class="book" data-edit="${b.id}" style="animation-delay:${i * 0.04}s" aria-label="${esc(b.title)} bearbeiten">
-        <div class="book-inner" style="--c:${b.color}">
+        <div class="book-inner" style="--c:${coverColor(b.title)}">
           <span class="badge-status">${STATUS_LABEL[b.status]}</span>
           <span class="book-emoji">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</span>
           <div class="book-title">${esc(b.title)}</div>
@@ -579,7 +579,7 @@
     const cv = $("#confetti"), ctx = cv.getContext("2d");
     cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
     ctx.scale(devicePixelRatio, devicePixelRatio);
-    const cols = ["#e0703a", "#2f7d6d", "#e8b33a", "#4b6cb7", "#b5487a"];
+    const cols = ["#2d6a4f", "#52b788", "#c9a227", "#95d5b2", "#1b4332"];
     const parts = Array.from({ length: 140 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.35,
       vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 13 - 4, r: Math.random() * 6 + 4,
@@ -597,9 +597,31 @@
   }
   function buildSky() {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const icons = ["📚", "📖", "🔖", "✏️", "⭐", "📕", "📗", "🌙"];
+    const glyphs = ["A", "ä", "ß", "Ö", "g", "&", "Q", "ü", "„", "R", "e", "§"];
     $(".sky").innerHTML = Array.from({ length: 14 }, (_, i) =>
-      `<span style="left:${(i * 7.3 + Math.random() * 5) % 100}%;--s:${18 + Math.random() * 22}px;--d:${18 + Math.random() * 16}s;--delay:${-Math.random() * 30}s">${icons[i % icons.length]}</span>`).join("");
+      `<span style="left:${(i * 7.3 + Math.random() * 5) % 100}%;--s:${24 + Math.random() * 40}px;--d:${22 + Math.random() * 18}s;--delay:${-Math.random() * 30}s">${glyphs[i % glyphs.length]}</span>`).join("");
+  }
+
+  function runIntro() {
+    const intro = $("#intro");
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!intro || reduce) { intro?.remove(); document.body.classList.remove("intro-on"); return Promise.resolve(); }
+    $("#introWord").innerHTML = [..."Lesezeit"].map((c, i) => `<span style="animation-delay:${0.9 + i * 0.07}s">${c}</span>`).join("");
+    const g = ["L", "e", "s", "a", "ß", "ö", "Z", "t", "&", "„", "i", "W"];
+    $("#introGlyphs").innerHTML = Array.from({ length: 18 }, (_, i) =>
+      `<span style="--x:${Math.random() * 95}%;--y:${Math.random() * 90}%;--s:${30 + Math.random() * 70}px;--r:${(Math.random() - 0.5) * 30}deg;--dl:${Math.random() * 0.8}s">${g[i % g.length]}</span>`).join("");
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return; done = true;
+        intro.classList.add("out");
+        document.body.classList.remove("intro-on");
+        render();
+        setTimeout(() => { intro.remove(); resolve(); }, 1000);
+      };
+      intro.addEventListener("click", finish);
+      setTimeout(finish, 2900);
+    });
   }
 
   // ---------- Start ----------
@@ -609,7 +631,7 @@
   fillBookSelects();
   go(location.hash.slice(1) || "uebersicht");
   if (state.timer) startTick();
-  if (!state.profile) openProfile();
+  runIntro().then(() => { if (!state.profile) openProfile(); });
   // Datum wechselt um Mitternacht → Übersicht aktualisieren
   setInterval(() => { if ($("#view-uebersicht").classList.contains("active") && !document.querySelector("dialog[open]")) renderDashboard(); }, 5 * 60000);
 })();
