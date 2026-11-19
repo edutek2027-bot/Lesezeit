@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=5">
 </head>
 <body class="intro-on">
   <!-- Intro-Animation -->
@@ -90,10 +90,11 @@
           <p class="muted center" id="goalHint"></p>
         </article>
 
-        <article class="card streak-card">
-          <h2>Lesesträhne</h2>
-          <div class="flame" id="flame" aria-hidden="true">🔥</div>
-          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord">Tage</span></p>
+        <article class="card tree-card">
+          <h2>Dein Lesebaum</h2>
+          <svg class="tree" id="tree" viewBox="0 0 140 110" role="img" aria-label="Lesebaum"></svg>
+          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord">Tage in Folge</span></p>
+          <p class="tree-stage" id="treeStage"></p>
           <div class="week-dots" id="weekDots"></div>
         </article>
 
@@ -324,7 +325,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
 </body>
 </html>

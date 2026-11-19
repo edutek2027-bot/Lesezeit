@@ -1,12 +1,12 @@
 # 📚 Lesezeit
 
 **Lesezeit** ist eine Plattform zur Leseförderung für Kinder, Jugendliche und Erwachsene.
-Sie hilft, eine tägliche Lesegewohnheit aufzubauen – mit Tagesziel, Lesesträhne, Lese-Timer,
+Sie hilft, eine tägliche Lesegewohnheit aufzubauen – mit Tagesziel, Lesebaum, Lese-Timer,
 Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Ganze lebendig.
 
 ## Funktionen
 
-- **Übersicht** – Tagesziel-Ring, Lesesträhne 🔥, Statistik (Bücher, Seiten, Lesezeit), Wochen-Diagramm, „Gerade lese ich“ mit Fortschritt und *„liest seit X Tagen“*, Tipp des Tages
+- **Übersicht** – Tagesziel-Ring, Lesebaum 🌳 (wächst mit jedem Lesetag in Folge), Statistik (Bücher, Seiten, Lesezeit), Wochen-Diagramm, „Gerade lese ich“ mit Fortschritt und *„liest seit X Tagen“*, Tipp des Tages
 - **Mein Regal** – Bücher mit Titel, Autor/in, Seiten, Gattung, Startdatum, Bewertung und Notizen; Status *Lese ich / Gelesen / Wunschliste*; animierte Buchcover
 - **Lese-Timer** – Countdown (10/20/30/45 Min.) oder freies Lesen, läuft auch nach Neuladen weiter; danach aktuelle Seite eintragen; manuelles Nachtragen möglich
 - **Entdecken** – Buchempfehlungen und Lesetipps passend zur Altersgruppe (Kinder 6–10, Jugendliche 11–17, Erwachsene)

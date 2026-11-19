@@ -43,7 +43,7 @@
   function streak() {
     const m = minutesByDay();
     let d = new Date();
-    if (!m[dateKey(d)]) d = addDays(d, -1); // heute noch offen → Strähne zählt ab gestern
+    if (!m[dateKey(d)]) d = addDays(d, -1); // heute noch offen → Serie zählt ab gestern
     let n = 0;
     while (m[dateKey(d)]) { n++; d = addDays(d, -1); }
     return n;
@@ -85,8 +85,8 @@
     { id: "first-book", ico: "📗", name: "Regal eröffnet", desc: "Erstes Buch hinzugefügt", test: () => state.books.length >= 1 },
     { id: "first-session", ico: "⏱️", name: "Los geht's", desc: "Erste Lese-Einheit", test: () => state.sessions.length >= 1 },
     { id: "goal", ico: "🎯", name: "Ziel erreicht", desc: "Tagesziel einmal geschafft", test: () => Object.values(minutesByDay()).some((m) => m >= (state.profile?.goal || 20)) },
-    { id: "streak3", ico: "🔥", name: "Drei am Stück", desc: "3 Tage in Folge gelesen", test: () => bestStreak() >= 3 },
-    { id: "streak7", ico: "🌟", name: "Wochen-Held", desc: "7 Tage in Folge gelesen", test: () => bestStreak() >= 7 },
+    { id: "streak3", ico: "🌱", name: "Drei am Stück", desc: "3 Tage in Folge gelesen", test: () => bestStreak() >= 3 },
+    { id: "streak7", ico: "🌳", name: "Wochen-Held", desc: "7 Tage in Folge gelesen", test: () => bestStreak() >= 7 },
     { id: "streak30", ico: "🏆", name: "Gewohnheit!", desc: "30 Tage in Folge gelesen", test: () => bestStreak() >= 30 },
     { id: "finish1", ico: "✅", name: "Ausgelesen", desc: "Erstes Buch beendet", test: () => totals().finished >= 1 },
     { id: "finish5", ico: "📚", name: "Bücherstapel", desc: "5 Bücher beendet", test: () => totals().finished >= 5 },
@@ -148,11 +148,11 @@
     $("#goalOf").textContent = `von ${goal} Min.`;
     $("#goalHint").textContent = ratio >= 1 ? "Geschafft! Du bist großartig. 🎉" : today ? `Nur noch ${goal - today} Minuten!` : "Noch nicht gelesen – starte mit 10 Minuten.";
 
-    // Strähne
+    // Lesebaum
     const st = streak();
     $("#streakDays").textContent = st;
-    $("#streakWord").textContent = st === 1 ? "Tag" : "Tage";
-    $("#flame").classList.toggle("off", st === 0);
+    $("#streakWord").textContent = st === 1 ? "Tag in Folge" : "Tage in Folge";
+    renderTree(st);
     const m = minutesByDay();
     $("#weekDots").innerHTML = Array.from({ length: 7 }, (_, i) => {
       const d = addDays(new Date(), i - 6);
@@ -195,6 +195,42 @@
     requestAnimationFrame(() => requestAnimationFrame(() => $$("#weekChart .col").forEach((c) => (c.style.height = c.dataset.h + "%"))));
 
     showTip(false);
+  }
+
+  // Der Baum wächst mit jedem Lesetag in Folge: Keimling → junger Baum → blühender Baum
+  const LEAVES = [[63,55,-35],[77,55,35],[70,40,0],[58,46,-30],[82,46,30],[50,56,-50],[90,56,50],[64,32,-15],[76,32,15],
+    [44,64,-60],[96,62,60],[58,60,-20],[82,61,20],[70,25,0],[52,40,-35],[88,40,35],[66,48,-10],[75,49,10]];
+  const LEAF_FILLS = ["var(--accent)", "var(--accent-2)", "var(--mint)"];
+  function treeStage(n) {
+    if (n === 0) return "Samen – lies heute, dann keimt er";
+    if (n < 3) return "Keimling";
+    if (n < 7) return "Junger Baum";
+    if (n < 14) return "Kräftiger Baum";
+    if (n < 30) return "Stattlicher Baum";
+    return "Blühender Baum";
+  }
+  function renderTree(n) {
+    $("#treeStage").textContent = treeStage(n);
+    const ground = `<ellipse class="ground" cx="70" cy="101" rx="46" ry="5"/>`;
+    if (n === 0) {
+      $("#tree").innerHTML = ground + `<ellipse class="seed" cx="70" cy="97" rx="5" ry="3.5"/><path class="sprout" d="M70 95 C70 90 71 87 73 84"/>`;
+      return;
+    }
+    const scale = (0.5 + 0.5 * Math.min(1, (n - 1) / 13)).toFixed(3);
+    const leaves = LEAVES.slice(0, Math.min(LEAVES.length, n + 1)).map(([x, y, r], i) =>
+      `<g transform="translate(${x} ${y}) rotate(${r})"><ellipse class="leaf" rx="8" ry="4.6" fill="${LEAF_FILLS[i % 3]}" style="animation-delay:${0.5 + i * 0.06}s"/></g>`).join("");
+    const blooms = n >= 21 ? [[60,38],[80,37],[70,30],[52,52],[88,50],[66,58]].slice(0, Math.min(6, Math.floor((n - 18) / 2)))
+      .map(([x, y], i) => `<circle class="bloom" cx="${x}" cy="${y}" r="2.6" style="animation-delay:${1.6 + i * 0.1}s"/>`).join("") : "";
+    const branches = n >= 3 ? `
+        <path class="bark" stroke-width="2.5" d="M70 78 C63 72 56 68 50 60" style="animation-delay:.25s"/>
+        <path class="bark" stroke-width="2.5" d="M70 72 C77 66 85 62 90 56" style="animation-delay:.35s"/>
+        <path class="bark" stroke-width="2" d="M70 62 C66 55 62 50 58 44" style="animation-delay:.45s"/>
+        <path class="bark" stroke-width="2" d="M70 60 C74 53 78 48 82 44" style="animation-delay:.5s"/>` : "";
+    $("#tree").innerHTML = ground + `
+      <g class="grow" style="transform:scale(${scale})"><g class="sway">
+        <path class="bark" stroke-width="5" d="M70 100 C70 86 69 72 70 52"/>${branches}
+        ${leaves}${blooms}
+      </g></g>`;
   }
 
   function allTips() { return [...D.tips[group()], ...D.tips.alle]; }
