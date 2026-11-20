@@ -221,6 +221,7 @@
       ? (both ? t("Heute ist dein Stempel sicher.") : !mn && !pg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list }))
       : (both ? t("An diesem Tag hast du dein Ziel erreicht.") : !mn ? t(patchableDays().includes(k) ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.") : t("Es fehlten {list}.", { list }));
   }
+  $("#goalEdit").addEventListener("click", () => openDay(dateKey(addDays(new Date(), goalOffset)), "day"));
   $("#goalPrev").addEventListener("click", () => { goalOffset = Math.max(-60, goalOffset - 1); renderGoal(); });
   $("#goalNext").addEventListener("click", () => { goalOffset = Math.min(0, goalOffset + 1); renderGoal(); });
 
@@ -458,6 +459,7 @@
   const isoWeek = (d) => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); return Math.ceil(((t - new Date(Date.UTC(t.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7); };
   const mondayOf = (k) => { const d = parseKey(k); return addDays(d, -((d.getDay() + 6) % 7)); };
   function openDay(k, mode = "day") {
+    editSid = null;
     dvDay = k > dateKey() ? dateKey() : k; dvMode = mode;
     renderDayView();
     if (!$("#dayDialog").open) $("#dayDialog").showModal();
@@ -468,6 +470,55 @@
   }
   // „· 25 Min. · 18 S. · nachgelesen am 20. Nov.“
   const sessionMeta = (x) => "· " + (x.pages ? t("{n} S.", { n: x.pages }) + " · " : "") + t("{n} Min.", { n: x.minutes }) + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
+  // Bearbeiten eines Eintrags (editSid = id) oder neuer Eintrag (editSid = "new")
+  let editSid = null;
+  function sessionForm(x) {
+    const books = state.books.filter((b) => b.status !== "wunsch");
+    const bookSel = x ? "" : `<label class="field"><span>${t("Buch")}</span><select data-f="book">${books.filter((b) => b.status === "lesen").map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("")}<option value="">${t("Ohne bestimmtes Buch")}</option></select></label>`;
+    return `<li class="ds-form" data-sid="${x ? x.id : "new"}">
+      ${x ? `<strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong>` : ""}
+      ${bookSel}
+      <div class="row">
+        <label class="field"><span>${t("Seiten")}</span><input type="number" min="0" max="2000" data-f="pages" value="${x ? x.pages || 0 : ""}" placeholder="0"></label>
+        <label class="field"><span>${t("Minuten")}</span><input type="number" min="1" max="600" data-f="minutes" value="${x ? x.minutes : ""}" placeholder="20"></label>
+      </div>
+      <div class="modal-actions">
+        ${x ? `<button type="button" class="btn danger" data-s-del>${t("Löschen")}</button>` : ""}
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-s-cancel>${t("Abbrechen")}</button>
+        <button type="button" class="btn primary" data-s-save>${t("Speichern")}</button>
+      </div></li>`;
+  }
+  // Seitenänderung eines Eintrags auch auf die aktuelle Seite des Buchs übertragen
+  function shiftBook(bookId, delta) {
+    const b = bookById(bookId); if (!b || !delta) return;
+    b.currentPage = Math.max(0, (b.currentPage || 0) + delta);
+    if (b.pages) b.currentPage = Math.min(b.pages, b.currentPage);
+    if (b.status === "gelesen" && b.pages && b.currentPage < b.pages) { b.status = "lesen"; b.endDate = null; }
+    b.updated = Date.now();
+  }
+  function saveSessionForm(li) {
+    const pages = Math.max(0, Math.min(2000, parseInt(li.querySelector('[data-f="pages"]').value) || 0));
+    const minutes = parseInt(li.querySelector('[data-f="minutes"]').value) || 0;
+    if (minutes < 1) { toast(t("Bitte mindestens 1 Minute eintragen.")); return; }
+    if (li.dataset.sid === "new") {
+      editSid = null;
+      logSession({ bookId: li.querySelector('[data-f="book"]').value, minutes, pagesRead: pages, date: dvDay });
+    } else {
+      const x = state.sessions.find((s) => s.id === li.dataset.sid); if (!x) return;
+      shiftBook(x.bookId, pages - (x.pages || 0));
+      x.pages = pages; x.minutes = minutes;
+      editSid = null; save(); checkBadges(); render(); toast(t("Gespeichert ✓"));
+    }
+    renderDayBody();
+  }
+  async function deleteSession(id) {
+    const x = state.sessions.find((s) => s.id === id); if (!x) return;
+    if (!(await askConfirm(t("Diesen Eintrag löschen?")))) return;
+    shiftBook(x.bookId, -(x.pages || 0));
+    state.sessions = state.sessions.filter((s) => s.id !== id);
+    editSid = null; save(); render(); renderDayBody(); toast(t("Eintrag gelöscht."));
+  }
   function renderDayBody() {
     const k = dvDay, d = parseKey(k), ss = sessionsOn(k);
     const m = ss.reduce((a, x) => a + x.minutes, 0), pg = ss.reduce((a, x) => a + (x.pages || 0), 0);
@@ -486,12 +537,14 @@
         <div class="ruler-block"><div class="ruler-head"><span>${t("Seiten")}</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
         <div class="ruler-block"><div class="ruler-head"><span>${t("Minuten")}</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
       </div>
-      <ul class="day-sessions">${ss.map((x) => `<li><strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong> <span class="muted">${sessionMeta(x)}</span>${x.note ? `<p class="entry-note">${esc(quoted(x.note))}</p>` : ""}</li>`).join("")}</ul>`
+      <ul class="day-sessions">${ss.map((x) => editSid === x.id ? sessionForm(x) : `<li><div class="ds-row"><span><strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong> <span class="muted">${sessionMeta(x)}</span></span>
+        <button type="button" class="link ds-edit" data-edit-s="${x.id}" aria-label="${t("Eintrag bearbeiten")}">✎ ${t("Bearbeiten")}</button></div>${x.note ? `<p class="entry-note">${esc(quoted(x.note))}</p>` : ""}</li>`).join("")}</ul>`
       : `<p class="day-empty">${t(isToday ? "Heute fehlt noch ein Knoten." : canP ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.")}</p>`}
       ${words.length ? `<div><p class="kicker" style="margin-bottom:.4rem">${t("Neue Wörter")}</p><div class="words">${words.map((w) => `<span class="word">${esc(w.w)}</span>`).join("")}</div></div>` : ""}
       ${lines.length ? `<div class="lines">${lines.map((l) => `<figure class="line"><blockquote>${esc(quoted(l.text))}</blockquote><figcaption>${esc(bookById(l.bookId)?.title || "")}${l.page ? " · " + t("S. {n}", { n: l.page }) : ""}</figcaption></figure>`).join("")}</div>` : ""}
       ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">${t("Jetzt lesen")}</button></div>` : ""}
-      ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}`;
+      ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}
+      ${editSid === "new" ? `<ul class="day-sessions">${sessionForm(null)}</ul>` : `<div class="day-actions"><button class="btn" type="button" data-add-s>＋ ${t("Lesezeit eintragen")}</button></div>`}`;
   }
   let wkMode = "pg"; // Wochenblick: Seiten (Standard) oder Minuten
   function renderWeekBody() {
@@ -552,11 +605,16 @@
   }
   $("#dayBody").addEventListener("click", (e) => { const b = e.target.closest("[data-wkm]"); if (b) { wkMode = b.dataset.wkm; renderWeekBody(); } });
   $("#dayMode").addEventListener("click", (e) => { const b = e.target.closest("[data-dmode]"); if (b) { dvMode = b.dataset.dmode; renderDayView(); } });
-  $("#dayPrev").addEventListener("click", () => { dvDay = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? -1 : -7)); renderDayView(); });
-  $("#dayNext").addEventListener("click", () => { const n = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? 1 : 7)); dvDay = n > dateKey() ? dateKey() : n; renderDayView(); });
+  $("#dayPrev").addEventListener("click", () => { editSid = null; dvDay = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? -1 : -7)); renderDayView(); });
+  $("#dayNext").addEventListener("click", () => { editSid = null; const n = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? 1 : 7)); dvDay = n > dateKey() ? dateKey() : n; renderDayView(); });
   $("#dayClose").addEventListener("click", () => $("#dayDialog").close());
   $("#dayBody").addEventListener("click", (e) => {
-    const w = e.target.closest("[data-wday]"); if (w) { dvDay = w.dataset.wday; dvMode = "day"; renderDayView(); return; }
+    const w = e.target.closest("[data-wday]"); if (w) { dvDay = w.dataset.wday; dvMode = "day"; editSid = null; renderDayView(); return; }
+    const ed = e.target.closest("[data-edit-s]"); if (ed) { editSid = ed.dataset.editS; renderDayBody(); return; }
+    if (e.target.closest("[data-add-s]")) { editSid = "new"; renderDayBody(); return; }
+    if (e.target.closest("[data-s-cancel]")) { editSid = null; renderDayBody(); return; }
+    if (e.target.closest("[data-s-save]")) { saveSessionForm(e.target.closest(".ds-form")); return; }
+    if (e.target.closest("[data-s-del]")) { deleteSession(e.target.closest(".ds-form").dataset.sid); return; }
     const a = e.target.closest("[data-dv]"); if (!a) return;
     $("#dayDialog").close();
     if (a.dataset.dv === "read") go("timer"); else openPatch(dvDay);
@@ -975,7 +1033,8 @@
 
   function logSession({ bookId, minutes, toPage, pagesRead, note = "", word = "", date = dateKey(), patched = false }) {
     const b = bookById(bookId);
-    let pages = !b && Number.isFinite(pagesRead) ? Math.max(0, Math.min(2000, pagesRead)) : 0;
+    let pages = Number.isFinite(pagesRead) && !(b && Number.isFinite(toPage)) ? Math.max(0, Math.min(2000, pagesRead)) : 0;
+    if (b && pages) { shiftBook(b.id, pages); if (!b.startDate) b.startDate = date; }
     const beforeMin = minutesByDay()[date] || 0, beforePg = pagesByDay()[date] || 0;
     if (b && Number.isFinite(toPage)) {
       const np = Math.max(0, b.pages ? Math.min(toPage, b.pages) : toPage);

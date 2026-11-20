@@ -409,6 +409,13 @@ window.LZ_I18N = {
     "{d} ansehen": "View {d}",
     "{d} flicken": "Mend {d}",
     "{d} gelesen": "{d} read",
+    "Tag bearbeiten →": "Edit day →",
+    "Bearbeiten": "Edit",
+    "Eintrag bearbeiten": "Edit entry",
+    "Lesezeit eintragen": "Add reading time",
+    "Bitte mindestens 1 Minute eintragen.": "Please enter at least 1 minute.",
+    "Diesen Eintrag löschen?": "Delete this entry?",
+    "Eintrag gelöscht.": "Entry deleted.",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -820,6 +827,13 @@ window.LZ_I18N = {
     "{d} ansehen": "{d} – göster",
     "{d} flicken": "{d} – onar",
     "{d} gelesen": "{d} okundu",
+    "Tag bearbeiten →": "Günü düzenle →",
+    "Bearbeiten": "Düzenle",
+    "Eintrag bearbeiten": "Kaydı düzenle",
+    "Lesezeit eintragen": "Okuma süresi ekle",
+    "Bitte mindestens 1 Minute eintragen.": "Lütfen en az 1 dakika gir.",
+    "Diesen Eintrag löschen?": "Bu kayıt silinsin mi?",
+    "Eintrag gelöscht.": "Kayıt silindi.",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1231,6 +1245,13 @@ window.LZ_I18N = {
     "{d} ansehen": "Prikaži: {d}",
     "{d} flicken": "Zakrpi: {d}",
     "{d} gelesen": "pročitano {d}",
+    "Tag bearbeiten →": "Uredi dan →",
+    "Bearbeiten": "Uredi",
+    "Eintrag bearbeiten": "Uredi zapis",
+    "Lesezeit eintragen": "Upiši vrijeme čitanja",
+    "Bitte mindestens 1 Minute eintragen.": "Upiši najmanje 1 minutu.",
+    "Diesen Eintrag löschen?": "Izbrisati ovaj zapis?",
+    "Eintrag gelöscht.": "Zapis je izbrisan.",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };

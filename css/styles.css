@@ -317,6 +317,11 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .day-status.gold { color: color-mix(in srgb, var(--gold) 75%, var(--ink)); border-color: var(--gold); }
 .day-sessions { list-style: none; margin: 0; padding: 0; display: grid; }
 .day-sessions li { padding: .6rem 0; border-top: 1px solid var(--rule); }
+.ds-row { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; }
+.ds-edit { font-size: .82rem; white-space: nowrap; }
+.ds-form { display: grid; gap: .6rem; padding: .8rem !important; margin: .3rem 0; border: 1px dashed var(--green) !important; border-radius: 8px; background: var(--paper); animation: rise .3s both; }
+.ds-form .modal-actions { margin-top: 0; }
+.goal-edit { font-size: .82rem; margin-top: .35rem; }
 .day-sessions .entry-note { margin: .2rem 0 0; font-family: var(--font-display); font-style: italic; font-size: 1.15rem; line-height: 1.25; }
 .day-empty { text-align: center; color: var(--ink-soft); margin: .4rem 0; }
 .day-actions { display: flex; justify-content: center; gap: .5rem; flex-wrap: wrap; }
