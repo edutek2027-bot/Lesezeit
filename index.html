@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=10">
+  <link rel="stylesheet" href="css/styles.css?v=11">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -109,10 +109,16 @@
         <article class="card wide faden-card">
           <div class="card-head"><h2>Lesefaden</h2><span class="kicker" id="fadenStat"></span></div>
           <p class="faden-sub" id="fadenSub"></p>
+          <div class="patch-note" id="patchNote" hidden>
+            <svg viewBox="0 0 40 40" aria-hidden="true"><rect class="pn-patch" x="6" y="6" width="28" height="28" rx="4" transform="rotate(-8 20 20)"/><path class="pn-x" d="M13 13L27 27M27 13L13 27"/></svg>
+            <p id="patchNoteText"></p>
+            <button class="btn" id="patchOpen">Faden flicken</button>
+          </div>
           <svg class="faden" id="faden" viewBox="-14 -10 728 352" role="img" aria-label="Lesefaden der letzten vier Wochen"></svg>
           <p class="faden-legend">
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x full" d="M4 4L16 16M16 4L4 16"/><circle class="lg-gold" cx="10" cy="10" r="2.6"/></svg>Ziel erreicht</span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x" d="M5 5L15 15M15 5L5 15"/></svg>gelesen</span>
+            <span><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="lg-patch" x="2.5" y="2.5" width="15" height="15" rx="2.5"/><path class="lg-x" d="M6 6L14 14M14 6L6 14"/></svg>geflickt</span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg>Faden gerissen</span>
           </p>
         </article>
@@ -180,6 +186,10 @@
             <span>Welches Buch liest du?</span>
             <select id="timerBook"></select>
           </label>
+          <div class="patch-banner" id="patchBanner" hidden>
+            <span id="patchBannerText"></span>
+            <button class="link" type="button" id="patchBannerCancel">nicht flicken</button>
+          </div>
           <div class="presets" id="timerPresets">
             <button class="chip" data-min="0">Frei</button>
             <button class="chip" data-min="10">10 Min.</button>
@@ -342,6 +352,35 @@
     </form>
   </dialog>
 
+  <!-- Faden flicken -->
+  <dialog id="patchDialog" class="modal small">
+    <form method="dialog" id="patchForm" class="form">
+      <svg class="patch-art" viewBox="0 0 120 70" aria-hidden="true">
+        <path class="pa-thread" d="M6 35 H38"/><path class="pa-thread" d="M82 35 H114"/>
+        <rect class="pa-patch" x="40" y="13" width="40" height="44" rx="5" transform="rotate(-6 60 35)"/>
+        <path class="pa-x" d="M50 25L70 45M70 25L50 45"/>
+        <path class="pa-join" d="M38 35 H50 M70 35 H82"/>
+      </svg>
+      <h2>Faden flicken</h2>
+      <p class="muted center" style="margin:0">Ein Tag ohne Lesen ist kein Problem. Lies nach, dann ist dein Faden wieder verbunden.</p>
+      <div class="field">
+        <span>Welchen Tag möchtest du flicken?</span>
+        <div class="filters" id="patchDays" style="margin:0"></div>
+      </div>
+      <p class="patch-rule" id="patchRule"></p>
+      <div class="patch-manual" id="patchManualBox" hidden>
+        <label class="field"><span>Wie lange hast du nachgelesen?</span><input type="number" id="patchMin" min="1" max="600"></label>
+        <label class="field"><span>Buch</span><select id="patchBook"></select></label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="patchManual">Schon nachgelesen</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="patchCancel">Abbrechen</button>
+        <button type="submit" class="btn primary" id="patchGo">Mit Timer nachlesen</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Bestätigung -->
   <dialog id="confirmDialog" class="modal small">
     <form method="dialog" class="form">
@@ -358,7 +397,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/data.js?v=11"></script>
+  <script src="js/app.js?v=11"></script>
 </body>
 </html>

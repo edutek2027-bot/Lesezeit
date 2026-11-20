@@ -244,6 +244,30 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .faden .today-ring { fill: none; stroke: var(--green); stroke-width: 2; opacity: .5; transform-box: fill-box; transform-origin: center; animation: ping 2s ease-out infinite; }
 @keyframes ping { 0% { transform: scale(.6); opacity: .6; } 100% { transform: scale(1.6); opacity: 0; } }
 @keyframes sew { to { stroke-dashoffset: 0; } }
+.faden .patch { fill: color-mix(in srgb, var(--gold) 26%, var(--sheet)); stroke: var(--gold); stroke-width: 2; stroke-dasharray: 4 3; transform-box: fill-box; transform-origin: center; animation: patchIn .5s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes patchIn { from { opacity: 0; transform: scale(.3) rotate(-30deg); } to { opacity: 1; } }
+.faden .patchable { cursor: pointer; }
+.faden .patchable .ph-ring { fill: var(--sheet); stroke: var(--gold); stroke-width: 2; stroke-dasharray: 4 4; animation: spin 8s linear infinite; transform-box: fill-box; transform-origin: center; }
+.faden .patchable .ph-plus { stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; }
+.faden .patchable:hover .ph-ring, .faden .patchable:focus-visible .ph-ring { fill: color-mix(in srgb, var(--gold) 20%, var(--sheet)); }
+.faden .patchable:focus { outline: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.patch-note { display: flex; align-items: center; gap: .8rem; padding: .6rem .8rem; margin: 0 0 .6rem; border: 1px dashed var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 8%, var(--sheet)); animation: rise .5s both .6s; }
+.patch-note svg { width: 34px; height: 34px; flex: none; }
+.patch-note p { margin: 0; flex: 1; min-width: 0; font-size: .92rem; }
+.patch-note .btn { padding: .45rem .9rem; flex: none; }
+.pn-patch, .pa-patch, .lg-patch { fill: color-mix(in srgb, var(--gold) 26%, var(--sheet)); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: 3 2.5; }
+.pn-x, .pa-x { fill: none; stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; }
+.patch-art { width: 160px; height: auto; justify-self: center; overflow: visible; }
+.pa-thread { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
+.pa-join { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 12; stroke-dashoffset: 12; animation: joinIn .5s ease 1s forwards; }
+@keyframes joinIn { to { stroke-dashoffset: 0; } }
+.pa-patch { transform-box: fill-box; transform-origin: center; animation: patchIn .6s cubic-bezier(.3,1.4,.5,1) .2s both; }
+.pa-x { stroke-dasharray: 30; stroke-dashoffset: 30; animation: joinIn .4s ease .65s forwards; }
+.patch-rule { margin: 0; padding: .6rem .75rem; border-radius: 8px; background: var(--paper); font-size: .9rem; }
+.patch-manual { display: grid; gap: .7rem; }
+.patch-banner { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .9rem; padding: .55rem .8rem; border: 1px dashed var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 8%, var(--sheet)); font-size: .9rem; text-align: left; }
+.faden-legend .lg-patch { stroke-width: 1.2; }
 .faden-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; align-items: center; margin: .5rem 0 0; font-size: .82rem; color: var(--ink-soft); }
 .faden-legend span { display: inline-flex; align-items: center; gap: .4rem; }
 .faden-legend svg { width: 18px; height: 18px; }

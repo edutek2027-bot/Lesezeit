@@ -112,6 +112,7 @@
     { id: "critic", ico: "✍️", name: "Rezensent/in", desc: "Ein Buch bewertet und Notizen geschrieben", test: () => state.books.some((b) => b.rating && b.notes?.trim()) },
     { id: "words10", ico: "🔤", name: "Wortsammler/in", desc: "10 Wörter im Wortschatz", test: () => state.words.length >= 10 },
     { id: "journal5", ico: "✒️", name: "Tagebuch", desc: "5 Einträge mit einem Satz zum Lesen", test: () => state.sessions.filter((x) => x.note).length >= 5 },
+    { id: "patch1", ico: "🪡", name: "Nicht aufgegeben", desc: "Einen gerissenen Faden geflickt", test: () => state.sessions.some((x) => x.patched) },
     { id: "genres", ico: "🎨", name: "Vielleser/in", desc: "Bücher aus 3 Gattungen", test: () => new Set(state.books.filter((b) => b.status !== "wunsch").map((b) => b.genre)).size >= 3 }
   ];
   let quietBadges = false;
@@ -282,6 +283,8 @@
     const days = Array.from({ length: F_DAYS }, (_, i) => dateKey(addDays(now, i - (F_DAYS - 1))));
     const read = days.map((k) => (mins[k] || 0) > 0);
     const full = days.map((k) => goalDone(mins[k] || 0, pgs[k] || 0));
+    const patchedSet = new Set(state.sessions.filter((x) => x.patched).map((x) => x.date));
+    const canPatch = new Set(patchableDays());
     const T = F_DAYS - 1, delay = (i) => 0.35 + i * 0.075;
     let guide = "", threads = "", marks = "", labels = "", extra = "";
     for (let i = 0; i < T; i++) guide += fSeg(i) + " ";
@@ -302,13 +305,19 @@
           <path class="fiber" d="M${ex} ${ey} q${sx * 8 || 6} ${sy ? 8 : -6} ${sx * 15 || 4} ${sy ? 15 : -5}"/>
           <path class="fiber" d="M${ex} ${ey} q${sx * 9 || -6} ${sy ? 4 : 5} ${sx * 16 || -4} ${sy ? 12 : 9}" style="animation-delay:-1.2s"/></g>`;
       }
+      if (read[i] && patchedSet.has(days[i])) {
+        marks += `<rect class="patch" x="${x - 20}" y="${y - 20}" width="40" height="40" rx="5" transform="rotate(${rot(days[i]) / 2} ${x} ${y})" style="animation-delay:${delay(i) - 0.1}s"/>`;
+      }
       if (read[i]) {
         const s = full[i] ? 15 : 12, dl = delay(i);
         marks += `<path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x - s} ${y - s} L${x + s} ${y + s}" style="animation-delay:${dl}s"/>
           <path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x + s} ${y - s} L${x - s} ${y + s}" style="animation-delay:${dl + 0.1}s"/>
           ${full[i] ? `<circle class="gold" cx="${x}" cy="${y}" r="4.5" style="animation-delay:${dl + 0.25}s"/>` : ""}`;
       } else {
-        marks += `<circle class="hole" cx="${x}" cy="${y}" r="5.5"/>`;
+        marks += canPatch.has(days[i])
+          ? `<g class="patchable" data-patch="${days[i]}" role="button" tabindex="0" aria-label="${d.toLocaleDateString("de-DE", { day: "numeric", month: "long" })} flicken">
+               <circle class="ph-ring" cx="${x}" cy="${y}" r="15"/><path class="ph-plus" d="M${x - 6} ${y}H${x + 6}M${x} ${y - 6}V${y + 6}"/></g>`
+          : `<circle class="hole" cx="${x}" cy="${y}" r="5.5"/>`;
       }
       const first = i === 0 || d.getDate() === 1;
       labels += `<text class="lbl ${i === T ? "today" : ""}" x="${x}" y="${y + 36}">${i === T ? "Heute" : first ? `${d.getDate()}.${d.getMonth() + 1}.` : d.getDate()}</text>`;
@@ -333,7 +342,72 @@
       ? `Heutiger Stich gesetzt. Dein Faden ist ${plural(st, "Tag", "Tage")} lang.`
       : st > 0 ? `Heute fehlt noch ein Stich, sonst reißt dein Faden von ${plural(st, "Tag", "Tagen")}.`
       : "Jeder Lesetag ist ein Stich. Lies heute und fang einen neuen Faden an.";
+    const gaps = patchableDays();
+    $("#patchNote").hidden = !gaps.length;
+    if (gaps.length) {
+      const last = parseKey(gaps[gaps.length - 1]).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+      $("#patchNoteText").textContent = gaps.length === 1
+        ? `Am ${last} ist der Faden gerissen. Lies ${goalMin()} Minuten nach, dann flickst du ihn.`
+        : `${gaps.length} Tage lassen sich noch flicken. Pro Tag liest du ${goalMin()} Minuten nach.`;
+    }
   }
+
+  // ---------- Faden flicken ----------
+  // Verpasste Tage der letzten 7 Tage (nach dem ersten Lesetag) lassen sich nachholen:
+  // einmal das Tagesziel in Minuten nachlesen, dann zählt der Tag wieder als Lesetag.
+  const PATCH_WINDOW = 7;
+  function patchableDays() {
+    const mins = minutesByDay(), keys = Object.keys(mins).sort();
+    if (!keys.length) return [];
+    const first = keys[0], out = [];
+    for (let i = PATCH_WINDOW; i >= 1; i--) {
+      const k = dateKey(addDays(new Date(), -i));
+      if (k > first && !mins[k]) out.push(k);
+    }
+    return out;
+  }
+  let patchPick = null, patchPending = null; // patchPending: Tag, für den der nächste Timer flickt
+  const longDay = (k) => parseKey(k).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  function openPatch(day) {
+    const gaps = patchableDays();
+    if (!gaps.length) { toast("Gerade gibt es nichts zu flicken."); return; }
+    patchPick = gaps.includes(day) ? day : gaps[gaps.length - 1];
+    $("#patchManualBox").hidden = true;
+    $("#patchManual").hidden = false;
+    $("#patchGo").textContent = "Mit Timer nachlesen";
+    renderPatchDialog();
+    $("#patchDialog").showModal();
+  }
+  function renderPatchDialog() {
+    $("#patchDays").innerHTML = patchableDays().map((k) => `<button type="button" class="chip ${k === patchPick ? "active" : ""}" data-pday="${k}">${parseKey(k).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" })}</button>`).join("");
+    $("#patchRule").textContent = `Lies einmal ${goalMin()} Minuten am Stück nach. Die Zeit zählt dann für ${longDay(patchPick)}, nicht für heute.`;
+  }
+  $("#patchDays").addEventListener("click", (e) => { const c = e.target.closest("[data-pday]"); if (c) { patchPick = c.dataset.pday; renderPatchDialog(); } });
+  $("#patchCancel").addEventListener("click", () => $("#patchDialog").close());
+  $("#patchOpen").addEventListener("click", () => openPatch());
+  $("#faden").addEventListener("click", (e) => { const g = e.target.closest("[data-patch]"); if (g) openPatch(g.dataset.patch); });
+  $("#faden").addEventListener("keydown", (e) => { const g = e.target.closest("[data-patch]"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openPatch(g.dataset.patch); } });
+  $("#patchManual").addEventListener("click", () => {
+    $("#patchManualBox").hidden = false; $("#patchManual").hidden = true;
+    $("#patchMin").value = goalMin(); $("#patchMin").min = goalMin();
+    $("#patchBook").innerHTML = state.books.filter((b) => b.status === "lesen").map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">Ohne bestimmtes Buch</option>`;
+    $("#patchGo").textContent = "Flicken";
+  });
+  $("#patchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!patchPick) return;
+    if (!$("#patchManualBox").hidden) {
+      const m = parseInt($("#patchMin").value) || 0;
+      if (m < goalMin()) { toast(`Zum Flicken brauchst du mindestens ${goalMin()} Minuten.`); return; }
+      $("#patchDialog").close();
+      logSession({ bookId: $("#patchBook").value, minutes: m, date: patchPick, patched: true });
+      return;
+    }
+    patchPending = patchPick; preset = goalMin();
+    $("#patchDialog").close();
+    go("timer");
+  });
+  $("#patchBannerCancel").addEventListener("click", () => { patchPending = null; updateClock(); });
 
   function renderWords() {
     const list = [...state.words].sort((a, b) => b.ts - a.ts);
@@ -559,7 +633,7 @@
   function celebrateFinish(b) { confetti(); toast(`🎉 „${b.title}“ ausgelesen – Glückwunsch!`); }
 
   // ---------- Timer ----------
-  let preset = 20, tickHandle = null;
+  let preset = 20, tickHandle = null, booting = true; // während des Intros keine Dialoge öffnen
   const CIRC = 578;
   function fillBookSelects() {
     const reading = state.books.filter((b) => b.status === "lesen");
@@ -580,7 +654,7 @@
     const recent = [...state.sessions].sort((a, b) => b.ts - a.ts).slice(0, 8);
     $("#sessionLog").innerHTML = recent.length
       ? recent.map((s, i) => `<li style="animation-delay:${i * 0.04}s"><time>${fmtDate(s.date)}</time><div>
-          <strong>${esc(bookById(s.bookId)?.title || "Freies Lesen")}</strong> <span class="entry-meta">· ${s.minutes} Min.${s.pages ? ` · ${s.pages} S.` : ""}</span>
+          <strong>${esc(bookById(s.bookId)?.title || "Freies Lesen")}</strong> <span class="entry-meta">· ${s.minutes} Min.${s.pages ? ` · ${s.pages} S.` : ""}${s.patched ? ` · nachgelesen am ${fmtDate(s.readOn)}` : ""}</span>
           ${s.note ? `<p class="entry-note">„${esc(s.note)}“</p>` : ""}
           ${s.word ? `<span class="word">${esc(s.word)}</span>` : ""}</div></li>`).join("")
       : `<li><time>—</time><span class="muted">Noch keine Einträge. Nach jeder Lesezeit kannst du hier einen Satz notieren.</span></li>`;
@@ -603,13 +677,21 @@
     $("#timerStop").disabled = !t;
     $$("#timerPresets .chip").forEach((c) => { c.disabled = !!t; c.classList.toggle("active", +c.dataset.min === (t ? t.target : preset)); });
     $("#timerBook").disabled = !!t;
-    if (target && t && el >= target) finishTimer(true);
+    const pf = t ? t.patchFor : patchPending;
+    $("#patchBanner").hidden = !pf;
+    if (pf) $("#patchBannerText").textContent = `🪡 Flicken für ${longDay(pf)} · ${goalMin()} Min. am Stück`;
+    $("#patchBannerCancel").hidden = !!t;
+    if (!booting && target && t && el >= target) finishTimer(true);
   }
   function startTick() { clearInterval(tickHandle); tickHandle = setInterval(updateClock, 500); }
   $("#timerPresets").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (!c || state.timer) return; preset = +c.dataset.min; updateClock(); });
   $("#timerStart").addEventListener("click", () => {
     const t = state.timer;
-    if (!t) state.timer = { running: true, startedAt: Date.now(), acc: 0, target: preset, bookId: $("#timerBook").value };
+    if (!t) {
+      if (patchPending && preset && preset < goalMin()) preset = goalMin();
+      state.timer = { running: true, startedAt: Date.now(), acc: 0, target: preset, bookId: $("#timerBook").value, patchFor: patchPending || null };
+      patchPending = null;
+    }
     else if (t.running) { t.acc += Date.now() - t.startedAt; t.running = false; }
     else { t.startedAt = Date.now(); t.running = true; }
     save(); updateClock(); startTick();
@@ -624,9 +706,11 @@
     if (ms < 30000) { toast("Unter 30 Sekunden – das zählt noch nicht. 😉"); return; }
     if (auto) chime();
     const minutes = Math.max(1, Math.round(ms / 60000));
-    pendingSession = { bookId: t.bookId, minutes };
+    const patchOk = t.patchFor && minutes >= goalMin() && patchableDays().includes(t.patchFor);
+    pendingSession = patchOk ? { bookId: t.bookId, minutes, date: t.patchFor, patched: true } : { bookId: t.bookId, minutes };
     const b = bookById(t.bookId);
-    $("#finishText").textContent = `Du hast ${plural(minutes, "Minute", "Minuten")} gelesen${b ? ` in „${b.title}“` : ""}.`;
+    $("#finishText").textContent = `Du hast ${plural(minutes, "Minute", "Minuten")} gelesen${b ? ` in „${b.title}“` : ""}.`
+      + (patchOk ? ` Damit flickst du ${longDay(t.patchFor)}.` : t.patchFor ? ` Zum Flicken fehlten ${goalMin() - minutes} Minuten, die Zeit zählt für heute.` : "");
     $("#finishStampMin").textContent = `${minutes}′`;
     $("#finishNote").value = ""; $("#finishWord").value = "";
     $("#finishPageLbl").textContent = b ? "Auf welcher Seite bist du jetzt?" : "Wie viele Seiten hast du gelesen?";
@@ -645,7 +729,7 @@
   });
   $("#finishDialog").addEventListener("cancel", () => { if (pendingSession) logSession(pendingSession); pendingSession = null; });
 
-  function logSession({ bookId, minutes, toPage, pagesRead, note = "", word = "", date = dateKey() }) {
+  function logSession({ bookId, minutes, toPage, pagesRead, note = "", word = "", date = dateKey(), patched = false }) {
     const b = bookById(bookId);
     let pages = !b && Number.isFinite(pagesRead) ? Math.max(0, Math.min(2000, pagesRead)) : 0;
     const beforeMin = minutesByDay()[date] || 0, beforePg = pagesByDay()[date] || 0;
@@ -657,7 +741,9 @@
     }
     note = note.trim().slice(0, 200); word = word.trim().slice(0, 40);
     if (word && !addWord(word, bookId, date)) word = "";
-    state.sessions.push({ id: uid(), bookId: bookId || null, date, minutes, pages, note, word, hour: date === dateKey() ? new Date().getHours() : null, ts: Date.now() });
+    const entry = { id: uid(), bookId: bookId || null, date, minutes, pages, note, word, hour: date === dateKey() ? new Date().getHours() : null, ts: Date.now() };
+    if (patched) { entry.patched = true; entry.readOn = dateKey(); entry.hour = null; }
+    state.sessions.push(entry);
     let finished = false;
     if (b && b.pages && b.currentPage >= b.pages && b.status !== "gelesen") { b.status = "gelesen"; b.endDate = date; finished = true; }
     save();
@@ -665,7 +751,8 @@
     const wasDone = goalDone(beforeMin, beforePg), nowDone = goalDone(beforeMin + minutes, beforePg + pages);
     const minHit = beforeMin < goalMin() && beforeMin + minutes >= goalMin();
     const pgHit = beforePg < goalPg() && beforePg + pages >= goalPg();
-    if (finished) celebrateFinish(b);
+    if (patched) { confetti(); toast(`🪡 Geflickt! Dein Faden ist wieder verbunden${streak() > 1 ? ` – ${streak()} Tage lang` : ""}.`); if (finished) setTimeout(() => celebrateFinish(b), 3400); }
+    else if (finished) celebrateFinish(b);
     else if (isToday && !wasDone && nowDone) { confetti(); toast("🎯 Tagesziel erreicht – Minuten und Seiten geschafft!"); }
     else if (isToday && beforeMin === 0) toast(`🧵 Neuer Stich! Dein Lesefaden ist jetzt ${plural(streak(), "Tag", "Tage")} lang.`);
     else if (isToday && minHit) toast(`⏱️ Minutenziel geschafft! Noch ${goalPg() - beforePg - pages} Seiten.`);
@@ -831,8 +918,11 @@
   window.addEventListener("hashchange", () => go(location.hash.slice(1)));
   fillBookSelects();
   go(location.hash.slice(1) || "uebersicht");
-  if (state.timer) startTick();
-  runIntro().then(() => { if (!state.profile) openProfile(); });
+  runIntro().then(() => {
+    booting = false;
+    if (state.timer) { startTick(); updateClock(); }
+    if (!state.profile) openProfile();
+  });
   // Datum wechselt um Mitternacht → Übersicht aktualisieren
   setInterval(() => { if ($("#view-uebersicht").classList.contains("active") && !document.querySelector("dialog[open]")) renderDashboard(); }, 5 * 60000);
 })();
