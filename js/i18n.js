@@ -412,8 +412,6 @@ window.LZ_I18N = {
     "Tag bearbeiten →": "Edit day →",
     "Bearbeiten": "Edit",
     "Eintrag bearbeiten": "Edit entry",
-    "Lesezeit eintragen": "Add reading time",
-    "Bitte mindestens 1 Minute eintragen.": "Please enter at least 1 minute.",
     "Diesen Eintrag löschen?": "Delete this entry?",
     "Eintrag gelöscht.": "Entry deleted.",
     "Du startest auf Seite": "You start on page",
@@ -427,6 +425,9 @@ window.LZ_I18N = {
     "Neue aktuelle Seite: {n}.": "New current page: {n}.",
     "Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.": "Page {b} is before your last page ({a}). Is that right? Otherwise enter the pages read directly.",
     "Von Seite {a} bis {b}: {len} gelesen.": "From page {a} to {b}: {len} read.",
+    "Seiten & Minuten eintragen": "Add pages & minutes",
+    "Bitte Seiten oder Minuten eintragen.": "Please enter pages or minutes.",
+    "{len} eingetragen.": "{len} added.",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -841,8 +842,6 @@ window.LZ_I18N = {
     "Tag bearbeiten →": "Günü düzenle →",
     "Bearbeiten": "Düzenle",
     "Eintrag bearbeiten": "Kaydı düzenle",
-    "Lesezeit eintragen": "Okuma süresi ekle",
-    "Bitte mindestens 1 Minute eintragen.": "Lütfen en az 1 dakika gir.",
     "Diesen Eintrag löschen?": "Bu kayıt silinsin mi?",
     "Eintrag gelöscht.": "Kayıt silindi.",
     "Du startest auf Seite": "Başladığın sayfa",
@@ -856,6 +855,9 @@ window.LZ_I18N = {
     "Neue aktuelle Seite: {n}.": "Yeni sayfan: {n}.",
     "Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.": "{b}. sayfa, son sayfandan ({a}) önce. Doğru mu? Değilse okunan sayfa sayısını doğrudan gir.",
     "Von Seite {a} bis {b}: {len} gelesen.": "{a}. sayfadan {b}. sayfaya: {len} okundu.",
+    "Seiten & Minuten eintragen": "Sayfa ve dakika ekle",
+    "Bitte Seiten oder Minuten eintragen.": "Lütfen sayfa ya da dakika gir.",
+    "{len} eingetragen.": "{len} kaydedildi.",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1270,8 +1272,6 @@ window.LZ_I18N = {
     "Tag bearbeiten →": "Uredi dan →",
     "Bearbeiten": "Uredi",
     "Eintrag bearbeiten": "Uredi zapis",
-    "Lesezeit eintragen": "Upiši vrijeme čitanja",
-    "Bitte mindestens 1 Minute eintragen.": "Upiši najmanje 1 minutu.",
     "Diesen Eintrag löschen?": "Izbrisati ovaj zapis?",
     "Eintrag gelöscht.": "Zapis je izbrisan.",
     "Du startest auf Seite": "Počinješ na stranici",
@@ -1285,6 +1285,9 @@ window.LZ_I18N = {
     "Neue aktuelle Seite: {n}.": "Nova trenutna stranica: {n}.",
     "Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.": "Stranica {b} je prije tvoje zadnje stranice ({a}). Je li to tačno? Inače direktno upiši broj pročitanih stranica.",
     "Von Seite {a} bis {b}: {len} gelesen.": "Od stranice {a} do {b}: pročitano {len}.",
+    "Seiten & Minuten eintragen": "Upiši stranice i minute",
+    "Bitte Seiten oder Minuten eintragen.": "Upiši stranice ili minute.",
+    "{len} eingetragen.": "Upisano: {len}.",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };

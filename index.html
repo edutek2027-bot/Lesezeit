@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=17">
+  <link rel="stylesheet" href="css/styles.css?v=18">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -261,7 +261,7 @@
           <form id="manualForm" class="form">
             <label class="field"><span data-t>Buch</span><select id="manualBook"></select></label>
             <div class="row">
-              <label class="field"><span data-t>Minuten</span><input type="number" min="1" max="600" id="manualMin" required value="20"></label>
+              <label class="field"><span><span data-t>Minuten</span> <small data-t>(optional)</small></span><input type="number" min="0" max="600" inputmode="numeric" id="manualMin" value="20"></label>
               <label class="field"><span id="manualPageLbl" data-t>Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
             </div>
             <label class="field"><span><span data-t>Ein Satz zum Lesen</span> <small data-t>(optional)</small></span><input id="manualNote" maxlength="200" placeholder="Was ist passiert?"></label>
@@ -455,8 +455,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=17"></script>
-  <script src="js/i18n.js?v=17"></script>
-  <script src="js/app.js?v=17"></script>
+  <script src="js/data.js?v=18"></script>
+  <script src="js/i18n.js?v=18"></script>
+  <script src="js/app.js?v=18"></script>
 </body>
 </html>

@@ -99,16 +99,22 @@
   const goalMin = () => state.profile?.goal || 20;
   const goalPg = () => state.profile?.goalPages || PAGE_DEFAULT[group()];
   const goalDone = (min, pg) => min >= goalMin() && pg >= goalPg();
+  // Ein Tag zählt als Lesetag, wenn Minuten ODER Seiten eingetragen sind
+  function readSet() {
+    const r = new Set();
+    for (const s of state.sessions) if ((s.minutes || 0) > 0 || (s.pages || 0) > 0) r.add(s.date);
+    return r;
+  }
   function streak() {
-    const m = minutesByDay();
+    const r = readSet();
     let d = new Date();
-    if (!m[dateKey(d)]) d = addDays(d, -1); // heute noch offen → Serie zählt ab gestern
+    if (!r.has(dateKey(d))) d = addDays(d, -1); // heute noch offen → Serie zählt ab gestern
     let n = 0;
-    while (m[dateKey(d)]) { n++; d = addDays(d, -1); }
+    while (r.has(dateKey(d))) { n++; d = addDays(d, -1); }
     return n;
   }
   function bestStreak() {
-    const days = Object.keys(minutesByDay()).sort();
+    const days = [...readSet()].sort();
     let best = 0, cur = 0, prev = null;
     for (const k of days) { cur = prev && daysBetween(parseKey(prev), parseKey(k)) === 1 ? cur + 1 : 1; best = Math.max(best, cur); prev = k; }
     return best;
@@ -219,7 +225,7 @@
     const list = left.join(" " + t("und") + " ");
     $("#goalHint").textContent = isToday
       ? (both ? t("Heute ist dein Stempel sicher.") : !mn && !pg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list }))
-      : (both ? t("An diesem Tag hast du dein Ziel erreicht.") : !mn ? t(patchableDays().includes(k) ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.") : t("Es fehlten {list}.", { list }));
+      : (both ? t("An diesem Tag hast du dein Ziel erreicht.") : !mn && !pg ? t(patchableDays().includes(k) ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.") : t("Es fehlten {list}.", { list }));
   }
   $("#goalEdit").addEventListener("click", () => openDay(dateKey(addDays(new Date(), goalOffset)), "day"));
   $("#goalPrev").addEventListener("click", () => { goalOffset = Math.max(-60, goalOffset - 1); renderGoal(); });
@@ -342,7 +348,7 @@
   function renderThread() {
     const mins = minutesByDay(), pgs = pagesByDay(), now = new Date();
     const days = Array.from({ length: F_DAYS }, (_, i) => dateKey(addDays(now, i - (F_DAYS - 1))));
-    const read = days.map((k) => (mins[k] || 0) > 0);
+    const rs = readSet(), read = days.map((k) => rs.has(k));
     const full = days.map((k) => goalDone(mins[k] || 0, pgs[k] || 0));
     const patchedSet = new Set(state.sessions.filter((x) => x.patched).map((x) => x.date));
     const canPatch = new Set(patchableDays());
@@ -420,12 +426,12 @@
   // einmal das Tagesziel in Minuten nachlesen, dann zählt der Tag wieder als Lesetag.
   const PATCH_WINDOW = 7;
   function patchableDays() {
-    const mins = minutesByDay(), keys = Object.keys(mins).sort();
+    const rs = readSet(), keys = [...rs].sort();
     if (!keys.length) return [];
     const first = keys[0], out = [];
     for (let i = PATCH_WINDOW; i >= 1; i--) {
       const k = dateKey(addDays(new Date(), -i));
-      if (k > first && !mins[k]) out.push(k);
+      if (k > first && !rs.has(k)) out.push(k);
     }
     return out;
   }
@@ -469,7 +475,7 @@
     if (dvMode === "day") renderDayBody(); else renderWeekBody();
   }
   // „· 25 Min. · 18 S. · nachgelesen am 20. Nov.“
-  const sessionMeta = (x) => "· " + (x.pages ? t("{n} S.", { n: x.pages }) + " · " : "") + t("{n} Min.", { n: x.minutes }) + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
+  const sessionMeta = (x) => "· " + [x.pages ? t("{n} S.", { n: x.pages }) : "", x.minutes ? t("{n} Min.", { n: x.minutes }) : ""].filter(Boolean).join(" · ") + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
   // Bearbeiten eines Eintrags (editSid = id) oder neuer Eintrag (editSid = "new")
   let editSid = null;
   function sessionForm(x) {
@@ -479,8 +485,8 @@
       ${x ? `<strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong>` : ""}
       ${bookSel}
       <div class="row">
-        <label class="field"><span>${t("Seiten")}</span><input type="number" min="0" max="2000" data-f="pages" value="${x ? x.pages || 0 : ""}" placeholder="0"></label>
-        <label class="field"><span>${t("Minuten")}</span><input type="number" min="1" max="600" data-f="minutes" value="${x ? x.minutes : ""}" placeholder="20"></label>
+        <label class="field"><span>${t("Seiten")}</span><input type="number" min="0" max="2000" inputmode="numeric" data-f="pages" value="${x ? x.pages || 0 : ""}" placeholder="0"></label>
+        <label class="field"><span>${t("Minuten")} <small>${t("(optional)")}</small></span><input type="number" min="0" max="600" inputmode="numeric" data-f="minutes" value="${x ? x.minutes || "" : ""}" placeholder="0"></label>
       </div>
       <div class="modal-actions">
         ${x ? `<button type="button" class="btn danger" data-s-del>${t("Löschen")}</button>` : ""}
@@ -499,8 +505,8 @@
   }
   function saveSessionForm(li) {
     const pages = Math.max(0, Math.min(2000, parseInt(li.querySelector('[data-f="pages"]').value) || 0));
-    const minutes = parseInt(li.querySelector('[data-f="minutes"]').value) || 0;
-    if (minutes < 1) { toast(t("Bitte mindestens 1 Minute eintragen.")); return; }
+    const minutes = Math.max(0, Math.min(600, parseInt(li.querySelector('[data-f="minutes"]').value) || 0));
+    if (!minutes && !pages) { toast(t("Bitte Seiten oder Minuten eintragen.")); return; }
     if (li.dataset.sid === "new") {
       editSid = null;
       logSession({ bookId: li.querySelector('[data-f="book"]').value, minutes, pagesRead: pages, date: dvDay });
@@ -528,12 +534,12 @@
     $("#dayNext").disabled = isToday;
     const words = state.words.filter((w) => w.date === k), lines = state.lines.filter((l) => l.date === k);
     const pt = patched ? " · " + t("geflickt") : "";
-    const status = !m ? `<span class="day-status">${t(isToday ? "Noch kein Knoten" : "Nicht gelesen")}</span>`
+    const status = !m && !pg ? `<span class="day-status">${t(isToday ? "Noch kein Knoten" : "Nicht gelesen")}</span>`
       : done ? `<span class="day-status gold">● ${t("Ziel erreicht")}${pt}</span>`
       : `<span class="day-status ok">● ${t("Gelesen")}${pt}</span>`;
     const canP = patchableDays().includes(k);
     $("#dayBody").innerHTML = `${status}
-      ${m ? `<div>
+      ${m || pg ? `<div>
         <div class="ruler-block"><div class="ruler-head"><span>${t("Seiten")}</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
         <div class="ruler-block"><div class="ruler-head"><span>${t("Minuten")}</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
       </div>
@@ -544,7 +550,7 @@
       ${lines.length ? `<div class="lines">${lines.map((l) => `<figure class="line"><blockquote>${esc(quoted(l.text))}</blockquote><figcaption>${esc(bookById(l.bookId)?.title || "")}${l.page ? " · " + t("S. {n}", { n: l.page }) : ""}</figcaption></figure>`).join("")}</div>` : ""}
       ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">${t("Jetzt lesen")}</button></div>` : ""}
       ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}
-      ${editSid === "new" ? `<ul class="day-sessions">${sessionForm(null)}</ul>` : `<div class="day-actions"><button class="btn" type="button" data-add-s>＋ ${t("Lesezeit eintragen")}</button></div>`}`;
+      ${editSid === "new" ? `<ul class="day-sessions">${sessionForm(null)}</ul>` : `<div class="day-actions"><button class="btn" type="button" data-add-s>＋ ${t("Seiten & Minuten eintragen")}</button></div>`}`;
   }
   let wkMode = "pg"; // Wochenblick: Seiten (Standard) oder Minuten
   function renderWeekBody() {
@@ -553,7 +559,7 @@
     const mins = minutesByDay(), pgs = pagesByDay();
     const past = days.filter((k) => k <= todayK), n = past.length || 1;
     const sumM = past.reduce((a, k) => a + (mins[k] || 0), 0), sumP = past.reduce((a, k) => a + (pgs[k] || 0), 0);
-    const readDays = past.filter((k) => mins[k]).length, goals = past.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length;
+    const rsW = readSet(), readDays = past.filter((k) => rsW.has(k)).length, goals = past.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length;
     const pgMode = wkMode === "pg", src = pgMode ? pgs : mins;
     const prev = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i - 7))).reduce((a, k) => a + (src[k] || 0), 0);
     const prevAvg = prev / 7, avg = (pgMode ? sumP : sumM) / n;
@@ -1083,7 +1089,7 @@
     const b = bookById(bookId);
     let pages = Number.isFinite(pagesRead) && !(b && Number.isFinite(toPage)) ? Math.max(0, Math.min(2000, pagesRead)) : 0;
     if (b && pages) { shiftBook(b.id, pages); if (!b.startDate) b.startDate = date; }
-    const beforeMin = minutesByDay()[date] || 0, beforePg = pagesByDay()[date] || 0;
+    const beforeMin = minutesByDay()[date] || 0, beforePg = pagesByDay()[date] || 0, wasRead = readSet().has(date);
     if (b && Number.isFinite(toPage)) {
       const np = Math.max(0, b.pages ? Math.min(toPage, b.pages) : toPage);
       pages = Math.max(0, np - (b.currentPage || 0));
@@ -1106,16 +1112,17 @@
     if (patched) { confetti(); toast("🪡 " + (streak() > 1 ? t("Geflickt! Dein Faden ist wieder verbunden – {len} lang.", { len: stLen }) : t("Geflickt! Dein Faden ist wieder verbunden."))); if (finished) setTimeout(() => celebrateFinish(b), 3400); }
     else if (finished) celebrateFinish(b);
     else if (isToday && !wasDone && nowDone) { confetti(); toast("🎯 " + t("Tagesziel erreicht – Minuten und Seiten geschafft!")); }
-    else if (isToday && beforeMin === 0) toast("🧵 " + t("Neuer Knoten! Dein Lesefaden ist jetzt {len} lang.", { len: stLen }));
+    else if (isToday && !wasRead && (minutes || pages)) toast("🧵 " + t("Neuer Knoten! Dein Lesefaden ist jetzt {len} lang.", { len: stLen }));
     else if (isToday && minHit) toast("⏱️ " + t("Minutenziel geschafft! Noch {len}.", { len: tn(goalPg() - beforePg - pages, "{n} Seite", "{n} Seiten") }));
     else if (isToday && pgHit) toast("📄 " + t("Seitenziel geschafft! Noch {len}.", { len: tn(goalMin() - beforeMin - minutes, "{n} Minute", "{n} Minuten") }));
-    else toast("✓ " + (pages ? t("{n} Min. und {p} Seiten eingetragen.", { n: minutes, p: pages }) : t("{n} Min. eingetragen.", { n: minutes })));
+    else toast("✓ " + (pages && minutes ? t("{n} Min. und {p} Seiten eingetragen.", { n: minutes, p: pages }) : pages ? t("{len} eingetragen.", { len: tn(pages, "{n} Seite", "{n} Seiten") }) : t("{n} Min. eingetragen.", { n: minutes })));
     checkBadges(); render();
   }
   $("#manualForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const minutes = parseInt($("#manualMin").value);
-    if (!minutes || minutes < 1) return;
+    const minutes = Math.max(0, parseInt($("#manualMin").value) || 0);
+    const pgIn = parseInt($("#manualPage").value);
+    if (!minutes && !(pgIn > 0)) { toast(t("Bitte Seiten oder Minuten eintragen.")); return; }
     const date = $("#manualDate").value || dateKey();
     if (date > dateKey()) { toast(t("Das Datum liegt in der Zukunft.")); return; }
     const bookId = $("#manualBook").value, v = parseInt($("#manualPage").value);
@@ -1249,9 +1256,9 @@
     if (!intro || reduce) { intro?.remove(); document.body.classList.remove("intro-on"); return Promise.resolve(); }
     const q = quoteOfDay();
     const p = state.profile;
-    const readDays = Object.keys(minutesByDay()).length;
+    const rsI = readSet(), readDays = rsI.size;
     $("#coverOwner").textContent = p?.name ? t("von {name}", { name: p.name }) : t("Jeden Tag ein paar Seiten");
-    $("#coverNo").textContent = t("Lesetag Nr. {n}", { n: String(readDays + (minutesByDay()[dateKey()] ? 0 : 1)).padStart(3, "0") });
+    $("#coverNo").textContent = t("Lesetag Nr. {n}", { n: String(readDays + (rsI.has(dateKey()) ? 0 : 1)).padStart(3, "0") });
     $("#fpDate").textContent = fd(new Date(), { weekday: "long", day: "numeric", month: "long" });
     $("#fpQuote").textContent = `„${q.text}“`;
     $("#fpBy").textContent = "— " + t(q.by);
