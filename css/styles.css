@@ -13,6 +13,7 @@
   --stamp: #2f8059;
   --on-green: #f6f4ec;
   --gold: #b48c25;
+  --orange: #e07b2c;
   --danger: #a33a32;
   --cover: #2f7354;
   --cover-2: #255c43;
@@ -29,14 +30,14 @@
   :root:not([data-theme="light"]) {
     --paper: #151d18; --paper-2: #101713; --sheet: #1c2620; --ink: #e7ebe3; --ink-soft: #9caf9f; --rule: #29362c;
     --green: #86cda6; --green-2: #5fae86; --green-wash: #1c3226; --stamp: #86cda6; --on-green: #0c1a11;
-    --gold: #d6b25a; --bark: #a88a6c; --mint: #8fcdaa; --danger: #e07a6f;
+    --gold: #d6b25a; --orange: #f29a52; --bark: #a88a6c; --mint: #8fcdaa; --danger: #e07a6f;
     --shadow: 0 1px 0 rgba(0,0,0,.3), 0 12px 30px -16px rgba(0,0,0,.6); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #151d18; --paper-2: #101713; --sheet: #1c2620; --ink: #e7ebe3; --ink-soft: #9caf9f; --rule: #29362c;
   --green: #86cda6; --green-2: #5fae86; --green-wash: #1c3226; --stamp: #86cda6; --on-green: #0c1a11;
-  --gold: #d6b25a; --bark: #a88a6c; --mint: #8fcdaa; --danger: #e07a6f;
+  --gold: #d6b25a; --orange: #f29a52; --bark: #a88a6c; --mint: #8fcdaa; --danger: #e07a6f;
   --shadow: 0 1px 0 rgba(0,0,0,.3), 0 12px 30px -16px rgba(0,0,0,.6); color-scheme: dark;
 }
 
@@ -264,8 +265,8 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .patch-note p { margin: 0; flex: 1; min-width: 0; font-size: .92rem; }
 .patch-note .btn { padding: .45rem .9rem; flex: none; }
 .pn-patch, .pa-patch, .lg-patch { fill: color-mix(in srgb, var(--gold) 26%, var(--sheet)); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: 3 2.5; }
-.pn-k, .pa-k circle { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); stroke-width: 1.3; }
-.pn-kw, .pa-k path { fill: none; stroke: color-mix(in srgb, var(--green) 65%, #000); stroke-width: 1.4; stroke-linecap: round; opacity: .75; }
+.pn-k, .pa-k circle { fill: var(--orange); stroke: color-mix(in srgb, var(--orange) 65%, #000); stroke-width: 1.3; }
+.pn-kw, .pa-k path { fill: none; stroke: color-mix(in srgb, var(--orange) 50%, #000); stroke-width: 1.4; stroke-linecap: round; opacity: .75; }
 .patch-art { width: 160px; height: auto; justify-self: center; overflow: visible; }
 .pa-thread { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
 .pa-join { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 12; stroke-dashoffset: 12; animation: joinIn .5s ease 1s forwards; }
@@ -279,12 +280,12 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 /* Knoten im Faden: grün = gelesen, gold mit Ring = Tagesziel erreicht */
 .faden .knot { transform-box: fill-box; transform-origin: center; animation: knotTie .7s cubic-bezier(.3,1.45,.5,1) both; }
 @keyframes knotTie { 0% { opacity: 0; transform: scale(1.9) rotate(-140deg); } 55% { opacity: 1; transform: scale(.86) rotate(12deg); } 100% { opacity: 1; transform: none; } }
-.faden .knot .kb { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); stroke-width: 1.4; }
-.faden .knot .kw { fill: none; stroke: color-mix(in srgb, var(--green) 65%, #000); stroke-width: 1.7; stroke-linecap: round; opacity: .75; }
+.faden .knot .kb { fill: var(--orange); stroke: color-mix(in srgb, var(--orange) 65%, #000); stroke-width: 1.4; }
+.faden .knot .kw { fill: none; stroke: color-mix(in srgb, var(--orange) 50%, #000); stroke-width: 1.7; stroke-linecap: round; opacity: .7; }
 .faden .knot .ks { fill: #fff; opacity: .5; }
-.faden .knot.gold .kb { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 55%, #000); }
-.faden .knot.gold .kw { stroke: color-mix(in srgb, var(--gold) 45%, #000); }
-.faden .knot .kr { fill: none; stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: 3 3.4; opacity: .8; transform-box: fill-box; transform-origin: center; animation: spin 14s linear infinite; }
+.faden .knot.gold .kb { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); }
+.faden .knot.gold .kw { stroke: color-mix(in srgb, var(--green) 60%, #000); }
+.faden .knot .kr { fill: none; stroke: var(--green); stroke-width: 1.6; stroke-dasharray: 3 3.4; opacity: .8; transform-box: fill-box; transform-origin: center; animation: spin 14s linear infinite; }
 /* Französischer Knoten = Tagesziel erreicht */
 .faden .fknot { transform-box: fill-box; transform-origin: center; animation: knotIn .55s cubic-bezier(.3,1.6,.5,1) both; }
 .faden .fknot-ball { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 60%, #000); stroke-width: 1.2; }
@@ -296,10 +297,10 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .faden-head-right { display: inline-flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; justify-content: flex-end; }
 .faden-head-right .link { font-size: .85rem; }
 .faden-hint { margin: .2rem 0 0; font-size: .8rem; color: var(--ink-soft); }
-.faden-legend .lg-kb { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); stroke-width: 1.2; }
-.faden-legend .lg-kb.gold { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 55%, #000); }
-.faden-legend .lg-kw { fill: none; stroke: color-mix(in srgb, var(--green) 65%, #000); stroke-width: 1.4; stroke-linecap: round; opacity: .75; }
-.faden-legend .lg-kw.gold { stroke: color-mix(in srgb, var(--gold) 45%, #000); }
+.faden-legend .lg-kb { fill: var(--orange); stroke: color-mix(in srgb, var(--orange) 65%, #000); stroke-width: 1.2; }
+.faden-legend .lg-kb.gold { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); }
+.faden-legend .lg-kw { fill: none; stroke: color-mix(in srgb, var(--orange) 50%, #000); stroke-width: 1.4; stroke-linecap: round; opacity: .7; }
+.faden-legend .lg-kw.gold { stroke: color-mix(in srgb, var(--green) 60%, #000); }
 .faden-legend .lg-knot { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 60%, #000); stroke-width: .8; }
 .faden-legend .lg-knot-s { fill: none; stroke: color-mix(in srgb, var(--gold) 55%, #000); stroke-width: .9; }
 
@@ -313,8 +314,8 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .day-mode { justify-self: center; }
 .day-body { display: grid; gap: .9rem; min-height: 200px; animation: rise .35s both; }
 .day-status { justify-self: center; display: inline-flex; align-items: center; gap: .4rem; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; padding: .25rem .65rem; border-radius: 4px; border: 1px solid var(--rule); color: var(--ink-soft); }
-.day-status.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
-.day-status.gold { color: color-mix(in srgb, var(--gold) 75%, var(--ink)); border-color: var(--gold); }
+.day-status.ok { color: color-mix(in srgb, var(--orange) 80%, var(--ink)); border-color: color-mix(in srgb, var(--orange) 55%, transparent); }
+.day-status.gold { color: var(--green); border-color: color-mix(in srgb, var(--green) 55%, transparent); }
 .day-sessions { list-style: none; margin: 0; padding: 0; display: grid; }
 .day-sessions li { padding: .6rem 0; border-top: 1px solid var(--rule); }
 .ds-row { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; }
@@ -345,7 +346,7 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .wk-bar .col b { position: absolute; top: -1.1rem; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: .62rem; font-weight: 500; color: var(--ink-soft); }
 .wk-bar span { font-family: var(--font-mono); font-size: .64rem; color: var(--ink-soft); text-align: center; }
 .wk-bar.sel span { color: var(--ink); font-weight: 600; }
-.wk-bar .kn { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-right: 3px; vertical-align: 1px; }
+.wk-bar .kn { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 3px; vertical-align: 1px; }
 .wk-notes { margin: 0; padding: 0; list-style: none; display: grid; gap: .3rem; font-size: .9rem; }
 .wk-notes li { display: flex; gap: .5rem; }
 .wk-notes li::before { content: "—"; color: var(--green); }
