@@ -180,6 +180,7 @@
 
   // ---------- Navigation ----------
   function go(view) {
+    editSid = null;
     if (!$("#view-" + view)) view = "uebersicht";
     $$(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
     $$(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.nav === view));
@@ -488,6 +489,8 @@
         <label class="field"><span>${t("Seiten")}</span><input type="number" min="0" max="2000" inputmode="numeric" data-f="pages" value="${x ? x.pages || 0 : ""}" placeholder="0"></label>
         <label class="field"><span>${t("Minuten")} <small>${t("(optional)")}</small></span><input type="number" min="0" max="600" inputmode="numeric" data-f="minutes" value="${x ? x.minutes || "" : ""}" placeholder="0"></label>
       </div>
+      <label class="field"><span>${t("Ein Satz zum Lesen")} <small>${t("(optional)")}</small></span><input data-f="note" maxlength="200" value="${x ? esc(x.note || "") : ""}" placeholder="${t("Was ist passiert?")}"></label>
+      ${x ? `<label class="field"><span>${t("Datum")}</span><input type="date" data-f="date" value="${x.date}" max="${dateKey()}"></label>` : ""}
       <div class="modal-actions">
         ${x ? `<button type="button" class="btn danger" data-s-del>${t("Löschen")}</button>` : ""}
         <span class="spacer"></span>
@@ -507,23 +510,27 @@
     const pages = Math.max(0, Math.min(2000, parseInt(li.querySelector('[data-f="pages"]').value) || 0));
     const minutes = Math.max(0, Math.min(600, parseInt(li.querySelector('[data-f="minutes"]').value) || 0));
     if (!minutes && !pages) { toast(t("Bitte Seiten oder Minuten eintragen.")); return; }
+    const note = li.querySelector('[data-f="note"]').value.trim().slice(0, 200);
     if (li.dataset.sid === "new") {
       editSid = null;
-      logSession({ bookId: li.querySelector('[data-f="book"]').value, minutes, pagesRead: pages, date: dvDay });
+      logSession({ bookId: li.querySelector('[data-f="book"]').value, minutes, pagesRead: pages, note, date: dvDay });
     } else {
       const x = state.sessions.find((s) => s.id === li.dataset.sid); if (!x) return;
+      const date = li.querySelector('[data-f="date"]').value || x.date;
+      if (date > dateKey()) { toast(t("Das Datum liegt in der Zukunft.")); return; }
       shiftBook(x.bookId, pages - (x.pages || 0));
-      x.pages = pages; x.minutes = minutes;
+      if (date !== x.date) { x.date = date; x.hour = null; }
+      x.pages = pages; x.minutes = minutes; x.note = note;
       editSid = null; save(); checkBadges(); render(); toast(t("Gespeichert ✓"));
     }
-    renderDayBody();
+    if ($("#dayDialog").open) renderDayBody();
   }
   async function deleteSession(id) {
     const x = state.sessions.find((s) => s.id === id); if (!x) return;
     if (!(await askConfirm(t("Diesen Eintrag löschen?")))) return;
     shiftBook(x.bookId, -(x.pages || 0));
     state.sessions = state.sessions.filter((s) => s.id !== id);
-    editSid = null; save(); render(); renderDayBody(); toast(t("Eintrag gelöscht."));
+    editSid = null; save(); render(); if ($("#dayDialog").open) renderDayBody(); toast(t("Eintrag gelöscht."));
   }
   function renderDayBody() {
     const k = dvDay, d = parseKey(k), ss = sessionsOn(k);
@@ -954,17 +961,32 @@
   }
   const elapsedMs = () => { const t = state.timer; return t ? t.acc + (t.running ? Date.now() - t.startedAt : 0) : 0; };
 
+  // Lesetagebuch (neueste zuerst nach Datum); jeder Eintrag lässt sich bearbeiten oder löschen
+  let logLimit = 10;
+  function renderLog() {
+    const all = [...state.sessions].sort((a, b) => (b.date === a.date ? b.ts - a.ts : b.date < a.date ? -1 : 1));
+    const recent = all.slice(0, logLimit);
+    $("#sessionLog").innerHTML = recent.length
+      ? recent.map((s, i) => editSid === s.id ? sessionForm(s) : `<li style="animation-delay:${Math.min(i, 8) * 0.04}s"><time>${fmtDate(s.date)}</time><div>
+          <div class="ds-row"><span><strong>${esc(bookById(s.bookId)?.title || t("Freies Lesen"))}</strong> <span class="entry-meta">${sessionMeta(s)}</span></span>
+          <button type="button" class="link ds-edit" data-edit-s="${s.id}" aria-label="${t("Eintrag bearbeiten")}">✎ ${t("Bearbeiten")}</button></div>
+          ${s.note ? `<p class="entry-note">${esc(quoted(s.note))}</p>` : ""}
+          ${s.word ? `<span class="word">${esc(s.word)}</span>` : ""}</div></li>`).join("")
+        + (all.length > logLimit ? `<li class="log-more"><button type="button" class="link" data-log-more>${t("Ältere Einträge anzeigen")}</button></li>` : "")
+      : `<li><time>—</time><span class="muted">${t("Noch keine Einträge. Nach jeder Lesezeit kannst du hier einen Satz notieren.")}</span></li>`;
+  }
+  $("#sessionLog").addEventListener("click", (e) => {
+    const ed = e.target.closest("[data-edit-s]"); if (ed) { editSid = ed.dataset.editS; renderLog(); $("#sessionLog .ds-form input")?.focus(); return; }
+    if (e.target.closest("[data-log-more]")) { logLimit += 15; renderLog(); return; }
+    if (e.target.closest("[data-s-cancel]")) { editSid = null; renderLog(); return; }
+    if (e.target.closest("[data-s-save]")) { saveSessionForm(e.target.closest(".ds-form")); return; }
+    if (e.target.closest("[data-s-del]")) { deleteSession(e.target.closest(".ds-form").dataset.sid); return; }
+  });
   function renderTimerView() {
     fillBookSelects();
     $("#manualDate").value ||= dateKey();
     $("#manualDate").max = dateKey();
-    const recent = [...state.sessions].sort((a, b) => b.ts - a.ts).slice(0, 8);
-    $("#sessionLog").innerHTML = recent.length
-      ? recent.map((s, i) => `<li style="animation-delay:${i * 0.04}s"><time>${fmtDate(s.date)}</time><div>
-          <strong>${esc(bookById(s.bookId)?.title || t("Freies Lesen"))}</strong> <span class="entry-meta">${sessionMeta(s)}</span>
-          ${s.note ? `<p class="entry-note">${esc(quoted(s.note))}</p>` : ""}
-          ${s.word ? `<span class="word">${esc(s.word)}</span>` : ""}</div></li>`).join("")
-      : `<li><time>—</time><span class="muted">${t("Noch keine Einträge. Nach jeder Lesezeit kannst du hier einen Satz notieren.")}</span></li>`;
+    renderLog();
     updateClock();
   }
   function updateClock() {

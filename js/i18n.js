@@ -428,6 +428,7 @@ window.LZ_I18N = {
     "Seiten & Minuten eintragen": "Add pages & minutes",
     "Bitte Seiten oder Minuten eintragen.": "Please enter pages or minutes.",
     "{len} eingetragen.": "{len} added.",
+    "Ältere Einträge anzeigen": "Show older entries",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -858,6 +859,7 @@ window.LZ_I18N = {
     "Seiten & Minuten eintragen": "Sayfa ve dakika ekle",
     "Bitte Seiten oder Minuten eintragen.": "Lütfen sayfa ya da dakika gir.",
     "{len} eingetragen.": "{len} kaydedildi.",
+    "Ältere Einträge anzeigen": "Eski kayıtları göster",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1288,6 +1290,7 @@ window.LZ_I18N = {
     "Seiten & Minuten eintragen": "Upiši stranice i minute",
     "Bitte Seiten oder Minuten eintragen.": "Upiši stranice ili minute.",
     "{len} eingetragen.": "Upisano: {len}.",
+    "Ältere Einträge anzeigen": "Prikaži starije zapise",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };
