@@ -171,6 +171,7 @@
   let quietBadges = false;
   function checkBadges() {
     if (quietBadges) return;
+    checkRewards(true);
     const fresh = BADGES.filter((b) => b.test() && !state.seenBadges.includes(b.id));
     if (!fresh.length) return;
     state.seenBadges.push(...fresh.map((b) => b.id));
@@ -861,6 +862,7 @@
     animateProgress($("#levelCard"));
     const un = BADGES.filter((b) => b.test());
     $("#badgeCount").textContent = t("{a} von {b} freigeschaltet", { a: un.length, b: BADGES.length });
+    renderCollections();
     $("#badges").innerHTML = BADGES.map((b, i) => {
       const ok = b.test();
       return `<article class="card badge ${ok ? "unlocked" : "locked"}" style="animation-delay:${i * 0.04}s;--r:${rot(b.id)}deg">
@@ -1151,7 +1153,7 @@
     const stLen = tn(streak(), "{n} Tag", "{n} Tage");
     if (patched) { confetti(); toast("🪡 " + (streak() > 1 ? t("Geflickt! Dein Faden ist wieder verbunden – {len} lang.", { len: stLen }) : t("Geflickt! Dein Faden ist wieder verbunden."))); if (finished) setTimeout(() => celebrateFinish(b), 3400); }
     else if (finished) celebrateFinish(b);
-    else if (isToday && !wasDone && nowDone) { confetti(); toast("🎯 " + t("Tagesziel erreicht – Minuten und Seiten geschafft!")); }
+    else if (isToday && !wasDone && nowDone) { celebrateQ({ type: "day", date }); }
     else if (isToday && !wasRead && (minutes || pages)) toast("🧵 " + t("Neuer Knoten! Dein Lesefaden ist jetzt {len} lang.", { len: stLen }));
     else if (isToday && minHit) toast("⏱️ " + t("Minutenziel geschafft! Noch {len}.", { len: tn(goalPg() - beforePg - pages, "{n} Seite", "{n} Seiten") }));
     else if (isToday && pgHit) toast("📄 " + t("Seitenziel geschafft! Noch {len}.", { len: tn(goalMin() - beforeMin - minutes, "{n} Minute", "{n} Minuten") }));
@@ -1256,6 +1258,7 @@
     for (const [d, minutes, b, pages] of plan) state.sessions.push({ id: uid(), bookId: b.id, date: k(d), minutes, pages, note: notes[d] || "", word: "", hour: d % 3 === 0 ? 21 : 18, ts: Date.now() - d * 86400000 });
     ["Sehnsucht", "beiläufig", "Fernweh", "verblüfft", "Abenteuer", "flüstern"].forEach((w, i) => state.words.push({ id: uid(), w, bookId: b1.id, date: k(i), ts: Date.now() - i * 86400000 }));
     state.seenBadges = BADGES.filter((b) => b.test()).map((b) => b.id);
+    state.rewards = null; checkRewards(false);
     quietBadges = false;
     save();
   }
@@ -1319,6 +1322,182 @@
     });
   }
 
+  // ---------- Belohnungen ----------
+  // Tagesziel → Knoten-Feier · 7 Lesetage in Folge → Lesezeichen · 20 Lesetage im Monat → Quadrat für die Lesedecke
+  const MILESTONES = [100, 250, 500, 1000, 2500, 5000, 10000];
+  const BM_COLORS = ["#2c7a55", "#e07b2c", "#3a6ea5", "#b5487a", "#7a5cc2", "#b48c25", "#2f8a8a", "#a8483b"];
+  const PATCH_MIN = 20;
+  const PRAISE = [
+    "Stark! Heute hast du dein Ziel geschafft.",
+    "Dein Faden hält – Knoten für Knoten.",
+    "Jede Seite zählt, und heute waren es genug.",
+    "Bravo! Lesen wird zu deiner Gewohnheit.",
+    "Geschafft! Dein Buch freut sich schon auf morgen.",
+    "Ein guter Tag für deinen Lesepass.",
+    "Du bleibst dran – das ist das Wichtigste.",
+    "Heute hast du dir Zeit für dich genommen."
+  ];
+  const ymKey = (k) => k.slice(0, 7);
+  const daysInMonth = (y, m) => new Date(y, m, 0).getDate(); // m: 1–12
+  function monthLabel(m) {
+    const [y, mo] = m.split("-").map(Number), name = fd(new Date(y, mo - 1, 1), { month: "long" });
+    return name.charAt(0).toLocaleUpperCase(LOC()) + name.slice(1) + " " + y;
+  }
+  function ensureRewards() {
+    if (!state.rewards || typeof state.rewards !== "object") state.rewards = { bookmarks: [], patches: {}, milestones: [] };
+    const r = state.rewards; r.bookmarks ||= []; r.patches ||= {}; r.milestones ||= [];
+    return r;
+  }
+  function sumKeys(keys) {
+    const m = minutesByDay(), p = pagesByDay();
+    return { minutes: keys.reduce((a, k) => a + (m[k] || 0), 0), pages: keys.reduce((a, k) => a + (p[k] || 0), 0) };
+  }
+  function checkRewards(celebrate = true) {
+    const r = ensureRewards(), days = [...readSet()].sort(), fresh = [];
+    // Lesezeichen: jede volle 7er-Strecke innerhalb einer lückenlosen Serie
+    const runs = [];
+    for (const k of days) {
+      const last = runs[runs.length - 1];
+      if (last && daysBetween(parseKey(last[last.length - 1]), parseKey(k)) === 1) last.push(k); else runs.push([k]);
+    }
+    for (const run of runs) for (let j = 7; j <= run.length; j += 7) {
+      const block = run.slice(j - 7, j), key = block[6];
+      if (!r.bookmarks.some((b) => b.key === key)) {
+        const b = { key, start: block[0], idx: r.bookmarks.length, ...sumKeys(block) };
+        r.bookmarks.push(b); fresh.push({ type: "week", b });
+      }
+    }
+    // Monatsquadrate
+    const byMonth = {};
+    for (const k of days) (byMonth[ymKey(k)] ||= []).push(k);
+    for (const [m, ks] of Object.entries(byMonth)) {
+      if (ks.length < PATCH_MIN) continue;
+      const [y, mo] = m.split("-").map(Number), n = daysInMonth(y, mo);
+      const complete = `${m}-${pad(n)}` <= dateKey() && ks.length === n;
+      if (!r.patches[m]) { r.patches[m] = { perfect: complete }; fresh.push({ type: "month", m, perfect: complete }); }
+      else if (complete && !r.patches[m].perfect) { r.patches[m].perfect = true; fresh.push({ type: "month", m, perfect: true }); }
+    }
+    // Seiten-Meilensteine
+    const total = totals().pages, newMs = MILESTONES.filter((x) => total >= x && !r.milestones.includes(x));
+    if (newMs.length) { r.milestones.push(...newMs); fresh.push({ type: "milestone", n: newMs[newMs.length - 1] }); }
+    save();
+    if (celebrate) fresh.slice(-3).forEach(celebrateQ);
+  }
+
+  // Grafiken
+  function bookmarkSVG(b) {
+    const c = BM_COLORS[b.idx % BM_COLORS.length], pat = b.idx % 4, id = "bmc" + b.key.replace(/-/g, "");
+    const deco = pat === 0 ? Array.from({ length: 9 }, (_, i) => `<path d="M0 ${i * 18 - 10} L60 ${i * 18 + 20}"/>`).join("")
+      : pat === 1 ? Array.from({ length: 24 }, (_, i) => `<circle cx="${12 + (i % 3) * 18 + (Math.floor(i / 3) % 2) * 9}" cy="${10 + Math.floor(i / 3) * 18}" r="2.2"/>`).join("")
+      : pat === 2 ? `<path d="M${[...Array(16)].map((_, i) => `${i % 2 ? 60 : 0} ${i * 10}`).join(" L")}"/>` : "";
+    return `<svg class="bm" viewBox="0 0 60 160" aria-hidden="true"><defs><clipPath id="${id}"><path d="M6 2 H54 V152 L30 134 L6 152 Z"/></clipPath></defs>
+      <path d="M6 2 H54 V152 L30 134 L6 152 Z" fill="${c}"/>
+      <g class="bm-deco" clip-path="url(#${id})">${deco}</g>
+      <path class="bm-stitch" d="M11 7 H49 V140 L30 125 L11 140 Z"/>
+      <path class="bm-thread" d="M30 20 V116"/>
+      ${Array.from({ length: 7 }, (_, i) => `<circle class="bm-knot" cx="30" cy="${20 + i * 16}" r="4.4" style="animation-delay:${0.25 + i * 0.08}s"/>`).join("")}</svg>`;
+  }
+  function patchSVG(m, perfect, anim = false) {
+    const [y, mo] = m.split("-").map(Number), n = daysInMonth(y, mo), rs = readSet(), mins = minutesByDay(), pgs = pagesByDay();
+    let cells = "";
+    for (let d = 1; d <= n; d++) {
+      const k = `${m}-${pad(d)}`, i = d - 1, cls = goalDone(mins[k] || 0, pgs[k] || 0) ? "g" : rs.has(k) ? "r" : "e";
+      cells += `<rect class="pt-${cls}" x="${13 + (i % 7) * 13.6}" y="${30 + Math.floor(i / 7) * 13.6}" width="10.6" height="10.6" rx="2.2"${anim ? ` style="animation-delay:${0.2 + i * 0.03}s"` : ""}/>`;
+    }
+    const label = fd(new Date(y, mo - 1, 1), { month: "short" }).replace(/\.$/, "");
+    return `<svg class="patch-svg ${anim ? "anim" : ""}" viewBox="0 0 120 120" aria-hidden="true">
+      ${perfect ? `<rect class="pt-gold" x="1.5" y="1.5" width="117" height="117" rx="8"/>` : ""}
+      <rect class="pt-bg" x="5" y="5" width="110" height="110" rx="6"/>
+      <rect class="pt-stitch" x="9" y="9" width="102" height="102" rx="4"/>
+      <text class="pt-lbl" x="60" y="23">${esc(label)} ${String(y).slice(2)}</text>${cells}</svg>`;
+  }
+  function dayArt() {
+    const sparks = Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return `<circle class="cd-spark" cx="${(Math.cos(a) * 30).toFixed(1)}" cy="${(Math.sin(a) * 30).toFixed(1)}" r="2.2" style="--dx:${(Math.cos(a) * 14).toFixed(1)}px;--dy:${(Math.sin(a) * 14).toFixed(1)}px"/>`; }).join("");
+    return `<svg class="faden cel-day" viewBox="-90 -48 180 96" aria-hidden="true">
+      <path class="cd-thread" pathLength="1" d="M-88 0 H88"/>
+      <circle class="cd-burst" r="16"/><circle class="cd-burst b2" r="16"/>
+      ${knot(0, 0, true, 0.55)}${sparks}
+      <g class="cd-needle"><path class="needle-body" d="M0 -3.4 L62 -1.7 Q70 0 62 1.7 L0 3.4 Q-4 0 0 -3.4Z"/><ellipse class="needle-eye" cx="3" cy="0" rx="4.4" ry="1.4"/></g></svg>`;
+  }
+  function monthStats(m) {
+    const [y, mo] = m.split("-").map(Number), n = daysInMonth(y, mo), todayK = dateKey();
+    const keys = Array.from({ length: n }, (_, i) => `${m}-${pad(i + 1)}`).filter((k) => k <= todayK);
+    const rs = readSet(), mins = minutesByDay(), pgs = pagesByDay();
+    return {
+      n, read: keys.filter((k) => rs.has(k)).length, goals: keys.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length, ...sumKeys(keys),
+      words: state.words.filter((w) => w.date.startsWith(m)).length, lines: state.lines.filter((l) => l.date.startsWith(m)).length,
+      books: state.books.filter((b) => b.endDate && b.endDate.startsWith(m)).length
+    };
+  }
+
+  // Feier-Dialog mit Warteschlange
+  const celQueue = []; let celBusy = false;
+  function celebrateQ(item) { celQueue.push(item); if (!celBusy) setTimeout(nextCelebration, 250); celBusy = true; }
+  function nextCelebration() {
+    const it = celQueue.shift(); const d = $("#celDialog");
+    if (!it) { celBusy = false; return; }
+    celBusy = true;
+    const list = $("#celList"); list.innerHTML = ""; $("#celStats").textContent = "";
+    d.dataset.type = it.type;
+    if (it.type === "day") {
+      const mn = minutesByDay()[it.date] || 0, pg = pagesByDay()[it.date] || 0;
+      $("#celArt").innerHTML = dayArt();
+      $("#celKicker").textContent = t("Tagesziel");
+      $("#celTitle").textContent = t("Knoten geknüpft!");
+      $("#celText").textContent = t(PRAISE[dayOfYear() % PRAISE.length]);
+      $("#celStats").textContent = `${tn(pg, "{n} Seite", "{n} Seiten")} · ${tn(mn, "{n} Minute", "{n} Minuten")}`;
+    } else if (it.type === "week") {
+      const b = it.b;
+      $("#celArt").innerHTML = bookmarkSVG(b);
+      $("#celKicker").textContent = t("7 Tage ohne Lücke");
+      $("#celTitle").textContent = t("Ein Lesezeichen für dich!");
+      $("#celText").textContent = t("Aus sieben Knoten wurde ein Lesezeichen. Es liegt jetzt in deiner Sammlung.");
+      $("#celStats").textContent = `${fd(parseKey(b.start), { day: "numeric", month: "short" })} – ${fd(parseKey(b.key), { day: "numeric", month: "short" })} · ${tn(b.pages, "{n} Seite", "{n} Seiten")} · ${tn(b.minutes, "{n} Minute", "{n} Minuten")}`;
+    } else if (it.type === "month" || it.type === "view") {
+      const st = monthStats(it.m), perfect = it.type === "view" ? !!state.rewards?.patches?.[it.m]?.perfect : it.perfect;
+      $("#celArt").innerHTML = patchSVG(it.m, perfect, true);
+      $("#celKicker").textContent = monthLabel(it.m);
+      $("#celTitle").textContent = it.type === "view" ? t("Monatsbilanz") : perfect ? t("Perfekter Monat!") : t("Ein Quadrat für deine Lesedecke!");
+      $("#celText").textContent = it.type === "view" ? "" : perfect ? t("Jeden Tag gelesen – dein Quadrat bekommt einen goldenen Rand.") : t("{n} Lesetage in diesem Monat. Dein Quadrat wird in die Lesedecke genäht.", { n: st.read });
+      list.innerHTML = [[t("Lesetage"), `${st.read}/${st.n}`], [t("Ziel erreicht"), `${st.goals}×`], [t("Seiten"), st.pages], [t("Minuten"), st.minutes],
+        [t("Neue Wörter"), st.words], [t("Sätze & Zitate"), st.lines], [t("Bücher beendet"), st.books]]
+        .map(([a, v]) => `<div><dt>${esc(a)}</dt><dd>${esc(String(typeof v === "number" ? v.toLocaleString(NUMLOC()) : v))}</dd></div>`).join("");
+    } else if (it.type === "milestone") {
+      $("#celArt").innerHTML = `<div class="cel-num"><span>${it.n.toLocaleString(NUMLOC())}</span></div>`;
+      $("#celKicker").textContent = t("Meilenstein");
+      $("#celTitle").textContent = t("{n} Seiten!", { n: it.n.toLocaleString(NUMLOC()) });
+      $("#celText").textContent = t("So viele Seiten hast du seit deinem Start gelesen. Weiter so!");
+    }
+    if (!d.open) d.showModal();
+    if (it.type !== "view") { confetti(); if (it.type !== "day") chime(); }
+  }
+  function closeCelebration() { $("#celDialog").close(); setTimeout(nextCelebration, 300); }
+  $("#celOk").addEventListener("click", closeCelebration);
+  $("#celDialog").addEventListener("cancel", (e) => { e.preventDefault(); closeCelebration(); });
+  $("#celDialog").addEventListener("click", (e) => { if (e.target === $("#celDialog")) closeCelebration(); });
+
+  // Sammlung im Bereich „Erfolge“
+  function renderCollections() {
+    const r = ensureRewards(), bms = [...r.bookmarks].sort((a, b) => (a.key < b.key ? 1 : -1));
+    $("#bmCount").textContent = bms.length ? tn(bms.length, "{n} Lesezeichen", "{n} Lesezeichen") : "";
+    const st = streak(), left = 7 - (st % 7);
+    $("#bmShelf").innerHTML = (bms.length ? bms.map((b, i) => `<figure class="bm-item" style="animation-delay:${Math.min(i, 10) * 0.05}s">${bookmarkSVG(b)}
+        <figcaption>${fd(parseKey(b.start), { day: "numeric", month: "short" })} – ${fd(parseKey(b.key), { day: "numeric", month: "short" })}<br>${tn(b.pages, "{n} Seite", "{n} Seiten")}</figcaption></figure>`).join("")
+      : `<p class="collect-empty">${t("Noch kein Lesezeichen.")}</p>`)
+      + `<p class="collect-next">${t("Noch {len} bis zum nächsten Lesezeichen.", { len: tn(left, "{n} Lesetag", "{n} Lesetage") })}</p>`;
+    const y = new Date().getFullYear(), curM = ymKey(dateKey()), rs = readSet();
+    $("#quiltTitle").textContent = t("Lesedecke {y}", { y });
+    const earned = Object.keys(r.patches).filter((m) => m.startsWith(y + "-")).length;
+    $("#quiltCount").textContent = t("{n} von 12 Quadraten", { n: earned });
+    $("#quilt").innerHTML = Array.from({ length: 12 }, (_, i) => {
+      const m = `${y}-${pad(i + 1)}`, p = r.patches[m], lbl = fd(new Date(y, i, 1), { month: "short" }).replace(/\.$/, "");
+      if (p) return `<button type="button" class="q-cell earned" data-qm="${m}" aria-label="${esc(monthLabel(m))}">${patchSVG(m, p.perfect)}</button>`;
+      const cnt = [...rs].filter((k) => k.startsWith(m)).length;
+      return `<button type="button" class="q-cell ${m > curM ? "future" : ""}" data-qm="${m}" ${m > curM ? "disabled" : ""} aria-label="${esc(monthLabel(m))}"><span>${esc(lbl)}</span>${m === curM || (m < curM && cnt) ? `<small>${cnt}/${PATCH_MIN}</small>` : ""}</button>`;
+    }).join("");
+  }
+  $("#quilt").addEventListener("click", (e) => { const b = e.target.closest("[data-qm]"); if (b && !b.disabled) celebrateQ({ type: "view", m: b.dataset.qm }); });
+
   // ---------- Sprachwechsel ----------
   function setLang(l) {
     if (!LOCALES[l] || l === lang) return;
@@ -1336,6 +1515,7 @@
   window.addEventListener("hashchange", () => go(location.hash.slice(1)));
   fillBookSelects();
   go(location.hash.slice(1) || "uebersicht");
+  if (!state.rewards) checkRewards(false); // bestehende Erfolge still übernehmen, ohne Feier-Flut
   runIntro().then(() => {
     booting = false;
     if (state.timer) { startTick(); updateClock(); }
