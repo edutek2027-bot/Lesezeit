@@ -326,6 +326,10 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .wk-tile dt { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
 .wk-tile dd { margin: 0; font-family: var(--font-display); font-size: 1.75rem; line-height: 1.05; font-variant-numeric: tabular-nums; }
 @media (max-width: 520px) { .wk-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wk-tile:nth-child(3) { border-left: 0; } .wk-tile:nth-child(n+3) { border-top: 1px solid var(--rule); } }
+.wk-mode { justify-self: start; }
+.wk-chart.pg .wk-bar .col { background: color-mix(in srgb, var(--gold) 60%, var(--sheet)); }
+.wk-chart.pg .wk-bar.sel .col { background: var(--gold); }
+.wk-chart.pg .wk-bar.future .col { background: transparent; }
 .wk-chart { position: relative; display: flex; align-items: flex-end; gap: .45rem; height: 150px; padding-top: 1.2rem; border-bottom: 1px solid var(--ink); }
 .wk-goal { position: absolute; left: 0; right: 0; border-top: 1.5px dashed var(--gold); pointer-events: none; }
 .wk-goal span { position: absolute; right: 0; top: -1.15rem; font-family: var(--font-mono); font-size: .6rem; color: color-mix(in srgb, var(--gold) 75%, var(--ink)); }

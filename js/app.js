@@ -401,7 +401,7 @@
     $("#fadenStat").textContent = t("Faden {a} T. · Rekord {b} T.", { a: st, b: best });
     $("#fadenSub").textContent = read[T]
       ? t("Heutiger Knoten geknüpft. Dein Faden ist {len} lang.", { len: tn(st, "{n} Tag", "{n} Tage") })
-      : st > 0 ? t("Heute fehlt noch ein Knoten, sonst reißt dein Faden von {len}.", { len: tn(st, "{n} Tag", "{n} Tagen") })
+      : st > 0 ? t("Heute fehlt noch ein Knoten, sonst reißt dein Faden.")
       : t("Jeder Lesetag ist ein Knoten im Faden. Lies heute und fang einen neuen Faden an.");
     const gaps = patchableDays();
     $("#patchNote").hidden = !gaps.length;
@@ -492,6 +492,7 @@
       ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">${t("Jetzt lesen")}</button></div>` : ""}
       ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}`;
   }
+  let wkMode = "min"; // Wochenblick: Minuten oder Seiten
   function renderWeekBody() {
     const mon = mondayOf(dvDay), todayK = dateKey();
     const days = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i)));
@@ -499,34 +500,43 @@
     const past = days.filter((k) => k <= todayK), n = past.length || 1;
     const sumM = past.reduce((a, k) => a + (mins[k] || 0), 0), sumP = past.reduce((a, k) => a + (pgs[k] || 0), 0);
     const readDays = past.filter((k) => mins[k]).length, goals = past.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length;
-    const prev = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i - 7))).reduce((a, k) => a + (mins[k] || 0), 0);
-    const prevAvg = prev / 7, avg = sumM / n;
-    const best = past.reduce((b, k) => ((mins[k] || 0) > (mins[b] || 0) ? k : b), past[0]);
+    const pgMode = wkMode === "pg", src = pgMode ? pgs : mins;
+    const prev = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i - 7))).reduce((a, k) => a + (src[k] || 0), 0);
+    const prevAvg = prev / 7, avg = (pgMode ? sumP : sumM) / n;
+    const best = past.reduce((b, k) => ((src[k] || 0) > (src[b] || 0) ? k : b), past[0]);
     const sun = addDays(mon, 6);
     $("#dayKicker").textContent = t("KW {n}", { n: isoWeek(mon) });
     $("#dayTitle").textContent = `${fd(mon, mon.getMonth() !== sun.getMonth() ? { day: "numeric", month: "short" } : { day: "numeric" })} – ${fd(sun, { day: "numeric", month: "long" })}`;
     $("#dayNext").disabled = days.includes(todayK);
     const fmt1 = (v) => v.toLocaleString(NUMLOC(), { maximumFractionDigits: 1 });
-    const max = Math.max(goalMin(), ...days.map((k) => mins[k] || 0));
+    const goalV = pgMode ? goalPg() : goalMin();
+    const max = Math.max(goalV, ...days.map((k) => src[k] || 0));
     const trend = prev ? Math.round(((avg - prevAvg) / prevAvg) * 100) : null;
     const notes = [];
-    if (readDays) notes.push(t("Stärkster Tag: {day} mit {n} Minuten.", { day: fd(parseKey(best), { weekday: "long" }), n: mins[best] }));
-    if (trend !== null) notes.push(trend >= 0 ? t("Ø {n} % mehr Lesezeit pro Tag als in der Vorwoche.", { n: trend }) : t("Ø {n} % weniger Lesezeit pro Tag als in der Vorwoche.", { n: -trend }));
+    const bestDay = fd(parseKey(best), { weekday: "long" });
+    if (readDays && src[best]) notes.push(pgMode ? t("Stärkster Tag: {day} mit {n} Seiten.", { day: bestDay, n: src[best] }) : t("Stärkster Tag: {day} mit {n} Minuten.", { day: bestDay, n: src[best] }));
+    if (trend !== null) notes.push(pgMode
+      ? (trend >= 0 ? t("Ø {n} % mehr Seiten pro Tag als in der Vorwoche.", { n: trend }) : t("Ø {n} % weniger Seiten pro Tag als in der Vorwoche.", { n: -trend }))
+      : (trend >= 0 ? t("Ø {n} % mehr Lesezeit pro Tag als in der Vorwoche.", { n: trend }) : t("Ø {n} % weniger Lesezeit pro Tag als in der Vorwoche.", { n: -trend })));
     else if (readDays) notes.push(t("In der Vorwoche gab es noch keine Lesezeit zum Vergleichen."));
     if (past.length < 7) notes.push(t("Die Woche läuft noch: Durchschnitt über {len}.", { len: tn(past.length, "{n} Tag", "{n} Tage") }));
     if (!readDays) notes.push(t("In dieser Woche wurde noch nicht gelesen."));
     $("#dayBody").innerHTML = `
       <dl class="wk-tiles">
-        <div class="wk-tile"><dt>${t("Ø Minuten/Tag")}</dt><dd>${fmt1(avg)}</dd></div>
+        <div class="wk-tile"><dt>${t("Ø Minuten/Tag")}</dt><dd>${fmt1(sumM / n)}</dd></div>
         <div class="wk-tile"><dt>${t("Ø Seiten/Tag")}</dt><dd>${fmt1(sumP / n)}</dd></div>
         <div class="wk-tile"><dt>${t("Lesetage")}</dt><dd>${readDays}/${past.length}</dd></div>
         <div class="wk-tile"><dt>${t("Ziel erreicht")}</dt><dd>${goals}×</dd></div>
       </dl>
-      <div class="wk-chart">
-        <div class="wk-goal" data-ratio="${goalMin() / max}"><span>${t("Ziel {n}′", { n: goalMin() })}</span></div>
-        ${days.map((k, i) => { const v = mins[k] || 0, fut = k > todayK; return `<button type="button" class="wk-bar ${k === dvDay ? "sel" : ""} ${fut ? "future" : ""}" data-wday="${k}" ${fut ? "disabled" : ""} aria-label="${fd(parseKey(k), { weekday: "long" })}: ${tn(v, "{n} Minute", "{n} Minuten")}">
+      <div class="seg-mini wk-mode" id="wkMode" role="tablist" aria-label="${t("Diagramm zeigt")}">
+        <button type="button" data-wkm="min" class="${pgMode ? "" : "active"}" role="tab">${t("Minuten")}</button>
+        <button type="button" data-wkm="pg" class="${pgMode ? "active" : ""}" role="tab">${t("Seiten")}</button>
+      </div>
+      <div class="wk-chart ${pgMode ? "pg" : ""}">
+        <div class="wk-goal" data-ratio="${goalV / max}"><span>${pgMode ? t("Ziel {n} S.", { n: goalV }) : t("Ziel {n}′", { n: goalV })}</span></div>
+        ${days.map((k) => { const v = src[k] || 0, fut = k > todayK; return `<button type="button" class="wk-bar ${k === dvDay ? "sel" : ""} ${fut ? "future" : ""}" data-wday="${k}" ${fut ? "disabled" : ""} aria-label="${fd(parseKey(k), { weekday: "long" })}: ${pgMode ? tn(v, "{n} Seite", "{n} Seiten") : tn(v, "{n} Minute", "{n} Minuten")}">
           <div class="col" data-h="${fut ? 100 : (v / max) * 100}">${v ? `<b>${v}</b>` : ""}</div>
-          <span>${goalDone(v, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD(parseKey(k))}</span></button>`; }).join("")}
+          <span>${goalDone(mins[k] || 0, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD(parseKey(k))}</span></button>`; }).join("")}
       </div>
       <ul class="wk-notes">${notes.map((t) => `<li>${t}</li>`).join("")}</ul>
       <p class="muted" style="margin:0;font-size:.82rem">${t("Gesamt diese Woche: {m} Minuten · {p} Seiten. Tippe auf einen Balken für den Tag.", { m: sumM, p: sumP })}</p>`;
@@ -539,6 +549,7 @@
       const g = chart.querySelector(".wk-goal"); g.style.bottom = `${labelH + area * +g.dataset.ratio}px`;
     }));
   }
+  $("#dayBody").addEventListener("click", (e) => { const b = e.target.closest("[data-wkm]"); if (b) { wkMode = b.dataset.wkm; renderWeekBody(); } });
   $("#dayMode").addEventListener("click", (e) => { const b = e.target.closest("[data-dmode]"); if (b) { dvMode = b.dataset.dmode; renderDayView(); } });
   $("#dayPrev").addEventListener("click", () => { dvDay = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? -1 : -7)); renderDayView(); });
   $("#dayNext").addEventListener("click", () => { const n = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? 1 : 7)); dvDay = n > dateKey() ? dateKey() : n; renderDayView(); });
