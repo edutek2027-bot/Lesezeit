@@ -325,10 +325,12 @@
 
   // Lesefaden: die letzten 4 Wochen als Schlangenlinie. Jeder Lesetag ist ein Kreuzstich,
   // aufeinanderfolgende Lesetage werden mit Faden verbunden, eine Lücke lässt ihn reißen.
-  const F_DAYS = 28, F_COLS = 7, F_COLW = 100, F_ROWH = 84;
+  // Lesefaden pro Kalendermonat: Tag 1 oben links, dann als Schlangenlinie (7 Tage pro Zeile)
+  const F_COLS = 7, F_COLW = 100, F_ROWH = 84;
+  let fadenMonth = 0; // 0 = aktueller Monat, -1 = Vormonat …
   function fPos(i) {
-    const rows = F_DAYS / F_COLS, r = Math.floor(i / F_COLS), c = i % F_COLS;
-    const ltr = (rows - 1 - r) % 2 === 0; // letzte Zeile (mit „heute“) läuft von links nach rechts
+    const r = Math.floor(i / F_COLS), c = i % F_COLS;
+    const ltr = r % 2 === 0;
     return [50 + (ltr ? c : F_COLS - 1 - c) * F_COLW, 42 + r * F_ROWH];
   }
   function fSeg(i) {
@@ -348,21 +350,30 @@
   }
   function renderThread() {
     const mins = minutesByDay(), pgs = pagesByDay(), now = new Date();
-    const days = Array.from({ length: F_DAYS }, (_, i) => dateKey(addDays(now, i - (F_DAYS - 1))));
+    const first = new Date(now.getFullYear(), now.getMonth() + fadenMonth, 1);
+    const N = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    const days = Array.from({ length: N }, (_, i) => dateKey(new Date(first.getFullYear(), first.getMonth(), i + 1)));
+    const rows = Math.ceil(N / F_COLS);
+    $("#faden").setAttribute("viewBox", `-14 -10 728 ${rows * F_ROWH + 16}`);
+    const isCur = fadenMonth === 0, todayK = dateKey();
+    const T = isCur ? days.indexOf(todayK) : N - 1; // letzter Tag, der schon war
     const rs = readSet(), read = days.map((k) => rs.has(k));
     const full = days.map((k) => goalDone(mins[k] || 0, pgs[k] || 0));
     const patchedSet = new Set(state.sessions.filter((x) => x.patched).map((x) => x.date));
     const canPatch = new Set(patchableDays());
-    const T = F_DAYS - 1, delay = (i) => 0.35 + i * 0.075;
-    let guide = "", threads = "", marks = "", labels = "", extra = "";
-    for (let i = 0; i < T; i++) guide += fSeg(i) + " ";
-    for (let i = 0; i < F_DAYS; i++) {
+    const delay = (i) => 0.3 + i * 0.06;
+    let guide = "", threads = "", marks = "", labels = "", extra = "", hits = "";
+    for (let i = 0; i < N - 1; i++) guide += fSeg(i) + " ";
+    for (let i = 0; i < N; i++) {
       const [x, y] = fPos(i), d = parseKey(days[i]);
-      // Faden zum nächsten Tag
+      if (i > T) { // Zukunft: nur angedeutet
+        marks += `<circle class="hole future" cx="${x}" cy="${y}" r="4"/>`;
+        labels += `<text class="lbl future" x="${x}" y="${y + 36}">${d.getDate()}</text>`;
+        continue;
+      }
       if (i < T && read[i] && read[i + 1]) {
         threads += `<path class="thread" pathLength="1" d="${fSeg(i)}" style="animation-delay:${delay(i) + 0.12}s"/><path class="twist" d="${fSeg(i)}" style="animation-delay:${delay(i) + 0.45}s"/>`;
       }
-      // Gerissener Faden nach dem letzten Tag einer Kette
       if (read[i] && i < T && !read[i + 1]) {
         const [nx, ny] = fPos(i + 1);
         const sx = ny === y ? Math.sign(nx - x) : (x > 350 ? 1 : -1), sy = ny === y ? 0 : 1;
@@ -376,34 +387,39 @@
       }
       if (read[i]) {
         marks += knot(x, y, full[i], delay(i));
+      } else if (canPatch.has(days[i])) {
+        marks += `<g class="patchable" data-patch="${days[i]}" role="button" tabindex="0" aria-label="${t("{d} flicken", { d: fd(d, { day: "numeric", month: "long" }) })}">
+               <circle class="ph-ring" cx="${x}" cy="${y}" r="15"/><path class="ph-plus" d="M${x - 6} ${y}H${x + 6}M${x} ${y - 6}V${y + 6}"/></g>`;
       } else {
-        marks += canPatch.has(days[i])
-          ? `<g class="patchable" data-patch="${days[i]}" role="button" tabindex="0" aria-label="${t("{d} flicken", { d: fd(d, { day: "numeric", month: "long" }) })}">
-               <circle class="ph-ring" cx="${x}" cy="${y}" r="15"/><path class="ph-plus" d="M${x - 6} ${y}H${x + 6}M${x} ${y - 6}V${y + 6}"/></g>`
-          : `<circle class="hole" cx="${x}" cy="${y}" r="5.5"/>`;
+        marks += `<circle class="hole" cx="${x}" cy="${y}" r="5.5"/>`;
       }
-      const first = i === 0 || d.getDate() === 1;
-      labels += `<text class="lbl ${i === T ? "today" : ""}" x="${x}" y="${y + 36}">${i === T ? t("Heute") : first ? fd(d, { day: "numeric", month: "numeric" }) : d.getDate()}</text>`;
+      const isToday = isCur && i === T;
+      labels += `<text class="lbl ${isToday ? "today" : ""}" x="${x}" y="${y + 36}">${isToday ? t("Heute") : d.getDate()}</text>`;
+      if (!canPatch.has(days[i])) hits += `<circle class="hit" cx="${x}" cy="${y + 8}" r="34" data-day="${days[i]}" role="button" tabindex="0" aria-label="${t("{d} ansehen", { d: fd(d, { weekday: "long", day: "numeric", month: "long" }) })}"/>`;
     }
-    // Nadel: nach dem heutigen Stich – oder wartend über dem heutigen Loch
-    const [tx, ty] = fPos(T), endDelay = delay(T) + 0.4;
-    const needle = (x, y) => `<g class="needle" transform="translate(${x} ${y}) rotate(-45)" style="animation-delay:${endDelay}s"><g class="needle-move">
-        <path class="needle-body" d="M0 -3.2 L58 -1.6 Q66 0 58 1.6 L0 3.2 Q-4 0 0 -3.2Z" transform="translate(-6 0)"/>
-        <ellipse class="needle-eye" cx="1" cy="0" rx="4" ry="1.3"/></g></g>`;
-    if (read[T]) {
-      extra += `<path class="needle-thread" d="M${tx} ${ty} q14 -2 18 -18" style="opacity:0;animation:fadeIn .4s ease ${endDelay}s forwards"/>` + needle(tx + 18, ty - 18);
-    } else {
-      extra += `<circle class="today-ring" cx="${tx}" cy="${ty}" r="14"/>`;
-      if (read[T - 1]) extra += `<path class="pending" d="${fSeg(T - 1)}"/>`;
-      extra += needle(tx + 8, ty - 8);
+    // Nadel nur im laufenden Monat: nach dem heutigen Knoten – oder wartend über dem heutigen Loch
+    if (isCur && T >= 0) {
+      const [tx, ty] = fPos(T), endDelay = delay(T) + 0.4;
+      const needle = (x, y) => `<g class="needle" transform="translate(${x} ${y}) rotate(-45)" style="animation-delay:${endDelay}s"><g class="needle-move">
+          <path class="needle-body" d="M0 -3.2 L58 -1.6 Q66 0 58 1.6 L0 3.2 Q-4 0 0 -3.2Z" transform="translate(-6 0)"/>
+          <ellipse class="needle-eye" cx="1" cy="0" rx="4" ry="1.3"/></g></g>`;
+      if (read[T]) {
+        extra += `<path class="needle-thread" d="M${tx} ${ty} q14 -2 18 -18" style="opacity:0;animation:fadeIn .4s ease ${endDelay}s forwards"/>` + needle(tx + 18, ty - 18);
+      } else {
+        extra += `<circle class="today-ring" cx="${tx}" cy="${ty}" r="14"/>`;
+        if (T > 0 && read[T - 1]) extra += `<path class="pending" d="${fSeg(T - 1)}"/>`;
+        extra += needle(tx + 8, ty - 8);
+      }
     }
-    // Unsichtbare Klickflächen für den Tagesblick (flickbare Löcher öffnen direkt das Flicken)
-    let hits = "";
-    for (let i = 0; i < F_DAYS; i++) {
-      if (canPatch.has(days[i])) continue;
-      const [x, y] = fPos(i);
-      hits += `<circle class="hit" cx="${x}" cy="${y + 8}" r="34" data-day="${days[i]}" role="button" tabindex="0" aria-label="${t("{d} ansehen", { d: fd(parseKey(days[i]), { weekday: "long", day: "numeric", month: "long" }) })}"/>`;
-    }
+    // Monatskopf mit Bilanz
+    const mName = fd(first, { month: "long" });
+    $("#fadenMonthLbl").textContent = mName.charAt(0).toLocaleUpperCase(LOC()) + mName.slice(1) + " " + first.getFullYear();
+    $("#fadenPrev").disabled = fadenMonth <= -24;
+    $("#fadenNext").disabled = isCur;
+    const past = days.slice(0, T + 1);
+    const mRead = past.filter((k) => rs.has(k)).length, mGoal = past.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length;
+    const mPages = past.reduce((a2, k) => a2 + (pgs[k] || 0), 0);
+    $("#fadenMonthStat").textContent = `${tn(mRead, "{n} Lesetag", "{n} Lesetage")} · ${t("{n}× Ziel", { n: mGoal })} · ${tn(mPages, "{n} Seite", "{n} Seiten")}`;
     $("#faden").innerHTML = `<path class="guide" d="${guide}"/>${threads}${extra}${marks}${labels}${hits}`;
 
     const st = streak(), best = bestStreak();
@@ -458,6 +474,8 @@
   const fadenAct = (el) => { const g = el.closest("[data-patch]"); if (g) return openPatch(g.dataset.patch); const h = el.closest("[data-day]"); if (h) openDay(h.dataset.day, "day"); };
   $("#faden").addEventListener("click", (e) => fadenAct(e.target));
   $("#faden").addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.closest("[data-patch],[data-day]")) { e.preventDefault(); fadenAct(e.target); } });
+  $("#fadenPrev").addEventListener("click", () => { fadenMonth = Math.max(-24, fadenMonth - 1); renderThread(); });
+  $("#fadenNext").addEventListener("click", () => { fadenMonth = Math.min(0, fadenMonth + 1); renderThread(); });
   $("#weekOpen").addEventListener("click", () => openDay(dateKey(), "week"));
 
   // ---------- Tages- und Wochenblick ----------

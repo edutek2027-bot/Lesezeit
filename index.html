@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20">
+  <link rel="stylesheet" href="css/styles.css?v=22">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -125,7 +125,13 @@
             <p id="patchNoteText"></p>
             <button class="btn" id="patchOpen" data-t>Faden flicken</button>
           </div>
-          <svg class="faden" id="faden" viewBox="-14 -10 728 352" role="img" aria-label="Lesefaden der letzten vier Wochen"></svg>
+          <div class="faden-month">
+            <button class="nav-btn" type="button" id="fadenPrev" aria-label="Vorheriger Monat">‹</button>
+            <strong id="fadenMonthLbl"></strong>
+            <button class="nav-btn" type="button" id="fadenNext" aria-label="Nächster Monat" disabled>›</button>
+            <span class="faden-month-stat" id="fadenMonthStat"></span>
+          </div>
+          <svg class="faden" id="faden" viewBox="-14 -10 728 436" role="img" aria-label="Lesefaden des Monats"></svg>
           <p class="faden-hint" data-t>Tippe auf einen Tag für den Tagesblick.</p>
           <p class="faden-legend">
             <span><svg viewBox="-12 -12 24 24" aria-hidden="true"><circle class="lg-kb" r="8"/><path class="lg-kw" d="M-5.6 -3.2Q0 -7.8 5.6 -3.2M-7 .8Q0 -4 7 .8M-5.2 4.6Q0 .6 5.2 4.6"/></svg><span data-t>gelesen</span></span>
@@ -133,6 +139,26 @@
             <span><svg viewBox="-12 -12 24 24" aria-hidden="true"><rect class="lg-patch" x="-10.5" y="-10.5" width="21" height="21" rx="3"/><circle class="lg-kb" r="6.5"/></svg><span data-t>geflickt</span></span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg><span data-t>Faden gerissen</span></span>
           </p>
+        </article>
+
+        <article class="card chart-card">
+          <div class="card-head">
+            <h2 data-t>7 Tage</h2>
+            <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
+              <button class="active" data-mode="pg" role="tab" data-t>Seiten</button>
+              <button data-mode="min" role="tab" data-t>Minuten</button>
+            </div>
+          </div>
+          <div class="bars pg" id="weekChart"></div>
+          <div class="chart-info" id="chartInfo"></div>
+        </article>
+
+        <article class="card wide">
+          <div class="card-head">
+            <h2 data-t>Gerade lese ich</h2>
+            <button class="link" data-nav="regal" data-t>Ganzes Regal →</button>
+          </div>
+          <div class="current-list" id="currentList"></div>
         </article>
 
         <article class="card words-card">
@@ -161,26 +187,6 @@
             </form>
             <div class="lines" id="lines"></div>
           </div>
-        </article>
-
-        <article class="card wide">
-          <div class="card-head">
-            <h2 data-t>Gerade lese ich</h2>
-            <button class="link" data-nav="regal" data-t>Ganzes Regal →</button>
-          </div>
-          <div class="current-list" id="currentList"></div>
-        </article>
-
-        <article class="card chart-card">
-          <div class="card-head">
-            <h2 data-t>7 Tage</h2>
-            <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
-              <button class="active" data-mode="pg" role="tab" data-t>Seiten</button>
-              <button data-mode="min" role="tab" data-t>Minuten</button>
-            </div>
-          </div>
-          <div class="bars pg" id="weekChart"></div>
-          <div class="chart-info" id="chartInfo"></div>
         </article>
 
         <article class="card tip-card full">
@@ -455,8 +461,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=20"></script>
-  <script src="js/i18n.js?v=20"></script>
-  <script src="js/app.js?v=20"></script>
+  <script src="js/data.js?v=22"></script>
+  <script src="js/i18n.js?v=22"></script>
+  <script src="js/app.js?v=22"></script>
 </body>
 </html>

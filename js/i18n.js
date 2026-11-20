@@ -213,7 +213,6 @@ window.LZ_I18N = {
     "Leseanfänger/in": "Beginner reader",
     "Lesebaum": "Reading tree",
     "Lesefaden": "Reading thread",
-    "Lesefaden der letzten vier Wochen": "Reading thread of the last four weeks",
     "Lesekreis": "Reading circle",
     "Lesen ist ein großes Wunder.": "Reading is a great miracle.",
     "Lesen statt Scrollen": "Read instead of scrolling",
@@ -429,6 +428,11 @@ window.LZ_I18N = {
     "Bitte Seiten oder Minuten eintragen.": "Please enter pages or minutes.",
     "{len} eingetragen.": "{len} added.",
     "Ältere Einträge anzeigen": "Show older entries",
+    "Lesefaden des Monats": "Reading thread of the month",
+    "Vorheriger Monat": "Previous month",
+    "Nächster Monat": "Next month",
+    "{n} Lesetag|{n} Lesetage": { one: "{n} reading day", other: "{n} reading days" },
+    "{n}× Ziel": "{n}× goal",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -644,7 +648,6 @@ window.LZ_I18N = {
     "Leseanfänger/in": "Okumaya yeni başlayan",
     "Lesebaum": "Okuma ağacı",
     "Lesefaden": "Okuma ipliği",
-    "Lesefaden der letzten vier Wochen": "Son dört haftanın okuma ipliği",
     "Lesekreis": "Okuma grubu",
     "Lesen ist ein großes Wunder.": "Okumak büyük bir mucizedir.",
     "Lesen statt Scrollen": "Kaydırmak yerine oku",
@@ -860,6 +863,11 @@ window.LZ_I18N = {
     "Bitte Seiten oder Minuten eintragen.": "Lütfen sayfa ya da dakika gir.",
     "{len} eingetragen.": "{len} kaydedildi.",
     "Ältere Einträge anzeigen": "Eski kayıtları göster",
+    "Lesefaden des Monats": "Ayın okuma ipliği",
+    "Vorheriger Monat": "Önceki ay",
+    "Nächster Monat": "Sonraki ay",
+    "{n} Lesetag|{n} Lesetage": "{n} okuma günü",
+    "{n}× Ziel": "{n}× hedef",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1075,7 +1083,6 @@ window.LZ_I18N = {
     "Leseanfänger/in": "Početnik/ca",
     "Lesebaum": "Drvo čitanja",
     "Lesefaden": "Nit čitanja",
-    "Lesefaden der letzten vier Wochen": "Nit čitanja posljednje četiri sedmice",
     "Lesekreis": "Čitalački krug",
     "Lesen ist ein großes Wunder.": "Čitanje je veliko čudo.",
     "Lesen statt Scrollen": "Čitaj umjesto skrolanja",
@@ -1291,6 +1298,11 @@ window.LZ_I18N = {
     "Bitte Seiten oder Minuten eintragen.": "Upiši stranice ili minute.",
     "{len} eingetragen.": "Upisano: {len}.",
     "Ältere Einträge anzeigen": "Prikaži starije zapise",
+    "Lesefaden des Monats": "Nit čitanja za mjesec",
+    "Vorheriger Monat": "Prethodni mjesec",
+    "Nächster Monat": "Sljedeći mjesec",
+    "{n} Lesetag|{n} Lesetage": { one: "{n} dan čitanja", few: "{n} dana čitanja", other: "{n} dana čitanja" },
+    "{n}× Ziel": "{n}× cilj",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };

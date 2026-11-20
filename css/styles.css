@@ -226,6 +226,11 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .stat dd { margin: 0; font-family: var(--font-display); font-size: 2.1rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
 
 /* ---------- Lesefaden: jeder Lesetag ein Kreuzstich, Folgetage werden zusammengenäht ---------- */
+.faden-month { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .2rem 0 .4rem; }
+.faden-month strong { font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; min-width: 9.5rem; text-align: center; }
+.faden-month-stat { margin-left: auto; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; color: var(--ink-soft); }
+.faden .hole.future { opacity: .35; }
+.faden .lbl.future { opacity: .35; }
 .faden-sub { margin: -.2rem 0 .6rem; color: var(--ink-soft); }
 .faden { width: 100%; height: auto; display: block; overflow: visible; }
 .faden .guide { fill: none; stroke: var(--rule); stroke-width: 2.5; stroke-dasharray: 1 11; stroke-linecap: round; }
@@ -414,6 +419,8 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .bar span { font-family: var(--font-mono); font-size: .66rem; color: var(--ink-soft); }
 .bars.pg .bar .col { background: color-mix(in srgb, var(--gold) 60%, var(--sheet)); }
 .bars.pg .bar.sel .col { background: var(--gold); }
+.chart-card { display: flex; flex-direction: column; }
+.chart-card .bars { flex: 1; height: auto; min-height: 170px; }
 .chart-info { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; flex-wrap: wrap; margin-top: .7rem; font-size: .9rem; color: var(--ink-soft); animation: rise .3s both; }
 .chart-info strong { color: var(--ink); }
 .chart-info .ci-pg { color: color-mix(in srgb, var(--gold) 75%, var(--ink)); }
