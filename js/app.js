@@ -7,6 +7,51 @@
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
+  // ---------- Sprache ----------
+  // Deutsche Texte sind die Schlüssel; js/i18n.js liefert Übersetzungen für en, tr, bs.
+  const I18N = window.LZ_I18N || {};
+  const LOCALES = { de: "de-DE", en: "en-GB", tr: "tr-TR", bs: "bs-BA" };
+  let lang = "de";
+  const LOC = () => LOCALES[lang];
+  // Manche Browser (z. B. Chrome) haben keine bosnischen Sprachdaten: dann eigene Namen,
+  // und für Zahlen/Mehrzahl Kroatisch (gleiche Regeln: 1 dan, 2 dana, 5 dana).
+  // Echte Probe statt supportedLocalesOf (das meldet bs manchmal, liefert aber englische Namen)
+  const BS_OK = (() => { try { return new Intl.DateTimeFormat("bs-BA", { month: "long" }).format(new Date(2020, 10, 2)).toLowerCase().startsWith("novemb"); } catch { return false; } })();
+  const NUMLOC = () => (lang === "bs" && !BS_OK ? "hr-HR" : LOC());
+  const BS_M = ["januar", "februar", "mart", "april", "maj", "juni", "juli", "august", "septembar", "oktobar", "novembar", "decembar"];
+  const BS_WD = ["nedjelja", "ponedjeljak", "utorak", "srijeda", "četvrtak", "petak", "subota"];
+  function fd(d, o) {
+    if (lang !== "bs" || BS_OK) return d.toLocaleDateString(LOC(), o);
+    const wd = o.weekday ? (o.weekday === "long" ? BS_WD[d.getDay()] : BS_WD[d.getDay()].slice(0, 3)) : "";
+    const mon = o.month === "long" ? BS_M[d.getMonth()] : BS_M[d.getMonth()].slice(0, 3);
+    const dm = o.day && o.month ? (o.month === "numeric" ? `${d.getDate()}. ${d.getMonth() + 1}.` : `${d.getDate()}. ${mon}`) : o.day ? `${d.getDate()}.` : o.month ? mon : "";
+    return [wd, dm].filter(Boolean).join(", ");
+  }
+  const fill = (s, vars) => (vars ? s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? "")) : s);
+  function t(src, vars) {
+    const tr = lang !== "de" && I18N[lang] ? I18N[lang][src] : null;
+    return fill(typeof tr === "string" ? tr : src, vars);
+  }
+  // Mehrzahl: Schlüssel "Einzahl|Mehrzahl"; Übersetzungen können {one, few, other} liefern
+  function tn(n, one, other, vars = {}) {
+    const e = lang !== "de" && I18N[lang] ? I18N[lang][one + "|" + other] : null;
+    let s = n === 1 ? one : other;
+    if (typeof e === "string") s = e;
+    else if (e && typeof e === "object") s = e[new Intl.PluralRules(NUMLOC()).select(n)] || e.other;
+    return fill(s, { ...vars, n: n.toLocaleString(NUMLOC()) });
+  }
+  const quoted = (x) => t("„{q}“", { q: x });
+  // Statische Texte im HTML einmal erfassen (data-t, Platzhalter, ARIA-Labels, Titel)
+  const ATTRS = ["placeholder", "aria-label", "title"];
+  $$("[data-t]").forEach((el) => (el.dataset.tsrc = el.textContent.trim()));
+  ATTRS.forEach((a) => $$(`[${a}]`).forEach((el) => (el.dataset["src" + a.replace("-", "")] = el.getAttribute(a))));
+  function applyStatic() {
+    document.documentElement.lang = lang;
+    $$("[data-tsrc]").forEach((el) => (el.textContent = t(el.dataset.tsrc)));
+    ATTRS.forEach((a) => { const k = "src" + a.replace("-", ""); $$(`[data-${k}]`).forEach((el) => el.setAttribute(a, t(el.dataset[k]))); });
+    $("#langSel").value = lang; $("#pLang").value = lang;
+  }
+
   // ---------- Hilfsfunktionen ----------
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -15,14 +60,13 @@
   const parseKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const daysBetween = (a, b) => Math.round((parseKey(dateKey(b)) - parseKey(dateKey(a))) / 86400000);
-  const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-  const fmtDate = (k) => parseKey(k).toLocaleDateString("de-DE", { day: "numeric", month: "short" });
+  const WD = (d) => fd(d, { weekday: "short" }).replace(/\.$/, "");
+  const fmtDate = (k) => fd(parseKey(k), { day: "numeric", month: "short" });
 
   const COVER_COLORS = ["#2d6a4f", "#40916c", "#1b4332", "#52796f", "#3a5a40", "#588157", "#2f5d62", "#5f7a3a", "#a1862f", "#35614f"];
   const coverColor = (t) => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COVER_COLORS[h % COVER_COLORS.length]; };
   const GENRE_EMOJI = { Roman: "📘", Abenteuer: "🗺️", Fantasy: "🐉", Krimi: "🔎", Sachbuch: "🔬", Comic: "💥", Klassiker: "🎩", Jugendbuch: "🎒", Kinderbuch: "🧸", Biografie: "👤", Lyrik: "🪶", Sonstiges: "📗" };
-  const STATUS_LABEL = { lesen: "Lese ich", gelesen: "Gelesen", wunsch: "Wunsch" };
+  const STATUS_LABEL = { lesen: "Lese ich", gelesen: "Gelesen", wunsch: "Wunsch" }; // über t() angezeigt
 
   // ---------- Zustand ----------
   const defaultState = () => ({ profile: null, books: [], sessions: [], words: [], lines: [], timer: null, seenBadges: [], tipIndex: 0 });
@@ -31,6 +75,7 @@
   catch { state = defaultState(); }
   if (!Array.isArray(state.words)) state.words = [];
   if (!Array.isArray(state.lines)) state.lines = [];
+  lang = LOCALES[state.lang] ? state.lang : (LOCALES[(navigator.language || "de").slice(0, 2)] ? navigator.language.slice(0, 2) : "de");
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* Speicher nicht verfügbar */ } };
 
   const bookById = (id) => state.books.find((b) => b.id === id);
@@ -74,22 +119,22 @@
     const finished = state.books.filter((b) => b.status === "gelesen").length;
     return { minutes, pages, finished, sessions: state.sessions.length };
   }
-  const fmtDuration = (min) => (min < 60 ? `${min} Min.` : `${Math.floor(min / 60)} Std.${min % 60 ? " " + (min % 60) + " Min." : ""}`);
+  const fmtDuration = (min) => (min < 60 ? t("{n} Min.", { n: min }) : min % 60 ? t("{h} Std. {m} Min.", { h: Math.floor(min / 60), m: min % 60 }) : t("{h} Std.", { h: Math.floor(min / 60) }));
 
   function sinceText(b) {
-    if (b.status === "wunsch") return "auf der Wunschliste";
+    if (b.status === "wunsch") return t("auf der Wunschliste");
     if (!b.startDate) return "";
     const start = parseKey(b.startDate);
     if (b.status === "gelesen" && b.endDate) {
       const n = Math.max(1, daysBetween(start, parseKey(b.endDate)) + 1);
-      return `in ${plural(n, "Tag", "Tagen")} gelesen`;
+      return t("in {len} gelesen", { len: tn(n, "{n} Tag", "{n} Tagen") });
     }
     const n = daysBetween(start, new Date());
-    if (n <= 0) return "seit heute";
-    if (n === 1) return "seit gestern";
-    if (n < 14) return `seit ${n} Tagen`;
-    if (n < 60) return `seit ${Math.round(n / 7)} Wochen`;
-    return `seit ${Math.round(n / 30)} Monaten`;
+    if (n <= 0) return t("seit heute");
+    if (n === 1) return t("seit gestern");
+    if (n < 14) return tn(n, "seit {n} Tag", "seit {n} Tagen");
+    if (n < 60) return tn(Math.round(n / 7), "seit {n} Woche", "seit {n} Wochen");
+    return tn(Math.round(n / 30), "seit {n} Monat", "seit {n} Monaten");
   }
   const pct = (b) => (b.pages ? Math.min(100, Math.round(((b.status === "gelesen" ? b.pages : b.currentPage || 0) / b.pages) * 100)) : b.status === "gelesen" ? 100 : 0);
   const bookMinutes = (id) => state.sessions.filter((s) => s.bookId === id).reduce((a, s) => a + s.minutes, 0);
@@ -124,7 +169,7 @@
     if (!fresh.length) return;
     state.seenBadges.push(...fresh.map((b) => b.id));
     save();
-    setTimeout(() => { toast(`${fresh[0].ico} Neuer Erfolg: ${fresh[0].name}!`); confetti(); }, 400);
+    setTimeout(() => { toast(`${fresh[0].ico} ` + t("Neuer Erfolg: {name}!", { name: t(fresh[0].name) })); confetti(); }, 400);
   }
 
   // ---------- Navigation ----------
@@ -149,12 +194,15 @@
   function renderDashboard() {
     const p = state.profile;
     const h = new Date().getHours();
-    const hello = h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend";
+    const hello = t(h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend");
     $("#greeting").textContent = p?.name ? `${hello}, ${p.name}.` : `${hello}.`;
-    $("#todayLabel").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" }).replace(",", " ·");
+    $("#todayLabel").textContent = fd(new Date(), { weekday: "long", day: "numeric", month: "long" }).replace(",", " ·");
     const q = quoteOfDay();
     $("#quoteText").textContent = `„${q.text}“`;
-    $("#quoteBy").textContent = "— " + q.by;
+    $("#quoteBy").textContent = "— " + t(q.by);
+    const qTr = t(q.text);
+    $("#quoteTr").hidden = qTr === q.text;
+    $("#quoteTr").textContent = qTr === q.text ? "" : quoted(qTr);
 
     // Tagesziel als zwei Lineale: Minuten und Seiten
     const goal = goalMin(), gp = goalPg();
@@ -171,28 +219,28 @@
     $("#goalMinutes").parentElement.classList.toggle("ok", rMin >= 1);
     $("#goalPages").parentElement.classList.toggle("ok", rPg >= 1);
     const both = rMin >= 1 && rPg >= 1;
-    $("#goalPct").textContent = both ? "geschafft" : `${Math.round(((rMin + rPg) / 2) * 100)} %`;
+    $("#goalPct").textContent = both ? t("geschafft") : `${Math.round(((rMin + rPg) / 2) * 100)} %`;
     $("#goalStamp").hidden = !both;
     const left = [];
-    if (rMin < 1) left.push(`${goal - today} Minuten`);
-    if (rPg < 1) left.push(`${gp - todayPg} Seiten`);
-    $("#goalHint").textContent = both ? "Heute ist dein Stempel sicher." : !today && !todayPg ? "Noch nicht gelesen. Zehn Minuten reichen für den Anfang." : `Noch ${left.join(" und ")}.`;
+    if (rMin < 1) left.push(tn(goal - today, "{n} Minute", "{n} Minuten"));
+    if (rPg < 1) left.push(tn(gp - todayPg, "{n} Seite", "{n} Seiten"));
+    $("#goalHint").textContent = both ? t("Heute ist dein Stempel sicher.") : !today && !todayPg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list: left.join(" " + t("und") + " ") });
 
     // Lesebaum
     const st = streak();
     $("#streakDays").textContent = st;
-    $("#streakWord").textContent = st === 1 ? "Tag in Folge" : "Tage in Folge";
+    $("#streakWord").textContent = tn(st, "Tag in Folge", "Tage in Folge");
     renderTree(st);
     const m = minutesByDay();
 
     // Zahlen
-    const t = totals();
-    countUp($("#statBooks"), t.finished);
-    countUp($("#statPages"), t.pages);
-    $("#statHours").textContent = t.minutes < 60 ? `${t.minutes} Min.` : `${(t.minutes / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Std.`;
+    const tot = totals();
+    countUp($("#statBooks"), tot.finished);
+    countUp($("#statPages"), tot.pages);
+    $("#statHours").textContent = tot.minutes < 60 ? t("{n} Min.", { n: tot.minutes }) : t("{h} Std.", { h: (tot.minutes / 60).toLocaleString(NUMLOC(), { maximumFractionDigits: 1 }) });
     countUp($("#statWords"), state.words.length);
-    countUp($("#statSessions"), t.sessions);
-    $("#statBest").textContent = `${bestStreak()} T.`;
+    countUp($("#statSessions"), tot.sessions);
+    $("#statBest").textContent = t("{n} T.", { n: bestStreak() });
 
     renderThread();
     renderWords();
@@ -205,12 +253,12 @@
           <div class="mini-cover" style="--c:${coverColor(b.title)}">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</div>
           <div>
             <h3>${esc(b.title)}</h3>
-            <p>${esc(b.author || "Unbekannt")} · ${b.pages ? `Seite ${b.currentPage || 0} von ${b.pages}` : "Seitenzahl offen"} · ${fmtDuration(bookMinutes(b.id))} gelesen</p>
+            <p>${esc(b.author || t("Unbekannt"))} · ${b.pages ? t("Seite {a} von {b}", { a: b.currentPage || 0, b: b.pages }) : t("Seitenzahl offen")} · ${t("{d} gelesen", { d: fmtDuration(bookMinutes(b.id)) })}</p>
             <div class="progress"><i data-w="${pct(b)}"></i></div>
           </div>
-          <span class="since">${sinceText(b)}</span>
+          <span class="since">${esc(sinceText(b))}</span>
         </button>`).join("")
-      : `<div class="empty"><span class="em">Gerade kein Buch auf dem Nachttisch.</span><button class="link" data-nav="entdecken">Empfehlungen ansehen →</button></div>`;
+      : `<div class="empty"><span class="em">${t("Gerade kein Buch auf dem Nachttisch.")}</span><button class="link" data-nav="entdecken">${t("Empfehlungen ansehen →")}</button></div>`;
     animateProgress($("#currentList"));
 
     // Woche
@@ -221,9 +269,9 @@
     const max = Math.max(pgMode ? gp : goal, ...vals);
     $("#weekChart").classList.toggle("pg", pgMode);
     $("#weekChart").innerHTML = days.map((d, i) => `
-      <div class="bar ${i === 6 ? "today" : ""}" title="${vals[i]} ${pgMode ? "Seiten" : "Minuten"}">
+      <div class="bar ${i === 6 ? "today" : ""}" title="${pgMode ? tn(vals[i], "{n} Seite", "{n} Seiten") : tn(vals[i], "{n} Minute", "{n} Minuten")}">
         <div class="col" data-h="${(vals[i] / max) * 100}">${vals[i] ? `<b>${vals[i]}</b>` : ""}</div>
-        <span>${i === 6 ? "Heute" : WD[d.getDay()]}</span>
+        <span>${i === 6 ? t("Heute") : WD(d)}</span>
       </div>`).join("");
     requestAnimationFrame(() => requestAnimationFrame(() => $$("#weekChart .col").forEach((c) => (c.style.height = c.dataset.h + "%"))));
 
@@ -243,7 +291,7 @@
     return "Blühender Baum";
   }
   function renderTree(n) {
-    $("#treeStage").textContent = treeStage(n);
+    $("#treeStage").textContent = t(treeStage(n));
     const ground = `<ellipse class="ground" cx="70" cy="101" rx="46" ry="5"/>`;
     if (n === 0) {
       $("#tree").innerHTML = ground + `<ellipse class="seed" cx="70" cy="97" rx="5" ry="3.5"/><path class="sprout" d="M70 95 C70 90 71 87 73 84"/>`;
@@ -280,11 +328,14 @@
     const dir = x1 > 350 ? 1 : -1; // Wende am Zeilenende als Bogen nach außen
     return `M${x1} ${y1} C${x1 + dir * 72} ${y1} ${x2 + dir * 72} ${y2} ${x2} ${y2}`;
   }
-  // Französischer Knoten: kleine goldene Kugel mit umwickeltem Faden
-  function frenchKnot(x, y, dl) {
-    return `<g class="fknot" style="animation-delay:${dl}s"><circle class="fknot-ball" cx="${x}" cy="${y}" r="7"/>
-      <path class="fknot-wrap" d="M${x - 3.6} ${y + .6}a3.7 3.7 0 1 1 3.9 3.3a2 2 0 1 1 -1.3 -3.6"/>
-      <circle class="fknot-shine" cx="${x - 2.4}" cy="${y - 2.6}" r="1.5"/></g>`;
+  // Knoten im Faden: umwickeltes Garnknötchen, das sich beim Erscheinen festzieht.
+  // Grün = gelesen, Gold mit Ring = Tagesziel erreicht.
+  function knot(x, y, gold, dl) {
+    return `<g transform="translate(${x} ${y})"><g class="knot ${gold ? "gold" : ""}" style="animation-delay:${dl}s">
+      ${gold ? `<circle class="kr" r="17"/>` : ""}
+      <circle class="kb" r="${gold ? 11 : 9.5}"/>
+      <path class="kw" d="M-6.8 -4Q0 -9.6 6.8 -4M-8.6 1Q0 -5 8.6 1M-6.4 5.6Q0 .8 6.4 5.6"${gold ? ` transform="scale(1.15)"` : ""}/>
+      <circle class="ks" cx="-3.4" cy="-4.4" r="${gold ? 2.2 : 1.8}"/></g></g>`;
   }
   function renderThread() {
     const mins = minutesByDay(), pgs = pagesByDay(), now = new Date();
@@ -315,18 +366,15 @@
         marks += `<rect class="patch" x="${x - 20}" y="${y - 20}" width="40" height="40" rx="5" transform="rotate(${rot(days[i]) / 2} ${x} ${y})" style="animation-delay:${delay(i) - 0.1}s"/>`;
       }
       if (read[i]) {
-        const s = 12, dl = delay(i);
-        marks += `<path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x - s} ${y - s} L${x + s} ${y + s}" style="animation-delay:${dl}s"/>
-          <path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x + s} ${y - s} L${x - s} ${y + s}" style="animation-delay:${dl + 0.1}s"/>
-          ${full[i] ? frenchKnot(x, y, dl + 0.3) : ""}`;
+        marks += knot(x, y, full[i], delay(i));
       } else {
         marks += canPatch.has(days[i])
-          ? `<g class="patchable" data-patch="${days[i]}" role="button" tabindex="0" aria-label="${d.toLocaleDateString("de-DE", { day: "numeric", month: "long" })} flicken">
+          ? `<g class="patchable" data-patch="${days[i]}" role="button" tabindex="0" aria-label="${t("{d} flicken", { d: fd(d, { day: "numeric", month: "long" }) })}">
                <circle class="ph-ring" cx="${x}" cy="${y}" r="15"/><path class="ph-plus" d="M${x - 6} ${y}H${x + 6}M${x} ${y - 6}V${y + 6}"/></g>`
           : `<circle class="hole" cx="${x}" cy="${y}" r="5.5"/>`;
       }
       const first = i === 0 || d.getDate() === 1;
-      labels += `<text class="lbl ${i === T ? "today" : ""}" x="${x}" y="${y + 36}">${i === T ? "Heute" : first ? `${d.getDate()}.${d.getMonth() + 1}.` : d.getDate()}</text>`;
+      labels += `<text class="lbl ${i === T ? "today" : ""}" x="${x}" y="${y + 36}">${i === T ? t("Heute") : first ? fd(d, { day: "numeric", month: "numeric" }) : d.getDate()}</text>`;
     }
     // Nadel: nach dem heutigen Stich – oder wartend über dem heutigen Loch
     const [tx, ty] = fPos(T), endDelay = delay(T) + 0.4;
@@ -345,23 +393,23 @@
     for (let i = 0; i < F_DAYS; i++) {
       if (canPatch.has(days[i])) continue;
       const [x, y] = fPos(i);
-      hits += `<circle class="hit" cx="${x}" cy="${y + 8}" r="34" data-day="${days[i]}" role="button" tabindex="0" aria-label="${parseKey(days[i]).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })} ansehen"/>`;
+      hits += `<circle class="hit" cx="${x}" cy="${y + 8}" r="34" data-day="${days[i]}" role="button" tabindex="0" aria-label="${t("{d} ansehen", { d: fd(parseKey(days[i]), { weekday: "long", day: "numeric", month: "long" }) })}"/>`;
     }
     $("#faden").innerHTML = `<path class="guide" d="${guide}"/>${threads}${extra}${marks}${labels}${hits}`;
 
     const st = streak(), best = bestStreak();
-    $("#fadenStat").textContent = `Faden ${st} T. · Rekord ${best} T.`;
+    $("#fadenStat").textContent = t("Faden {a} T. · Rekord {b} T.", { a: st, b: best });
     $("#fadenSub").textContent = read[T]
-      ? `Heutiger Stich gesetzt. Dein Faden ist ${plural(st, "Tag", "Tage")} lang.`
-      : st > 0 ? `Heute fehlt noch ein Stich, sonst reißt dein Faden von ${plural(st, "Tag", "Tagen")}.`
-      : "Jeder Lesetag ist ein Stich. Lies heute und fang einen neuen Faden an.";
+      ? t("Heutiger Knoten geknüpft. Dein Faden ist {len} lang.", { len: tn(st, "{n} Tag", "{n} Tage") })
+      : st > 0 ? t("Heute fehlt noch ein Knoten, sonst reißt dein Faden von {len}.", { len: tn(st, "{n} Tag", "{n} Tagen") })
+      : t("Jeder Lesetag ist ein Knoten im Faden. Lies heute und fang einen neuen Faden an.");
     const gaps = patchableDays();
     $("#patchNote").hidden = !gaps.length;
     if (gaps.length) {
-      const last = parseKey(gaps[gaps.length - 1]).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+      const last = fd(parseKey(gaps[gaps.length - 1]), { weekday: "long", day: "numeric", month: "long" });
       $("#patchNoteText").textContent = gaps.length === 1
-        ? `Am ${last} ist der Faden gerissen. Lies ${goalMin()} Minuten nach, dann flickst du ihn.`
-        : `${gaps.length} Tage lassen sich noch flicken. Pro Tag liest du ${goalMin()} Minuten nach.`;
+        ? t("Am {day} ist der Faden gerissen. Lies {n} Minuten nach, dann flickst du ihn.", { day: last, n: goalMin() })
+        : t("{count} Tage lassen sich noch flicken. Pro Tag liest du {n} Minuten nach.", { count: gaps.length, n: goalMin() });
     }
   }
 
@@ -380,20 +428,20 @@
     return out;
   }
   let patchPick = null, patchPending = null; // patchPending: Tag, für den der nächste Timer flickt
-  const longDay = (k) => parseKey(k).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  const longDay = (k) => fd(parseKey(k), { weekday: "long", day: "numeric", month: "long" });
   function openPatch(day) {
     const gaps = patchableDays();
-    if (!gaps.length) { toast("Gerade gibt es nichts zu flicken."); return; }
+    if (!gaps.length) { toast(t("Gerade gibt es nichts zu flicken.")); return; }
     patchPick = gaps.includes(day) ? day : gaps[gaps.length - 1];
     $("#patchManualBox").hidden = true;
     $("#patchManual").hidden = false;
-    $("#patchGo").textContent = "Mit Timer nachlesen";
+    $("#patchGo").textContent = t("Mit Timer nachlesen");
     renderPatchDialog();
     $("#patchDialog").showModal();
   }
   function renderPatchDialog() {
-    $("#patchDays").innerHTML = patchableDays().map((k) => `<button type="button" class="chip ${k === patchPick ? "active" : ""}" data-pday="${k}">${parseKey(k).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" })}</button>`).join("");
-    $("#patchRule").textContent = `Lies einmal ${goalMin()} Minuten am Stück nach. Die Zeit zählt dann für ${longDay(patchPick)}, nicht für heute.`;
+    $("#patchDays").innerHTML = patchableDays().map((k) => `<button type="button" class="chip ${k === patchPick ? "active" : ""}" data-pday="${k}">${fd(parseKey(k), { weekday: "short", day: "numeric", month: "short" })}</button>`).join("");
+    $("#patchRule").textContent = t("Lies einmal {n} Minuten am Stück nach. Die Zeit zählt dann für {day}, nicht für heute.", { n: goalMin(), day: longDay(patchPick) });
   }
   $("#patchDays").addEventListener("click", (e) => { const c = e.target.closest("[data-pday]"); if (c) { patchPick = c.dataset.pday; renderPatchDialog(); } });
   $("#patchCancel").addEventListener("click", () => $("#patchDialog").close());
@@ -417,29 +465,32 @@
     $$("#dayMode button").forEach((b) => b.classList.toggle("active", b.dataset.dmode === dvMode));
     if (dvMode === "day") renderDayBody(); else renderWeekBody();
   }
+  // „· 25 Min. · 18 S. · nachgelesen am 20. Nov.“
+  const sessionMeta = (x) => "· " + t("{n} Min.", { n: x.minutes }) + (x.pages ? " · " + t("{n} S.", { n: x.pages }) : "") + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
   function renderDayBody() {
     const k = dvDay, d = parseKey(k), ss = sessionsOn(k);
     const m = ss.reduce((a, x) => a + x.minutes, 0), pg = ss.reduce((a, x) => a + (x.pages || 0), 0);
     const isToday = k === dateKey(), done = goalDone(m, pg), patched = ss.some((x) => x.patched);
-    $("#dayKicker").textContent = isToday ? "Heute" : `KW ${isoWeek(d)}`;
-    $("#dayTitle").textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    $("#dayKicker").textContent = isToday ? t("Heute") : t("KW {n}", { n: isoWeek(d) });
+    $("#dayTitle").textContent = fd(d, { weekday: "long", day: "numeric", month: "long" });
     $("#dayNext").disabled = isToday;
     const words = state.words.filter((w) => w.date === k), lines = state.lines.filter((l) => l.date === k);
-    const status = !m ? `<span class="day-status">${isToday ? "Noch kein Stich" : "Nicht gelesen"}</span>`
-      : done ? `<span class="day-status gold">● Ziel erreicht${patched ? " · geflickt" : ""}</span>`
-      : `<span class="day-status ok">✕ Gelesen${patched ? " · geflickt" : ""}</span>`;
+    const pt = patched ? " · " + t("geflickt") : "";
+    const status = !m ? `<span class="day-status">${t(isToday ? "Noch kein Knoten" : "Nicht gelesen")}</span>`
+      : done ? `<span class="day-status gold">● ${t("Ziel erreicht")}${pt}</span>`
+      : `<span class="day-status ok">● ${t("Gelesen")}${pt}</span>`;
     const canP = patchableDays().includes(k);
     $("#dayBody").innerHTML = `${status}
       ${m ? `<div>
-        <div class="ruler-block"><div class="ruler-head"><span>Minuten</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
-        <div class="ruler-block"><div class="ruler-head"><span>Seiten</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
+        <div class="ruler-block"><div class="ruler-head"><span>${t("Minuten")}</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
+        <div class="ruler-block"><div class="ruler-head"><span>${t("Seiten")}</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
       </div>
-      <ul class="day-sessions">${ss.map((x) => `<li><strong>${esc(bookById(x.bookId)?.title || "Freies Lesen")}</strong> <span class="muted">· ${x.minutes} Min.${x.pages ? ` · ${x.pages} S.` : ""}${x.patched ? ` · nachgelesen am ${fmtDate(x.readOn)}` : ""}</span>${x.note ? `<p class="entry-note">„${esc(x.note)}“</p>` : ""}</li>`).join("")}</ul>`
-      : `<p class="day-empty">${isToday ? "Heute fehlt noch ein Stich." : canP ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen."}</p>`}
-      ${words.length ? `<div><p class="kicker" style="margin-bottom:.4rem">Neue Wörter</p><div class="words">${words.map((w) => `<span class="word">${esc(w.w)}</span>`).join("")}</div></div>` : ""}
-      ${lines.length ? `<div class="lines">${lines.map((l) => `<figure class="line"><blockquote>„${esc(l.text)}“</blockquote><figcaption>${esc(bookById(l.bookId)?.title || "")}${l.page ? ` · S. ${l.page}` : ""}</figcaption></figure>`).join("")}</div>` : ""}
-      ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">Jetzt lesen</button></div>` : ""}
-      ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">Faden flicken</button></div>` : ""}`;
+      <ul class="day-sessions">${ss.map((x) => `<li><strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong> <span class="muted">${sessionMeta(x)}</span>${x.note ? `<p class="entry-note">${esc(quoted(x.note))}</p>` : ""}</li>`).join("")}</ul>`
+      : `<p class="day-empty">${t(isToday ? "Heute fehlt noch ein Knoten." : canP ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.")}</p>`}
+      ${words.length ? `<div><p class="kicker" style="margin-bottom:.4rem">${t("Neue Wörter")}</p><div class="words">${words.map((w) => `<span class="word">${esc(w.w)}</span>`).join("")}</div></div>` : ""}
+      ${lines.length ? `<div class="lines">${lines.map((l) => `<figure class="line"><blockquote>${esc(quoted(l.text))}</blockquote><figcaption>${esc(bookById(l.bookId)?.title || "")}${l.page ? " · " + t("S. {n}", { n: l.page }) : ""}</figcaption></figure>`).join("")}</div>` : ""}
+      ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">${t("Jetzt lesen")}</button></div>` : ""}
+      ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}`;
   }
   function renderWeekBody() {
     const mon = mondayOf(dvDay), todayK = dateKey();
@@ -452,33 +503,33 @@
     const prevAvg = prev / 7, avg = sumM / n;
     const best = past.reduce((b, k) => ((mins[k] || 0) > (mins[b] || 0) ? k : b), past[0]);
     const sun = addDays(mon, 6);
-    $("#dayKicker").textContent = `KW ${isoWeek(mon)}`;
-    $("#dayTitle").textContent = `${mon.getDate()}.${mon.getMonth() !== sun.getMonth() ? ` ${mon.toLocaleDateString("de-DE", { month: "short" })}` : ""} – ${sun.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}`;
+    $("#dayKicker").textContent = t("KW {n}", { n: isoWeek(mon) });
+    $("#dayTitle").textContent = `${fd(mon, mon.getMonth() !== sun.getMonth() ? { day: "numeric", month: "short" } : { day: "numeric" })} – ${fd(sun, { day: "numeric", month: "long" })}`;
     $("#dayNext").disabled = days.includes(todayK);
-    const fmt1 = (v) => v.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+    const fmt1 = (v) => v.toLocaleString(NUMLOC(), { maximumFractionDigits: 1 });
     const max = Math.max(goalMin(), ...days.map((k) => mins[k] || 0));
     const trend = prev ? Math.round(((avg - prevAvg) / prevAvg) * 100) : null;
     const notes = [];
-    if (readDays) notes.push(`Stärkster Tag: ${parseKey(best).toLocaleDateString("de-DE", { weekday: "long" })} mit ${mins[best]} Minuten.`);
-    if (trend !== null) notes.push(trend >= 0 ? `Ø ${trend} % mehr Lesezeit pro Tag als in der Vorwoche.` : `Ø ${-trend} % weniger Lesezeit pro Tag als in der Vorwoche.`);
-    else if (readDays) notes.push("In der Vorwoche gab es noch keine Lesezeit zum Vergleichen.");
-    if (past.length < 7) notes.push(`Die Woche läuft noch: Durchschnitt über ${plural(past.length, "Tag", "Tage")}.`);
-    if (!readDays) notes.push("In dieser Woche wurde noch nicht gelesen.");
+    if (readDays) notes.push(t("Stärkster Tag: {day} mit {n} Minuten.", { day: fd(parseKey(best), { weekday: "long" }), n: mins[best] }));
+    if (trend !== null) notes.push(trend >= 0 ? t("Ø {n} % mehr Lesezeit pro Tag als in der Vorwoche.", { n: trend }) : t("Ø {n} % weniger Lesezeit pro Tag als in der Vorwoche.", { n: -trend }));
+    else if (readDays) notes.push(t("In der Vorwoche gab es noch keine Lesezeit zum Vergleichen."));
+    if (past.length < 7) notes.push(t("Die Woche läuft noch: Durchschnitt über {len}.", { len: tn(past.length, "{n} Tag", "{n} Tage") }));
+    if (!readDays) notes.push(t("In dieser Woche wurde noch nicht gelesen."));
     $("#dayBody").innerHTML = `
       <dl class="wk-tiles">
-        <div class="wk-tile"><dt>Ø Minuten/Tag</dt><dd>${fmt1(avg)}</dd></div>
-        <div class="wk-tile"><dt>Ø Seiten/Tag</dt><dd>${fmt1(sumP / n)}</dd></div>
-        <div class="wk-tile"><dt>Lesetage</dt><dd>${readDays}/${past.length}</dd></div>
-        <div class="wk-tile"><dt>Ziel erreicht</dt><dd>${goals}×</dd></div>
+        <div class="wk-tile"><dt>${t("Ø Minuten/Tag")}</dt><dd>${fmt1(avg)}</dd></div>
+        <div class="wk-tile"><dt>${t("Ø Seiten/Tag")}</dt><dd>${fmt1(sumP / n)}</dd></div>
+        <div class="wk-tile"><dt>${t("Lesetage")}</dt><dd>${readDays}/${past.length}</dd></div>
+        <div class="wk-tile"><dt>${t("Ziel erreicht")}</dt><dd>${goals}×</dd></div>
       </dl>
       <div class="wk-chart">
-        <div class="wk-goal" data-ratio="${goalMin() / max}"><span>Ziel ${goalMin()}′</span></div>
-        ${days.map((k, i) => { const v = mins[k] || 0, fut = k > todayK; return `<button type="button" class="wk-bar ${k === dvDay ? "sel" : ""} ${fut ? "future" : ""}" data-wday="${k}" ${fut ? "disabled" : ""} aria-label="${parseKey(k).toLocaleDateString("de-DE", { weekday: "long" })}: ${v} Minuten">
+        <div class="wk-goal" data-ratio="${goalMin() / max}"><span>${t("Ziel {n}′", { n: goalMin() })}</span></div>
+        ${days.map((k, i) => { const v = mins[k] || 0, fut = k > todayK; return `<button type="button" class="wk-bar ${k === dvDay ? "sel" : ""} ${fut ? "future" : ""}" data-wday="${k}" ${fut ? "disabled" : ""} aria-label="${fd(parseKey(k), { weekday: "long" })}: ${tn(v, "{n} Minute", "{n} Minuten")}">
           <div class="col" data-h="${fut ? 100 : (v / max) * 100}">${v ? `<b>${v}</b>` : ""}</div>
-          <span>${goalDone(v, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD[parseKey(k).getDay()]}</span></button>`; }).join("")}
+          <span>${goalDone(v, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD(parseKey(k))}</span></button>`; }).join("")}
       </div>
       <ul class="wk-notes">${notes.map((t) => `<li>${t}</li>`).join("")}</ul>
-      <p class="muted" style="margin:0;font-size:.82rem">Gesamt diese Woche: ${sumM} Minuten · ${sumP} Seiten. Tippe auf einen Balken für den Tag.</p>`;
+      <p class="muted" style="margin:0;font-size:.82rem">${t("Gesamt diese Woche: {m} Minuten · {p} Seiten. Tippe auf einen Balken für den Tag.", { m: sumM, p: sumP })}</p>`;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       $$("#dayBody .wk-bar .col").forEach((c) => (c.style.height = c.dataset.h + "%"));
       // Ziel-Linie genau auf Höhe der Balkenskala setzen
@@ -501,15 +552,15 @@
   $("#patchManual").addEventListener("click", () => {
     $("#patchManualBox").hidden = false; $("#patchManual").hidden = true;
     $("#patchMin").value = goalMin(); $("#patchMin").min = goalMin();
-    $("#patchBook").innerHTML = state.books.filter((b) => b.status === "lesen").map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">Ohne bestimmtes Buch</option>`;
-    $("#patchGo").textContent = "Flicken";
+    $("#patchBook").innerHTML = state.books.filter((b) => b.status === "lesen").map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">${t("Ohne bestimmtes Buch")}</option>`;
+    $("#patchGo").textContent = t("Flicken");
   });
   $("#patchForm").addEventListener("submit", (e) => {
     e.preventDefault();
     if (!patchPick) return;
     if (!$("#patchManualBox").hidden) {
       const m = parseInt($("#patchMin").value) || 0;
-      if (m < goalMin()) { toast(`Zum Flicken brauchst du mindestens ${goalMin()} Minuten.`); return; }
+      if (m < goalMin()) { toast(t("Zum Flicken brauchst du mindestens {n} Minuten.", { n: goalMin() })); return; }
       $("#patchDialog").close();
       logSession({ bookId: $("#patchBook").value, minutes: m, date: patchPick, patched: true });
       return;
@@ -524,18 +575,18 @@
   function renderLines() {
     const books = state.books.filter((b) => b.status !== "wunsch");
     const sel = $("#lineBook"), v = sel.value;
-    sel.innerHTML = `<option value="">Buch wählen …</option>` + books.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("");
+    sel.innerHTML = `<option value="">${t("Buch wählen …")}</option>` + books.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("");
     if (v && books.some((b) => b.id === v)) sel.value = v; else if (books.find((b) => b.status === "lesen")) sel.value = books.find((b) => b.status === "lesen").id;
     const list = [...state.lines].sort((a, b) => b.ts - a.ts);
     $("#lines").innerHTML = list.length
-      ? list.slice(0, 6).map((l, i) => `<figure class="line" style="animation-delay:${i * 0.04}s"><blockquote>„${esc(l.text)}“</blockquote>
-          <figcaption>${esc(bookById(l.bookId)?.title || "ohne Buch")}${l.page ? ` · S. ${l.page}` : ""} · ${fmtDate(l.date)}</figcaption>
-          <button type="button" data-delline="${l.id}" aria-label="Satz entfernen">×</button></figure>`).join("")
-      : `<p class="words-empty">Halte Sätze fest, die dich berühren, überraschen oder zum Nachdenken bringen. Mit Seitenzahl findest du sie wieder.</p>`;
+      ? list.slice(0, 6).map((l, i) => `<figure class="line" style="animation-delay:${i * 0.04}s"><blockquote>${esc(quoted(l.text))}</blockquote>
+          <figcaption>${esc(bookById(l.bookId)?.title || t("ohne Buch"))}${l.page ? " · " + t("S. {n}", { n: l.page }) : ""} · ${fmtDate(l.date)}</figcaption>
+          <button type="button" data-delline="${l.id}" aria-label="${t("Satz entfernen")}">×</button></figure>`).join("")
+      : `<p class="words-empty">${t("Halte Sätze fest, die dich berühren, überraschen oder zum Nachdenken bringen. Mit Seitenzahl findest du sie wieder.")}</p>`;
   }
   function renderCollectCount() {
     const w = state.words.length, l = state.lines.length;
-    $("#wordCount").textContent = [w ? `${w} ${w === 1 ? "Wort" : "Wörter"}` : "", l ? `${l} ${l === 1 ? "Satz" : "Sätze"}` : ""].filter(Boolean).join(" · ");
+    $("#wordCount").textContent = [w ? tn(w, "{n} Wort", "{n} Wörter") : "", l ? tn(l, "{n} Satz", "{n} Sätze") : ""].filter(Boolean).join(" · ");
   }
   $("#collectMode").addEventListener("click", (e) => {
     const b = e.target.closest("[data-cmode]"); if (!b) return;
@@ -551,7 +602,7 @@
     const page = parseInt($("#linePage").value) || null;
     state.lines.push({ id: uid(), text, bookId: $("#lineBook").value || null, page, date: dateKey(), ts: Date.now() });
     save(); $("#lineInput").value = ""; $("#linePage").value = "";
-    renderLines(); renderCollectCount(); checkBadges(); toast("📜 Satz gespeichert.");
+    renderLines(); renderCollectCount(); checkBadges(); toast("📜 " + t("Satz gespeichert."));
   });
   $("#lines").addEventListener("click", (e) => {
     const b = e.target.closest("[data-delline]"); if (!b) return;
@@ -563,13 +614,13 @@
     renderCollectCount();
     if (collectMode === "lines") renderLines();
     $("#words").innerHTML = list.length
-      ? list.slice(0, 18).map((w, i) => `<span class="word" style="animation-delay:${i * 0.03}s" title="${esc(fmtDate(w.date))}${bookById(w.bookId) ? " · " + esc(bookById(w.bookId).title) : ""}">${esc(w.w)}<button type="button" data-delword="${w.id}" aria-label="${esc(w.w)} entfernen">×</button></span>`).join("")
-      : `<p class="words-empty">Sammle Wörter, die neu, schön oder schwierig sind. Wer sie aufschreibt, behält sie.</p>`;
+      ? list.slice(0, 18).map((w, i) => `<span class="word" style="animation-delay:${i * 0.03}s" title="${esc(fmtDate(w.date))}${bookById(w.bookId) ? " · " + esc(bookById(w.bookId).title) : ""}">${esc(w.w)}<button type="button" data-delword="${w.id}" aria-label="${esc(t("{w} entfernen", { w: w.w }))}">×</button></span>`).join("")
+      : `<p class="words-empty">${t("Sammle Wörter, die neu, schön oder schwierig sind. Wer sie aufschreibt, behält sie.")}</p>`;
   }
   function addWord(word, bookId = null, date = dateKey()) {
     const w = word.trim().replace(/\s+/g, " ");
     if (!w) return false;
-    if (state.words.some((x) => x.w.toLowerCase() === w.toLowerCase())) { toast(`„${w}“ steht schon in deinem Wortschatz.`); return false; }
+    if (state.words.some((x) => x.w.toLowerCase() === w.toLowerCase())) { toast(t("„{w}“ steht schon in deinem Wortschatz.", { w })); return false; }
     state.words.push({ id: uid(), w, bookId: bookId || null, date, ts: Date.now() });
     return true;
   }
@@ -594,9 +645,9 @@
   function showTip(next) {
     const tips = allTips();
     if (next) { state.tipIndex = (state.tipIndex + 1) % tips.length; save(); }
-    const t = tips[(state.tipIndex + new Date().getDate()) % tips.length];
+    const tip = tips[(state.tipIndex + new Date().getDate()) % tips.length];
     const el = $("#tipOfDay");
-    el.innerHTML = `<span class="tip-ico">${t.ico}</span><p><strong>${esc(t.title)}</strong>${esc(t.text)}</p>`;
+    el.innerHTML = `<span class="tip-ico">${tip.ico}</span><p><strong>${esc(t(tip.title))}</strong>${esc(t(tip.text))}</p>`;
     el.classList.remove("swap"); void el.offsetWidth; el.classList.add("swap");
   }
 
@@ -606,21 +657,21 @@
     const order = { lesen: 0, wunsch: 1, gelesen: 2 };
     list.sort((a, b) => order[a.status] - order[b.status] || (b.updated || 0) - (a.updated || 0));
     $("#shelf").innerHTML = list.map((b, i) => `
-      <button class="book" data-edit="${b.id}" style="animation-delay:${i * 0.04}s" aria-label="${esc(b.title)} bearbeiten">
+      <button class="book" data-edit="${b.id}" style="animation-delay:${i * 0.04}s" aria-label="${esc(t("{t} bearbeiten", { t: b.title }))}">
         <div class="book-inner" style="--c:${coverColor(b.title)}">
-          <span class="badge-status">${STATUS_LABEL[b.status]}</span>
+          <span class="badge-status">${t(STATUS_LABEL[b.status])}</span>
           <span class="book-emoji">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</span>
           <div class="book-title">${esc(b.title)}</div>
           <div class="book-author">${esc(b.author)}</div>
           <div class="book-foot">
             ${b.rating ? "★".repeat(b.rating) + "<br>" : ""}
-            ${b.status !== "wunsch" && b.pages ? `${pct(b)} % · ${b.status === "gelesen" ? b.pages : b.currentPage || 0}/${b.pages} S.` : ""}
+            ${b.status !== "wunsch" && b.pages ? `${pct(b)} % · ${t("{a}/{b} S.", { a: b.status === "gelesen" ? b.pages : b.currentPage || 0, b: b.pages })}` : ""}
             ${b.status !== "wunsch" ? `<div class="progress"><i data-w="${pct(b)}"></i></div>` : ""}
           </div>
         </div>
-        <div class="book-meta"><span>${sinceText(b)}</span><span>${bookMinutes(b.id) ? fmtDuration(bookMinutes(b.id)) : ""}</span></div>
+        <div class="book-meta"><span>${esc(sinceText(b))}</span><span>${bookMinutes(b.id) ? fmtDuration(bookMinutes(b.id)) : ""}</span></div>
       </button>`).join("") + `
-      <button class="book add" id="shelfAdd"><div class="book-inner"><span class="book-emoji">＋</span><div class="book-title">Neues Buch</div></div></button>`;
+      <button class="book add" id="shelfAdd"><div class="book-inner"><span class="book-emoji">＋</span><div class="book-title">${t("Neues Buch")}</div></div></button>`;
     animateProgress($("#shelf"));
   }
   $("#shelfFilters").addEventListener("click", (e) => {
@@ -639,15 +690,15 @@
         <div>
           <h3>${esc(r.title)}</h3>
           <p class="by">${esc(r.author)}</p>
-          <div class="tags"><span class="tag">${esc(r.genre)}</span><span class="tag">ca. ${r.pages} Seiten</span></div>
-          <p>${esc(r.text)}</p>
+          <div class="tags"><span class="tag">${esc(t(r.genre))}</span><span class="tag">${t("ca. {n} Seiten", { n: r.pages })}</span></div>
+          <p>${esc(t(r.text))}</p>
           ${have.has(r.title.toLowerCase())
-            ? `<button class="btn" disabled>✓ Im Regal</button>`
-            : `<button class="btn" data-wish="${g}|${i}">＋ Wunschliste</button> <button class="btn primary" data-start="${g}|${i}">Jetzt lesen</button>`}
+            ? `<button class="btn" disabled>✓ ${t("Im Regal")}</button>`
+            : `<button class="btn" data-wish="${g}|${i}">＋ ${t("Wunschliste")}</button> <button class="btn primary" data-start="${g}|${i}">${t("Jetzt lesen")}</button>`}
         </div>
       </article>`).join("");
-    $("#tipsGrid").innerHTML = [...D.tips[g], ...D.tips.alle].map((t, i) => `
-      <article class="card" style="animation-delay:${i * 0.05}s"><span class="tip-ico">${t.ico}</span><h3>${esc(t.title)}</h3><p>${esc(t.text)}</p></article>`).join("");
+    $("#tipsGrid").innerHTML = [...D.tips[g], ...D.tips.alle].map((tp, i) => `
+      <article class="card" style="animation-delay:${i * 0.05}s"><span class="tip-ico">${tp.ico}</span><h3>${esc(t(tp.title))}</h3><p>${esc(t(tp.text))}</p></article>`).join("");
   }
   $("#recoFilters").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (c) renderDiscover(c.dataset.group); });
   $("#recoGrid").addEventListener("click", (e) => {
@@ -656,13 +707,13 @@
     const r = D.recommendations[g][+i];
     const status = b.dataset.start ? "lesen" : "wunsch";
     addBook({ title: r.title, author: r.author, pages: r.pages, genre: r.genre, emoji: r.emoji, status, startDate: status === "lesen" ? dateKey() : null });
-    toast(status === "lesen" ? `📖 Viel Spaß mit „${r.title}“!` : `⭐ „${r.title}“ steht auf deiner Wunschliste.`);
+    toast(status === "lesen" ? "📖 " + t("Viel Spaß mit „{t}“!", { t: r.title }) : "⭐ " + t("„{t}“ steht auf deiner Wunschliste.", { t: r.title }));
     renderDiscover(g);
   });
 
   function renderBadges() {
-    const t = totals();
-    const pts = t.minutes + t.pages + t.finished * 50;
+    const tot = totals();
+    const pts = tot.minutes + tot.pages + tot.finished * 50;
     const lv = [...D.levels].reverse().find((l) => pts >= l.min);
     const idx = D.levels.indexOf(lv);
     const next = D.levels[idx + 1];
@@ -670,19 +721,19 @@
     $("#levelCard").innerHTML = `
       <span class="lv-ico">${lv.ico}</span>
       <div>
-        <p class="kicker">Stufe ${idx + 1} von ${D.levels.length}</p>
-        <h2>${lv.name}</h2>
-        <p class="muted" style="margin:.2rem 0 .4rem">${pts} Lesepunkte${next ? ` · noch ${next.min - pts} bis „${next.name}“` : " · Höchste Stufe erreicht!"}</p>
+        <p class="kicker">${t("Stufe {a} von {b}", { a: idx + 1, b: D.levels.length })}</p>
+        <h2>${t(lv.name)}</h2>
+        <p class="muted" style="margin:.2rem 0 .4rem">${t("{n} Lesepunkte", { n: pts })} · ${next ? t("noch {n} bis „{name}“", { n: next.min - pts, name: t(next.name) }) : t("Höchste Stufe erreicht!")}</p>
         <div class="progress"><i data-w="${prog}"></i></div>
-        <p class="muted" style="font-size:.78rem;margin:.4rem 0 0">1 Punkt pro Minute und pro Seite, 50 Bonuspunkte pro beendetem Buch.</p>
+        <p class="muted" style="font-size:.78rem;margin:.4rem 0 0">${t("1 Punkt pro Minute und pro Seite, 50 Bonuspunkte pro beendetem Buch.")}</p>
       </div>`;
     animateProgress($("#levelCard"));
     const un = BADGES.filter((b) => b.test());
-    $("#badgeCount").textContent = `${un.length} von ${BADGES.length} freigeschaltet`;
+    $("#badgeCount").textContent = t("{a} von {b} freigeschaltet", { a: un.length, b: BADGES.length });
     $("#badges").innerHTML = BADGES.map((b, i) => {
       const ok = b.test();
       return `<article class="card badge ${ok ? "unlocked" : "locked"}" style="animation-delay:${i * 0.04}s;--r:${rot(b.id)}deg">
-        <div class="medal">${ok ? b.ico : "offen"}</div><h3>${b.name}</h3><p>${b.desc}</p></article>`;
+        <div class="medal">${ok ? b.ico : t("offen")}</div><h3>${t(b.name)}</h3><p>${t(b.desc)}</p></article>`;
     }).join("");
   }
 
@@ -693,7 +744,7 @@
     const from = 0, dur = 900, t0 = performance.now();
     const step = (t) => {
       const k = Math.min(1, (t - t0) / dur);
-      el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))).toLocaleString("de-DE");
+      el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))).toLocaleString(NUMLOC());
       if (k < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
@@ -713,14 +764,14 @@
   const bookDialog = $("#bookDialog");
   let editingId = null, rating = 0;
   function renderStars() {
-    $("#fStars").innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} Sterne" class="${n <= rating ? "on" : ""}" data-star="${n}">★</button>`).join("");
+    $("#fStars").innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${tn(n, "{n} Stern", "{n} Sterne")}" class="${n <= rating ? "on" : ""}" data-star="${n}">★</button>`).join("");
   }
   $("#fStars").addEventListener("click", (e) => { const s = e.target.closest("[data-star]"); if (!s) return; rating = +s.dataset.star === rating ? 0 : +s.dataset.star; renderStars(); });
 
   function openBook(id = null) {
     editingId = id;
     const b = id ? bookById(id) : null;
-    $("#bookDialogTitle").textContent = b ? "Buch bearbeiten" : "Buch hinzufügen";
+    $("#bookDialogTitle").textContent = t(b ? "Buch bearbeiten" : "Buch hinzufügen");
     $("#fTitle").value = b?.title || "";
     $("#fAuthor").value = b?.author || "";
     $("#fPages").value = b?.pages || "";
@@ -751,9 +802,9 @@
   }
   $("#deleteBook").addEventListener("click", async () => {
     const b = bookById(editingId);
-    if (!b || !(await askConfirm(`„${b.title}“ wirklich löschen? Die Lesezeiten bleiben in deiner Statistik.`))) return;
+    if (!b || !(await askConfirm(t("„{t}“ wirklich löschen? Die Lesezeiten bleiben in deiner Statistik.", { t: b.title })))) return;
     state.books = state.books.filter((x) => x.id !== editingId); save();
-    bookDialog.close(); toast("Buch gelöscht."); render();
+    bookDialog.close(); toast(t("Buch gelöscht.")); render();
   });
   $("#bookForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -773,21 +824,21 @@
       Object.assign(b, data, { updated: Date.now() });
       if (status === "gelesen" && !wasDone) { b.endDate = dateKey(); if (b.pages) b.currentPage = b.pages; celebrateFinish(b); }
       if (status !== "gelesen") b.endDate = null;
-      save(); checkBadges(); toast("Gespeichert ✓");
+      save(); checkBadges(); toast(t("Gespeichert ✓"));
     } else {
       const b = addBook({ ...data, endDate: status === "gelesen" ? dateKey() : null });
-      if (status === "gelesen") celebrateFinish(b); else toast(`📚 „${b.title}“ steht jetzt in deinem Regal.`);
+      if (status === "gelesen") celebrateFinish(b); else toast("📚 " + t("„{t}“ steht jetzt in deinem Regal.", { t: b.title }));
     }
     bookDialog.close(); render(); fillBookSelects();
   });
-  function celebrateFinish(b) { confetti(); toast(`🎉 „${b.title}“ ausgelesen – Glückwunsch!`); }
+  function celebrateFinish(b) { confetti(); toast("🎉 " + t("„{t}“ ausgelesen – Glückwunsch!", { t: b.title })); }
 
   // ---------- Timer ----------
   let preset = 20, tickHandle = null, booting = true; // während des Intros keine Dialoge öffnen
   const CIRC = 578;
   function fillBookSelects() {
     const reading = state.books.filter((b) => b.status === "lesen");
-    const opts = reading.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">Ohne bestimmtes Buch</option>`;
+    const opts = reading.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">${t("Ohne bestimmtes Buch")}</option>`;
     for (const sel of [$("#timerBook"), $("#manualBook")]) {
       const v = sel.value; sel.innerHTML = opts;
       if (v && [...sel.options].some((o) => o.value === v)) sel.value = v;
@@ -804,34 +855,34 @@
     const recent = [...state.sessions].sort((a, b) => b.ts - a.ts).slice(0, 8);
     $("#sessionLog").innerHTML = recent.length
       ? recent.map((s, i) => `<li style="animation-delay:${i * 0.04}s"><time>${fmtDate(s.date)}</time><div>
-          <strong>${esc(bookById(s.bookId)?.title || "Freies Lesen")}</strong> <span class="entry-meta">· ${s.minutes} Min.${s.pages ? ` · ${s.pages} S.` : ""}${s.patched ? ` · nachgelesen am ${fmtDate(s.readOn)}` : ""}</span>
-          ${s.note ? `<p class="entry-note">„${esc(s.note)}“</p>` : ""}
+          <strong>${esc(bookById(s.bookId)?.title || t("Freies Lesen"))}</strong> <span class="entry-meta">${sessionMeta(s)}</span>
+          ${s.note ? `<p class="entry-note">${esc(quoted(s.note))}</p>` : ""}
           ${s.word ? `<span class="word">${esc(s.word)}</span>` : ""}</div></li>`).join("")
-      : `<li><time>—</time><span class="muted">Noch keine Einträge. Nach jeder Lesezeit kannst du hier einen Satz notieren.</span></li>`;
+      : `<li><time>—</time><span class="muted">${t("Noch keine Einträge. Nach jeder Lesezeit kannst du hier einen Satz notieren.")}</span></li>`;
     updateClock();
   }
   function updateClock() {
-    const t = state.timer;
-    const target = (t ? t.target : preset) * 60000;
+    const tm = state.timer;
+    const target = (tm ? tm.target : preset) * 60000;
     const el = elapsedMs();
     let shown, ratio;
     if (target) { shown = Math.max(0, target - el); ratio = el / target; }
     else { shown = el; ratio = (el % 3600000) / 3600000; }
     const s = Math.round(shown / 1000);
     $("#clockTime").textContent = s >= 3600 ? `${Math.floor(s / 3600)}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}` : `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
-    $("#clockMode").textContent = target ? (t ? "noch" : "Countdown") : "Freies Lesen";
+    $("#clockMode").textContent = t(target ? (tm ? "noch" : "Countdown") : "Freies Lesen");
     $("#clockRing").style.strokeDashoffset = target ? CIRC * Math.min(1, ratio) : CIRC * (1 - ratio);
-    const running = !!t?.running;
+    const running = !!tm?.running;
     $(".timer-card").classList.toggle("running", running);
-    $("#timerStart").textContent = running ? "Pause" : t ? "Weiter" : "Start";
-    $("#timerStop").disabled = !t;
-    $$("#timerPresets .chip").forEach((c) => { c.disabled = !!t; c.classList.toggle("active", +c.dataset.min === (t ? t.target : preset)); });
-    $("#timerBook").disabled = !!t;
-    const pf = t ? t.patchFor : patchPending;
+    $("#timerStart").textContent = t(running ? "Pause" : tm ? "Weiter" : "Start");
+    $("#timerStop").disabled = !tm;
+    $$("#timerPresets .chip").forEach((c) => { c.disabled = !!tm; c.classList.toggle("active", +c.dataset.min === (tm ? tm.target : preset)); });
+    $("#timerBook").disabled = !!tm;
+    const pf = tm ? tm.patchFor : patchPending;
     $("#patchBanner").hidden = !pf;
-    if (pf) $("#patchBannerText").textContent = `🪡 Flicken für ${longDay(pf)} · ${goalMin()} Min. am Stück`;
-    $("#patchBannerCancel").hidden = !!t;
-    if (!booting && target && t && el >= target) finishTimer(true);
+    if (pf) $("#patchBannerText").textContent = "🪡 " + t("Flicken für {day} · {n} Min. am Stück", { day: longDay(pf), n: goalMin() });
+    $("#patchBannerCancel").hidden = !!tm;
+    if (!booting && target && tm && el >= target) finishTimer(true);
   }
   function startTick() { clearInterval(tickHandle); tickHandle = setInterval(updateClock, 500); }
   $("#timerPresets").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (!c || state.timer) return; preset = +c.dataset.min; updateClock(); });
@@ -850,20 +901,21 @@
 
   let pendingSession = null;
   function finishTimer(auto) {
-    const t = state.timer; if (!t) return;
-    const ms = t.target && auto ? t.target * 60000 : elapsedMs();
+    const tm = state.timer; if (!tm) return;
+    const ms = tm.target && auto ? tm.target * 60000 : elapsedMs();
     state.timer = null; save(); clearInterval(tickHandle); updateClock();
-    if (ms < 30000) { toast("Unter 30 Sekunden – das zählt noch nicht. 😉"); return; }
+    if (ms < 30000) { toast(t("Unter 30 Sekunden – das zählt noch nicht.") + " 😉"); return; }
     if (auto) chime();
     const minutes = Math.max(1, Math.round(ms / 60000));
-    const patchOk = t.patchFor && minutes >= goalMin() && patchableDays().includes(t.patchFor);
-    pendingSession = patchOk ? { bookId: t.bookId, minutes, date: t.patchFor, patched: true } : { bookId: t.bookId, minutes };
-    const b = bookById(t.bookId);
-    $("#finishText").textContent = `Du hast ${plural(minutes, "Minute", "Minuten")} gelesen${b ? ` in „${b.title}“` : ""}.`
-      + (patchOk ? ` Damit flickst du ${longDay(t.patchFor)}.` : t.patchFor ? ` Zum Flicken fehlten ${goalMin() - minutes} Minuten, die Zeit zählt für heute.` : "");
+    const patchOk = tm.patchFor && minutes >= goalMin() && patchableDays().includes(tm.patchFor);
+    pendingSession = patchOk ? { bookId: tm.bookId, minutes, date: tm.patchFor, patched: true } : { bookId: tm.bookId, minutes };
+    const b = bookById(tm.bookId);
+    const len = tn(minutes, "{n} Minute", "{n} Minuten");
+    $("#finishText").textContent = (b ? t("Du hast {len} in „{book}“ gelesen.", { len, book: b.title }) : t("Du hast {len} gelesen.", { len }))
+      + (patchOk ? " " + t("Damit flickst du {day}.", { day: longDay(tm.patchFor) }) : tm.patchFor ? " " + t("Zum Flicken fehlten {n} Minuten, die Zeit zählt für heute.", { n: goalMin() - minutes }) : "");
     $("#finishStampMin").textContent = `${minutes}′`;
     $("#finishNote").value = ""; $("#finishWord").value = "";
-    $("#finishPageLbl").textContent = b ? "Auf welcher Seite bist du jetzt?" : "Wie viele Seiten hast du gelesen?";
+    $("#finishPageLbl").textContent = t(b ? "Auf welcher Seite bist du jetzt?" : "Wie viele Seiten hast du gelesen?");
     $("#finishPage").value = b ? b.currentPage || "" : "";
     if (b?.pages) $("#finishPage").max = b.pages; else $("#finishPage").removeAttribute("max");
     $("#finishDialog").showModal();
@@ -901,13 +953,14 @@
     const wasDone = goalDone(beforeMin, beforePg), nowDone = goalDone(beforeMin + minutes, beforePg + pages);
     const minHit = beforeMin < goalMin() && beforeMin + minutes >= goalMin();
     const pgHit = beforePg < goalPg() && beforePg + pages >= goalPg();
-    if (patched) { confetti(); toast(`🪡 Geflickt! Dein Faden ist wieder verbunden${streak() > 1 ? ` – ${streak()} Tage lang` : ""}.`); if (finished) setTimeout(() => celebrateFinish(b), 3400); }
+    const stLen = tn(streak(), "{n} Tag", "{n} Tage");
+    if (patched) { confetti(); toast("🪡 " + (streak() > 1 ? t("Geflickt! Dein Faden ist wieder verbunden – {len} lang.", { len: stLen }) : t("Geflickt! Dein Faden ist wieder verbunden."))); if (finished) setTimeout(() => celebrateFinish(b), 3400); }
     else if (finished) celebrateFinish(b);
-    else if (isToday && !wasDone && nowDone) { confetti(); toast("🎯 Tagesziel erreicht – Minuten und Seiten geschafft!"); }
-    else if (isToday && beforeMin === 0) toast(`🧵 Neuer Stich! Dein Lesefaden ist jetzt ${plural(streak(), "Tag", "Tage")} lang.`);
-    else if (isToday && minHit) toast(`⏱️ Minutenziel geschafft! Noch ${goalPg() - beforePg - pages} Seiten.`);
-    else if (isToday && pgHit) toast(`📄 Seitenziel geschafft! Noch ${goalMin() - beforeMin - minutes} Minuten.`);
-    else toast(`✓ ${minutes} Min.${pages ? ` und ${pages} Seiten` : ""} eingetragen.`);
+    else if (isToday && !wasDone && nowDone) { confetti(); toast("🎯 " + t("Tagesziel erreicht – Minuten und Seiten geschafft!")); }
+    else if (isToday && beforeMin === 0) toast("🧵 " + t("Neuer Knoten! Dein Lesefaden ist jetzt {len} lang.", { len: stLen }));
+    else if (isToday && minHit) toast("⏱️ " + t("Minutenziel geschafft! Noch {len}.", { len: tn(goalPg() - beforePg - pages, "{n} Seite", "{n} Seiten") }));
+    else if (isToday && pgHit) toast("📄 " + t("Seitenziel geschafft! Noch {len}.", { len: tn(goalMin() - beforeMin - minutes, "{n} Minute", "{n} Minuten") }));
+    else toast("✓ " + (pages ? t("{n} Min. und {p} Seiten eingetragen.", { n: minutes, p: pages }) : t("{n} Min. eingetragen.", { n: minutes })));
     checkBadges(); render();
   }
   $("#manualForm").addEventListener("submit", (e) => {
@@ -915,7 +968,7 @@
     const minutes = parseInt($("#manualMin").value);
     if (!minutes || minutes < 1) return;
     const date = $("#manualDate").value || dateKey();
-    if (date > dateKey()) { toast("Das Datum liegt in der Zukunft."); return; }
+    if (date > dateKey()) { toast(t("Das Datum liegt in der Zukunft.")); return; }
     const bookId = $("#manualBook").value, v = parseInt($("#manualPage").value);
     const note = $("#manualNote").value;
     logSession(bookById(bookId) ? { bookId, minutes, toPage: v, note, date } : { bookId, minutes, pagesRead: v, note, date });
@@ -924,8 +977,8 @@
 
   $("#manualBook").addEventListener("change", () => {
     const b = bookById($("#manualBook").value);
-    $("#manualPageLbl").textContent = b ? "Bis Seite" : "Gelesene Seiten";
-    $("#manualPage").placeholder = b ? `jetzt S. ${b.currentPage || 0}` : "z. B. 12";
+    $("#manualPageLbl").textContent = t(b ? "Bis Seite" : "Gelesene Seiten");
+    $("#manualPage").placeholder = b ? t("jetzt S. {n}", { n: b.currentPage || 0 }) : t("z. B. 12");
   });
 
   function chime() {
@@ -944,10 +997,14 @@
 
   // ---------- Profil ----------
   const profileDialog = $("#profileDialog");
+  function profileTexts() {
+    const p = state.profile;
+    $("#profileTitle").textContent = t(p ? "Dein Lesepass" : "Willkommen bei Lesezeit");
+    $("#profileIntro").textContent = t(p ? "Name, Sprache, Altersgruppe und Tagesziele ändern." : "Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:");
+  }
   function openProfile() {
     const p = state.profile;
-    $("#profileTitle").textContent = p ? "Dein Lesepass" : "Willkommen bei Lesezeit";
-    $("#profileIntro").textContent = p ? "Name, Altersgruppe und Tagesziele ändern." : "Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:";
+    profileTexts();
     $("#pName").value = p?.name || "";
     $$("#pGroup input").forEach((r) => (r.checked = r.value === (p?.group || "erwachsene")));
     $("#pGoal").value = p?.goal || 20; $("#pGoalOut").textContent = $("#pGoal").value;
@@ -974,18 +1031,18 @@
     const first = !state.profile;
     state.profile = readProfile(); save();
     profileDialog.close(); render();
-    if (first) { confetti(); toast(`Dein Lesepass ist bereit, ${state.profile.name}.`); }
+    if (first) { confetti(); toast(t("Dein Lesepass ist bereit, {name}.", { name: state.profile.name })); }
   });
   profileDialog.addEventListener("cancel", (e) => { if (!state.profile) e.preventDefault(); });
   $("#resetAll").addEventListener("click", async () => {
-    if (!(await askConfirm("Wirklich alle Bücher, Lesezeiten und Erfolge löschen?"))) return;
-    state = defaultState(); save(); profileDialog.close(); render(); openProfile();
+    if (!(await askConfirm(t("Wirklich alle Bücher, Lesezeiten und Erfolge löschen?")))) return;
+    state = { ...defaultState(), lang }; save(); profileDialog.close(); render(); openProfile();
   });
   $("#demoData").addEventListener("click", () => {
     if (!$("#pName").value.trim()) $("#pName").value = "Lea";
     state.profile = readProfile();
     loadDemo(); profileDialog.close(); render(); fillBookSelects();
-    toast("Beispieldaten geladen. Schau dich um!");
+    toast(t("Beispieldaten geladen. Schau dich um!"));
   });
 
   function loadDemo() {
@@ -996,10 +1053,10 @@
     quietBadges = true;
     const b1 = addBook({ ...recos[0], status: "lesen", currentPage: Math.round(recos[0].pages * 0.55), startDate: k(9) });
     const b2 = addBook({ ...recos[1], status: "lesen", currentPage: Math.round(recos[1].pages * 0.2), startDate: k(2) });
-    const b3 = addBook({ ...recos[2], status: "gelesen", currentPage: recos[2].pages, startDate: k(24), endDate: k(11), rating: 5, notes: "Hat mich total gepackt!" });
+    const b3 = addBook({ ...recos[2], status: "gelesen", currentPage: recos[2].pages, startDate: k(24), endDate: k(11), rating: 5, notes: t("Hat mich total gepackt!") });
     addBook({ ...recos[3], status: "wunsch", startDate: null });
     const plan = [[0, 15, b1, 12], [1, 25, b1, 18], [2, 20, b2, 14], [3, 30, b1, 20], [4, 10, b1, 8], [6, 22, b1, 15], [7, 35, b1, 25], [11, 40, b3, 40], [12, 25, b3, 20], [13, 30, b3, 28]];
-    const notes = { 0: "Endlich wird klar, warum die beiden losfahren.", 3: "Das Kapitel war spannend, ich wollte nicht aufhören.", 7: "Eine Stelle habe ich zweimal gelesen, so schön war sie." };
+    const notes = { 0: t("Heute wurde endlich klar, worum es eigentlich geht."), 3: t("Das Kapitel war spannend, ich wollte nicht aufhören."), 7: t("Eine Stelle habe ich zweimal gelesen, so schön war sie.") };
     for (const [d, minutes, b, pages] of plan) state.sessions.push({ id: uid(), bookId: b.id, date: k(d), minutes, pages, note: notes[d] || "", word: "", hour: d % 3 === 0 ? 21 : 18, ts: Date.now() - d * 86400000 });
     ["Sehnsucht", "beiläufig", "Fernweh", "verblüfft", "Abenteuer", "flüstern"].forEach((w, i) => state.words.push({ id: uid(), w, bookId: b1.id, date: k(i), ts: Date.now() - i * 86400000 }));
     state.seenBadges = BADGES.filter((b) => b.test()).map((b) => b.id);
@@ -1044,11 +1101,14 @@
     const q = quoteOfDay();
     const p = state.profile;
     const readDays = Object.keys(minutesByDay()).length;
-    $("#coverOwner").textContent = p?.name ? `von ${p.name}` : "Jeden Tag ein paar Seiten";
-    $("#coverNo").textContent = `Lesetag Nr. ${String(readDays + (minutesByDay()[dateKey()] ? 0 : 1)).padStart(3, "0")}`;
-    $("#fpDate").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    $("#coverOwner").textContent = p?.name ? t("von {name}", { name: p.name }) : t("Jeden Tag ein paar Seiten");
+    $("#coverNo").textContent = t("Lesetag Nr. {n}", { n: String(readDays + (minutesByDay()[dateKey()] ? 0 : 1)).padStart(3, "0") });
+    $("#fpDate").textContent = fd(new Date(), { weekday: "long", day: "numeric", month: "long" });
     $("#fpQuote").textContent = `„${q.text}“`;
-    $("#fpBy").textContent = "— " + q.by;
+    $("#fpBy").textContent = "— " + t(q.by);
+    const qTr = t(q.text);
+    $("#fpTr").hidden = qTr === q.text;
+    $("#fpTr").textContent = qTr === q.text ? "" : quoted(qTr);
     return new Promise((resolve) => {
       let done = false;
       const finish = () => {
@@ -1063,7 +1123,19 @@
     });
   }
 
+  // ---------- Sprachwechsel ----------
+  function setLang(l) {
+    if (!LOCALES[l] || l === lang) return;
+    lang = l; state.lang = l; save();
+    applyStatic(); fillBookSelects(); updateClock(); renderStars();
+    if (profileDialog.open) profileTexts();
+    render();
+  }
+  $("#langSel").addEventListener("change", (e) => setLang(e.target.value));
+  $("#pLang").addEventListener("change", (e) => setLang(e.target.value));
+
   // ---------- Start ----------
+  applyStatic();
   $("#nextTip").addEventListener("click", () => showTip(true));
   window.addEventListener("hashchange", () => go(location.hash.slice(1)));
   fillBookSelects();

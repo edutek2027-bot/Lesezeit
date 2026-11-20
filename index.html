@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=12">
+  <link rel="stylesheet" href="css/styles.css?v=13">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -19,37 +19,42 @@
         <p class="fp-date" id="fpDate"></p>
         <p class="fp-quote" id="fpQuote"></p>
         <p class="fp-by" id="fpBy"></p>
-        <div class="stamp fp-stamp"><span>Heute</span><b>lesen</b></div>
+        <p class="fp-tr" id="fpTr" hidden></p>
+        <div class="stamp fp-stamp"><span data-t>Heute</span><b data-t>lesen</b></div>
       </div>
       <div class="cover">
         <div class="cover-front">
           <div class="cover-frame">
-            <span class="cover-kicker">Lesepass</span>
-            <span class="cover-title">Lesezeit</span>
+            <span class="cover-kicker" data-t>Lesepass</span>
+            <span class="cover-title" data-t>Lesezeit</span>
             <span class="cover-rule"></span>
-            <span class="cover-owner" id="coverOwner">Jeden Tag ein paar Seiten</span>
+            <span class="cover-owner" id="coverOwner" data-t>Jeden Tag ein paar Seiten</span>
           </div>
           <span class="cover-no" id="coverNo"></span>
         </div>
         <div class="cover-back"></div>
       </div>
     </div>
-    <div class="intro-skip">Tippen zum Überspringen</div>
-    <div class="intro-next"><span>Weiter →</span><i></i></div>
+    <div class="intro-skip" data-t>Tippen zum Überspringen</div>
+    <div class="intro-next"><span data-t>Weiter →</span><i></i></div>
   </div>
 
   <header class="topbar">
     <a class="brand" href="#uebersicht" data-nav="uebersicht">
-      <span class="brand-mark" aria-hidden="true">Lz</span>
-      <span>Lesezeit</span>
+      <span class="brand-mark" aria-hidden="true" data-t>Lz</span>
+      <span data-t>Lesezeit</span>
     </a>
     <nav class="tabs" aria-label="Hauptnavigation">
-      <button data-nav="uebersicht" class="active"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/><path d="M9 14.5l2 2 4-4"/></svg></span><span class="lbl">Heute</span></button>
-      <button data-nav="regal"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><path d="M15.5 5.4l3.6-.9 3.4 14.6-3.6.9z"/></svg></span><span class="lbl">Regal</span></button>
-      <button data-nav="timer"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg></span><span class="lbl">Timer</span></button>
-      <button data-nav="entdecken"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span><span class="lbl">Entdecken</span></button>
-      <button data-nav="erfolge"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="6.5"/><circle cx="12" cy="10" r="3.5"/><path d="M8.5 15.5L7 22l5-2.5 5 2.5-1.5-6.5"/></svg></span><span class="lbl">Erfolge</span></button>
+      <button data-nav="uebersicht" class="active"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/><path d="M9 14.5l2 2 4-4"/></svg></span><span class="lbl" data-t>Heute</span></button>
+      <button data-nav="regal"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><path d="M15.5 5.4l3.6-.9 3.4 14.6-3.6.9z"/></svg></span><span class="lbl" data-t>Regal</span></button>
+      <button data-nav="timer"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg></span><span class="lbl" data-t>Timer</span></button>
+      <button data-nav="entdecken"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span><span class="lbl" data-t>Entdecken</span></button>
+      <button data-nav="erfolge"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="6.5"/><circle cx="12" cy="10" r="3.5"/><path d="M8.5 15.5L7 22l5-2.5 5 2.5-1.5-6.5"/></svg></span><span class="lbl" data-t>Erfolge</span></button>
     </nav>
+    <label class="lang-pick" title="Sprache">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3z"/></svg>
+      <select id="langSel" aria-label="Sprache"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select>
+    </label>
     <button class="icon-btn" id="profileBtn" title="Profil &amp; Einstellungen" aria-label="Profil und Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
   </header>
 
@@ -59,80 +64,81 @@
       <div class="hero">
         <div class="hero-main">
           <p class="kicker" id="todayLabel"></p>
-          <h1 id="greeting">Willkommen.</h1>
+          <h1 id="greeting" data-t>Willkommen.</h1>
           <div class="hero-actions">
-            <button class="btn primary" data-nav="timer">Jetzt lesen</button>
-            <button class="btn" id="quickAddBtn">Buch hinzufügen</button>
+            <button class="btn primary" data-nav="timer" data-t>Jetzt lesen</button>
+            <button class="btn" id="quickAddBtn" data-t>Buch hinzufügen</button>
           </div>
         </div>
         <figure class="quote">
           <blockquote id="quoteText"></blockquote>
           <figcaption id="quoteBy"></figcaption>
+          <p class="quote-tr" id="quoteTr" hidden></p>
         </figure>
       </div>
 
       <div class="grid-dash">
         <article class="card goal-card">
-          <div class="card-head"><h2>Heute</h2><span class="kicker" id="goalPct">0 %</span></div>
+          <div class="card-head"><h2 data-t>Heute</h2><span class="kicker" id="goalPct">0 %</span></div>
           <div class="ruler-block">
-            <div class="ruler-head"><span>Minuten</span><strong><span id="goalMinutes">0</span> / <span id="goalOf">20</span></strong></div>
+            <div class="ruler-head"><span data-t>Minuten</span><strong><span id="goalMinutes">0</span> / <span id="goalOf">20</span></strong></div>
             <div class="ruler" id="rulerMin"><i></i></div>
           </div>
           <div class="ruler-block">
-            <div class="ruler-head"><span>Seiten</span><strong><span id="goalPages">0</span> / <span id="goalPagesOf">15</span></strong></div>
+            <div class="ruler-head"><span data-t>Seiten</span><strong><span id="goalPages">0</span> / <span id="goalPagesOf">15</span></strong></div>
             <div class="ruler pg" id="rulerPg"><i></i></div>
           </div>
           <div class="goal-foot">
             <p class="goal-hint" id="goalHint"></p>
-            <div class="stamp goal-stamp" id="goalStamp" hidden><span>Ziel</span><b>erreicht</b></div>
+            <div class="stamp goal-stamp" id="goalStamp" hidden><span data-t>Ziel</span><b data-t>erreicht</b></div>
           </div>
         </article>
 
         <article class="card tree-card">
-          <div class="card-head"><h2>Lesebaum</h2><span class="kicker" id="treeStage"></span></div>
+          <div class="card-head"><h2 data-t>Lesebaum</h2><span class="kicker" id="treeStage"></span></div>
           <svg class="tree" id="tree" viewBox="0 0 140 110" role="img" aria-label="Lesebaum"></svg>
-          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord">Tage in Folge</span></p>
+          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord" data-t>Tage in Folge</span></p>
         </article>
 
         <article class="card stats-card">
-          <div class="card-head"><h2>In Zahlen</h2><span class="kicker">gesamt</span></div>
+          <div class="card-head"><h2 data-t>In Zahlen</h2><span class="kicker" data-t>gesamt</span></div>
           <dl class="stats">
-            <div class="stat"><dt>Bücher beendet</dt><dd id="statBooks">0</dd></div>
-            <div class="stat"><dt>Seiten</dt><dd id="statPages">0</dd></div>
-            <div class="stat"><dt>Lesezeit</dt><dd id="statHours">0</dd></div>
-            <div class="stat"><dt>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
-            <div class="stat"><dt>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
-            <div class="stat"><dt>Längste Serie</dt><dd id="statBest">0</dd></div>
+            <div class="stat"><dt data-t>Bücher beendet</dt><dd id="statBooks">0</dd></div>
+            <div class="stat"><dt data-t>Seiten</dt><dd id="statPages">0</dd></div>
+            <div class="stat"><dt data-t>Lesezeit</dt><dd id="statHours">0</dd></div>
+            <div class="stat"><dt data-t>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
+            <div class="stat"><dt data-t>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
+            <div class="stat"><dt data-t>Längste Serie</dt><dd id="statBest">0</dd></div>
           </dl>
         </article>
 
         <article class="card wide faden-card">
-          <div class="card-head"><h2>Lesefaden</h2><span class="faden-head-right"><span class="kicker" id="fadenStat"></span><button class="link" type="button" id="weekOpen">Wochenblick →</button></span></div>
+          <div class="card-head"><h2 data-t>Lesefaden</h2><span class="faden-head-right"><span class="kicker" id="fadenStat"></span><button class="link" type="button" id="weekOpen" data-t>Wochenblick →</button></span></div>
           <p class="faden-sub" id="fadenSub"></p>
           <div class="patch-note" id="patchNote" hidden>
-            <svg viewBox="0 0 40 40" aria-hidden="true"><rect class="pn-patch" x="6" y="6" width="28" height="28" rx="4" transform="rotate(-8 20 20)"/><path class="pn-x" d="M13 13L27 27M27 13L13 27"/></svg>
+            <svg viewBox="0 0 40 40" aria-hidden="true"><rect class="pn-patch" x="6" y="6" width="28" height="28" rx="4" transform="rotate(-8 20 20)"/><circle class="pn-k" cx="20" cy="20" r="7.5"/><path class="pn-kw" d="M14.8 17Q20 12.8 25.2 17M13.6 21Q20 16.6 26.4 21M15.2 24.4Q20 20.6 24.8 24.4"/></svg>
             <p id="patchNoteText"></p>
-            <button class="btn" id="patchOpen">Faden flicken</button>
+            <button class="btn" id="patchOpen" data-t>Faden flicken</button>
           </div>
           <svg class="faden" id="faden" viewBox="-14 -10 728 352" role="img" aria-label="Lesefaden der letzten vier Wochen"></svg>
-          <p class="faden-hint">Tippe auf einen Tag für den Tagesblick.</p>
+          <p class="faden-hint" data-t>Tippe auf einen Tag für den Tagesblick.</p>
           <p class="faden-legend">
-            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x" d="M5 5L15 15M15 5L5 15"/></svg>gelesen</span>
-            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x" d="M5 5L15 15M15 5L5 15"/><circle class="lg-knot" cx="10" cy="10" r="4"/><path class="lg-knot-s" d="M8.2 10a1.8 1.8 0 1 1 1.8 1.8"/></svg>Ziel erreicht (Knoten)</span>
-            <span><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="lg-patch" x="2.5" y="2.5" width="15" height="15" rx="2.5"/><path class="lg-x" d="M6 6L14 14M14 6L6 14"/></svg>geflickt</span>
-            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg>Faden gerissen</span>
+            <span><svg viewBox="-12 -12 24 24" aria-hidden="true"><circle class="lg-kb" r="8"/><path class="lg-kw" d="M-5.6 -3.2Q0 -7.8 5.6 -3.2M-7 .8Q0 -4 7 .8M-5.2 4.6Q0 .6 5.2 4.6"/></svg><span data-t>gelesen</span></span>
+            <span><svg viewBox="-12 -12 24 24" aria-hidden="true"><circle class="lg-kb gold" r="8"/><path class="lg-kw gold" d="M-5.6 -3.2Q0 -7.8 5.6 -3.2M-7 .8Q0 -4 7 .8M-5.2 4.6Q0 .6 5.2 4.6"/></svg><span data-t>Ziel erreicht</span></span>
+            <span><svg viewBox="-12 -12 24 24" aria-hidden="true"><rect class="lg-patch" x="-10.5" y="-10.5" width="21" height="21" rx="3"/><circle class="lg-kb" r="6.5"/></svg><span data-t>geflickt</span></span>
+            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg><span data-t>Faden gerissen</span></span>
           </p>
         </article>
 
         <article class="card words-card">
-          <div class="card-head"><h2>Sammelheft</h2><span class="kicker" id="wordCount"></span></div>
+          <div class="card-head"><h2 data-t>Sammelheft</h2><span class="kicker" id="wordCount"></span></div>
           <div class="seg-mini collect-mode" id="collectMode" role="tablist" aria-label="Sammlung">
-            <button class="active" data-cmode="words" role="tab">Wörter</button>
-            <button data-cmode="lines" role="tab">Sätze &amp; Zitate</button>
+            <button class="active" data-cmode="words" role="tab" data-t>Wörter</button>
+            <button data-cmode="lines" role="tab" data-t>Sätze &amp; Zitate</button>
           </div>
           <div id="collectWords">
             <form class="word-form" id="wordForm">
-              <label class="sr" for="wordInput">Neues Wort</label>
+              <label class="sr" for="wordInput" data-t>Neues Wort</label>
               <input id="wordInput" maxlength="40" autocomplete="off" placeholder="Neues Wort aus dem Buch …">
               <button class="btn primary" type="submit" aria-label="Wort speichern">＋</button>
             </form>
@@ -140,12 +146,12 @@
           </div>
           <div id="collectLines" hidden>
             <form class="line-form" id="lineForm">
-              <label class="sr" for="lineInput">Wichtiger Satz oder Zitat</label>
+              <label class="sr" for="lineInput" data-t>Wichtiger Satz oder Zitat</label>
               <textarea id="lineInput" rows="2" maxlength="400" placeholder="Ein Satz, den du behalten möchtest …"></textarea>
               <div class="line-meta">
-                <label class="sr" for="lineBook">Buch</label><select id="lineBook"></select>
-                <label class="sr" for="linePage">Seite</label><input id="linePage" type="number" min="1" placeholder="S.">
-                <button class="btn primary" type="submit">Speichern</button>
+                <label class="sr" for="lineBook" data-t>Buch</label><select id="lineBook"></select>
+                <label class="sr" for="linePage" data-t>Seite</label><input id="linePage" type="number" min="1" placeholder="S.">
+                <button class="btn primary" type="submit" data-t>Speichern</button>
               </div>
             </form>
             <div class="lines" id="lines"></div>
@@ -154,27 +160,27 @@
 
         <article class="card wide">
           <div class="card-head">
-            <h2>Gerade lese ich</h2>
-            <button class="link" data-nav="regal">Ganzes Regal →</button>
+            <h2 data-t>Gerade lese ich</h2>
+            <button class="link" data-nav="regal" data-t>Ganzes Regal →</button>
           </div>
           <div class="current-list" id="currentList"></div>
         </article>
 
         <article class="card chart-card">
           <div class="card-head">
-            <h2>7 Tage</h2>
+            <h2 data-t>7 Tage</h2>
             <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
-              <button class="active" data-mode="min" role="tab">Minuten</button>
-              <button data-mode="pg" role="tab">Seiten</button>
+              <button class="active" data-mode="min" role="tab" data-t>Minuten</button>
+              <button data-mode="pg" role="tab" data-t>Seiten</button>
             </div>
           </div>
           <div class="bars" id="weekChart"></div>
         </article>
 
         <article class="card tip-card full">
-          <span class="kicker">Tipp</span>
+          <span class="kicker" data-t>Tipp</span>
           <div class="tip" id="tipOfDay"></div>
-          <button class="link" id="nextTip">Nächster Tipp →</button>
+          <button class="link" id="nextTip" data-t>Nächster Tipp →</button>
         </article>
       </div>
     </section>
@@ -182,14 +188,14 @@
     <!-- REGAL -->
     <section class="view" id="view-regal">
       <div class="section-head">
-        <div><p class="kicker">Meine Bücher</p><h1>Bücherregal</h1></div>
-        <button class="btn primary" id="addBookBtn">Buch hinzufügen</button>
+        <div><p class="kicker" data-t>Meine Bücher</p><h1 data-t>Bücherregal</h1></div>
+        <button class="btn primary" id="addBookBtn" data-t>Buch hinzufügen</button>
       </div>
       <div class="filters" role="tablist" id="shelfFilters">
-        <button class="chip active" data-filter="alle">Alle</button>
-        <button class="chip" data-filter="lesen">Lese ich gerade</button>
-        <button class="chip" data-filter="gelesen">Gelesen</button>
-        <button class="chip" data-filter="wunsch">Wunschliste</button>
+        <button class="chip active" data-filter="alle" data-t>Alle</button>
+        <button class="chip" data-filter="lesen" data-t>Lese ich gerade</button>
+        <button class="chip" data-filter="gelesen" data-t>Gelesen</button>
+        <button class="chip" data-filter="wunsch" data-t>Wunschliste</button>
       </div>
       <div class="shelf" id="shelf"></div>
     </section>
@@ -197,24 +203,24 @@
     <!-- TIMER -->
     <section class="view" id="view-timer">
       <div class="section-head">
-        <div><p class="kicker">Konzentriert lesen</p><h1>Lese-Timer</h1></div>
+        <div><p class="kicker" data-t>Konzentriert lesen</p><h1 data-t>Lese-Timer</h1></div>
       </div>
       <div class="timer-layout">
         <article class="card timer-card">
           <label class="field">
-            <span>Welches Buch liest du?</span>
+            <span data-t>Welches Buch liest du?</span>
             <select id="timerBook"></select>
           </label>
           <div class="patch-banner" id="patchBanner" hidden>
             <span id="patchBannerText"></span>
-            <button class="link" type="button" id="patchBannerCancel">nicht flicken</button>
+            <button class="link" type="button" id="patchBannerCancel" data-t>nicht flicken</button>
           </div>
           <div class="presets" id="timerPresets">
-            <button class="chip" data-min="0">Frei</button>
-            <button class="chip" data-min="10">10 Min.</button>
-            <button class="chip active" data-min="20">20 Min.</button>
-            <button class="chip" data-min="30">30 Min.</button>
-            <button class="chip" data-min="45">45 Min.</button>
+            <button class="chip" data-min="0" data-t>Frei</button>
+            <button class="chip" data-min="10" data-t>10 Min.</button>
+            <button class="chip active" data-min="20" data-t>20 Min.</button>
+            <button class="chip" data-min="30" data-t>30 Min.</button>
+            <button class="chip" data-min="45" data-t>45 Min.</button>
           </div>
           <div class="clock">
             <svg viewBox="0 0 220 220" class="clock-svg">
@@ -229,29 +235,29 @@
                 <path class="page-flip" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
               </svg>
               <strong id="clockTime">20:00</strong>
-              <span id="clockMode" class="kicker">Countdown</span>
+              <span id="clockMode" class="kicker" data-t>Countdown</span>
             </div>
           </div>
           <div class="timer-actions">
-            <button class="btn primary big" id="timerStart">Start</button>
-            <button class="btn big" id="timerStop" disabled>Beenden</button>
+            <button class="btn primary big" id="timerStart" data-t>Start</button>
+            <button class="btn big" id="timerStop" disabled data-t>Beenden</button>
           </div>
         </article>
 
         <article class="card">
-          <h2>Nachtragen</h2>
-          <p class="muted">Ohne Timer gelesen? Trag es hier ein.</p>
+          <h2 data-t>Nachtragen</h2>
+          <p class="muted" data-t>Ohne Timer gelesen? Trag es hier ein.</p>
           <form id="manualForm" class="form">
-            <label class="field"><span>Buch</span><select id="manualBook"></select></label>
+            <label class="field"><span data-t>Buch</span><select id="manualBook"></select></label>
             <div class="row">
-              <label class="field"><span>Minuten</span><input type="number" min="1" max="600" id="manualMin" required value="20"></label>
-              <label class="field"><span id="manualPageLbl">Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
+              <label class="field"><span data-t>Minuten</span><input type="number" min="1" max="600" id="manualMin" required value="20"></label>
+              <label class="field"><span id="manualPageLbl" data-t>Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
             </div>
-            <label class="field"><span>Ein Satz zum Lesen <small>(optional)</small></span><input id="manualNote" maxlength="200" placeholder="Was ist passiert?"></label>
-            <label class="field"><span>Datum</span><input type="date" id="manualDate" required></label>
-            <button class="btn primary" type="submit">Eintragen</button>
+            <label class="field"><span><span data-t>Ein Satz zum Lesen</span> <small data-t>(optional)</small></span><input id="manualNote" maxlength="200" placeholder="Was ist passiert?"></label>
+            <label class="field"><span data-t>Datum</span><input type="date" id="manualDate" required></label>
+            <button class="btn primary" type="submit" data-t>Eintragen</button>
           </form>
-          <h2 class="mt">Lesetagebuch</h2>
+          <h2 class="mt" data-t>Lesetagebuch</h2>
           <ul class="log" id="sessionLog"></ul>
         </article>
       </div>
@@ -260,23 +266,23 @@
     <!-- ENTDECKEN -->
     <section class="view" id="view-entdecken">
       <div class="section-head">
-        <div><p class="kicker">Empfehlungen &amp; Tipps</p><h1>Entdecken</h1></div>
+        <div><p class="kicker" data-t>Empfehlungen &amp; Tipps</p><h1 data-t>Entdecken</h1></div>
       </div>
       <div class="filters" id="recoFilters">
-        <button class="chip" data-group="kinder">Kinder (6–10)</button>
-        <button class="chip" data-group="jugend">Jugendliche (11–17)</button>
-        <button class="chip" data-group="erwachsene">Erwachsene</button>
+        <button class="chip" data-group="kinder" data-t>Kinder (6–10)</button>
+        <button class="chip" data-group="jugend" data-t>Jugendliche (11–17)</button>
+        <button class="chip" data-group="erwachsene" data-t>Erwachsene</button>
       </div>
-      <h2 class="mt">Buchempfehlungen</h2>
+      <h2 class="mt" data-t>Buchempfehlungen</h2>
       <div class="reco-grid" id="recoGrid"></div>
-      <h2 class="mt">So wird Lesen zur Gewohnheit</h2>
+      <h2 class="mt" data-t>So wird Lesen zur Gewohnheit</h2>
       <div class="tips-grid" id="tipsGrid"></div>
     </section>
 
     <!-- ERFOLGE -->
     <section class="view" id="view-erfolge">
       <div class="section-head">
-        <div><p class="kicker">Stempel &amp; Stufen</p><h1>Erfolge</h1></div>
+        <div><p class="kicker" data-t>Stempel &amp; Stufen</p><h1 data-t>Erfolge</h1></div>
         <p class="muted" id="badgeCount"></p>
       </div>
       <div class="level card" id="levelCard"></div>
@@ -287,40 +293,40 @@
   <!-- Buch-Dialog -->
   <dialog id="bookDialog" class="modal">
     <form method="dialog" id="bookForm" class="form">
-      <h2 id="bookDialogTitle">Buch hinzufügen</h2>
-      <label class="field"><span>Titel *</span><input id="fTitle" required maxlength="120" autocomplete="off"></label>
-      <label class="field"><span>Autor/in</span><input id="fAuthor" maxlength="80" autocomplete="off"></label>
+      <h2 id="bookDialogTitle" data-t>Buch hinzufügen</h2>
+      <label class="field"><span data-t>Titel *</span><input id="fTitle" required maxlength="120" autocomplete="off"></label>
+      <label class="field"><span data-t>Autor/in</span><input id="fAuthor" maxlength="80" autocomplete="off"></label>
       <div class="row">
-        <label class="field"><span>Seiten gesamt</span><input type="number" min="1" max="5000" id="fPages" placeholder="z. B. 240"></label>
-        <label class="field"><span>Aktuelle Seite</span><input type="number" min="0" id="fCurrent" value="0"></label>
+        <label class="field"><span data-t>Seiten gesamt</span><input type="number" min="1" max="5000" id="fPages" placeholder="z. B. 240"></label>
+        <label class="field"><span data-t>Aktuelle Seite</span><input type="number" min="0" id="fCurrent" value="0"></label>
       </div>
       <div class="row">
-        <label class="field"><span>Status</span>
+        <label class="field"><span data-t>Status</span>
           <select id="fStatus">
-            <option value="lesen">Lese ich gerade</option>
-            <option value="wunsch">Wunschliste</option>
-            <option value="gelesen">Gelesen</option>
+            <option value="lesen" data-t>Lese ich gerade</option>
+            <option value="wunsch" data-t>Wunschliste</option>
+            <option value="gelesen" data-t>Gelesen</option>
           </select>
         </label>
-        <label class="field"><span>Gattung</span>
+        <label class="field"><span data-t>Gattung</span>
           <select id="fGenre">
-            <option>Roman</option><option>Abenteuer</option><option>Fantasy</option><option>Krimi</option>
-            <option>Sachbuch</option><option>Comic</option><option>Klassiker</option><option>Jugendbuch</option>
-            <option>Kinderbuch</option><option>Biografie</option><option>Lyrik</option><option>Sonstiges</option>
+            <option value="Roman" data-t>Roman</option><option value="Abenteuer" data-t>Abenteuer</option><option value="Fantasy" data-t>Fantasy</option><option value="Krimi" data-t>Krimi</option>
+            <option value="Sachbuch" data-t>Sachbuch</option><option value="Comic" data-t>Comic</option><option value="Klassiker" data-t>Klassiker</option><option value="Jugendbuch" data-t>Jugendbuch</option>
+            <option value="Kinderbuch" data-t>Kinderbuch</option><option value="Biografie" data-t>Biografie</option><option value="Lyrik" data-t>Lyrik</option><option value="Sonstiges" data-t>Sonstiges</option>
           </select>
         </label>
       </div>
-      <label class="field"><span>Lese ich seit</span><input type="date" id="fStart"></label>
+      <label class="field"><span data-t>Lese ich seit</span><input type="date" id="fStart"></label>
       <div class="field">
-        <span>Bewertung</span>
+        <span data-t>Bewertung</span>
         <div class="stars" id="fStars" role="radiogroup" aria-label="Bewertung"></div>
       </div>
-      <label class="field"><span>Notizen &amp; Lieblingszitat</span><textarea id="fNotes" rows="3" maxlength="2000" placeholder="Was hat dich überrascht? Welche Figur magst du?"></textarea></label>
+      <label class="field"><span data-t>Notizen &amp; Lieblingszitat</span><textarea id="fNotes" rows="3" maxlength="2000" placeholder="Was hat dich überrascht? Welche Figur magst du?"></textarea></label>
       <div class="modal-actions">
-        <button type="button" class="btn danger" id="deleteBook" hidden>Löschen</button>
+        <button type="button" class="btn danger" id="deleteBook" hidden data-t>Löschen</button>
         <span class="spacer"></span>
-        <button type="button" class="btn" id="cancelBook">Abbrechen</button>
-        <button type="submit" class="btn primary" value="save">Speichern</button>
+        <button type="button" class="btn" id="cancelBook" data-t>Abbrechen</button>
+        <button type="submit" class="btn primary" value="save" data-t>Speichern</button>
       </div>
     </form>
   </dialog>
@@ -328,29 +334,30 @@
   <!-- Profil-Dialog / Onboarding -->
   <dialog id="profileDialog" class="modal">
     <form method="dialog" id="profileForm" class="form">
-      <div class="stamp onboard-stamp" aria-hidden="true"><span>Lese</span><b>pass</b></div>
-      <h2 id="profileTitle">Dein Lesepass</h2>
-      <p class="muted" id="profileIntro">Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:</p>
-      <label class="field"><span>Wie heißt du?</span><input id="pName" maxlength="40" required autocomplete="given-name" placeholder="Vorname"></label>
+      <div class="stamp onboard-stamp" aria-hidden="true"><span data-t>Lese</span><b data-t>pass</b></div>
+      <h2 id="profileTitle" data-t>Dein Lesepass</h2>
+      <p class="muted" id="profileIntro" data-t>Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:</p>
+      <label class="field"><span data-t>Sprache</span><select id="pLang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
+      <label class="field"><span data-t>Wie heißt du?</span><input id="pName" maxlength="40" required autocomplete="given-name" placeholder="Vorname"></label>
       <div class="field">
-        <span>Ich bin …</span>
+        <span data-t>Ich bin …</span>
         <div class="seg" id="pGroup">
-          <label><input type="radio" name="group" value="kinder"><span>Kind<small>6–10 Jahre</small></span></label>
-          <label><input type="radio" name="group" value="jugend"><span>Jugendlich<small>11–17 Jahre</small></span></label>
-          <label><input type="radio" name="group" value="erwachsene" checked><span>Erwachsen<small>18+</small></span></label>
+          <label><input type="radio" name="group" value="kinder"><span><span data-t>Kind</span><small data-t>6–10 Jahre</small></span></label>
+          <label><input type="radio" name="group" value="jugend"><span><span data-t>Jugendlich</span><small data-t>11–17 Jahre</small></span></label>
+          <label><input type="radio" name="group" value="erwachsene" checked><span><span data-t>Erwachsen</span><small>18+</small></span></label>
         </div>
       </div>
-      <label class="field"><span>Tagesziel Lesezeit: <strong id="pGoalOut">20</strong> Minuten</span>
+      <label class="field"><span><span data-t>Tagesziel Lesezeit</span>: <strong id="pGoalOut">20</strong> <span data-t>Minuten</span></span>
         <input type="range" id="pGoal" min="5" max="90" step="5" value="20">
       </label>
-      <label class="field"><span>Tagesziel Seiten: <strong id="pGoalPagesOut">15</strong> Seiten</span>
+      <label class="field"><span><span data-t>Tagesziel Seiten</span>: <strong id="pGoalPagesOut">15</strong> <span data-t>Seiten</span></span>
         <input type="range" id="pGoalPages" min="5" max="100" step="5" value="15">
       </label>
       <div class="modal-actions">
-        <button type="button" class="btn danger" id="resetAll" hidden>Alle Daten löschen</button>
+        <button type="button" class="btn danger" id="resetAll" hidden data-t>Alle Daten löschen</button>
         <span class="spacer"></span>
-        <button type="button" class="btn" id="demoData">Beispieldaten laden</button>
-        <button type="submit" class="btn primary">Speichern</button>
+        <button type="button" class="btn" id="demoData" data-t>Beispieldaten laden</button>
+        <button type="submit" class="btn primary" data-t>Speichern</button>
       </div>
     </form>
   </dialog>
@@ -358,15 +365,15 @@
   <!-- Nach dem Lesen -->
   <dialog id="finishDialog" class="modal small">
     <form method="dialog" id="finishForm" class="form">
-      <div class="stamp finish-stamp" aria-hidden="true"><span>Gelesen</span><b id="finishStampMin">20′</b></div>
-      <h2>Gut gelesen!</h2>
+      <div class="stamp finish-stamp" aria-hidden="true"><span data-t>Gelesen</span><b id="finishStampMin">20′</b></div>
+      <h2 data-t>Gut gelesen!</h2>
       <p id="finishText" class="muted"></p>
-      <label class="field"><span id="finishPageLbl">Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
-      <label class="field"><span>Ein Satz zu heute <small>(optional)</small></span><input id="finishNote" maxlength="200" placeholder="Was ist passiert? Was hat dich überrascht?"></label>
-      <label class="field"><span>Neues Wort entdeckt? <small>(optional)</small></span><input id="finishWord" maxlength="40" autocomplete="off" placeholder="z. B. Sehnsucht"></label>
+      <label class="field"><span id="finishPageLbl" data-t>Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
+      <label class="field"><span><span data-t>Ein Satz zu heute</span> <small data-t>(optional)</small></span><input id="finishNote" maxlength="200" placeholder="Was ist passiert? Was hat dich überrascht?"></label>
+      <label class="field"><span><span data-t>Neues Wort entdeckt?</span> <small data-t>(optional)</small></span><input id="finishWord" maxlength="40" autocomplete="off" placeholder="z. B. Sehnsucht"></label>
       <div class="modal-actions">
         <span class="spacer"></span>
-        <button type="submit" class="btn primary">In den Lesepass eintragen</button>
+        <button type="submit" class="btn primary" data-t>In den Lesepass eintragen</button>
       </div>
     </form>
   </dialog>
@@ -377,25 +384,25 @@
       <svg class="patch-art" viewBox="0 0 120 70" aria-hidden="true">
         <path class="pa-thread" d="M6 35 H38"/><path class="pa-thread" d="M82 35 H114"/>
         <rect class="pa-patch" x="40" y="13" width="40" height="44" rx="5" transform="rotate(-6 60 35)"/>
-        <path class="pa-x" d="M50 25L70 45M70 25L50 45"/>
+        <g class="pa-k"><circle cx="60" cy="35" r="9"/><path d="M53.6 31.4Q60 26.4 66.4 31.4M52.2 36Q60 30.6 67.8 36M54 40.4Q60 35.8 66 40.4"/></g>
         <path class="pa-join" d="M38 35 H50 M70 35 H82"/>
       </svg>
-      <h2>Faden flicken</h2>
-      <p class="muted center" style="margin:0">Ein Tag ohne Lesen ist kein Problem. Lies nach, dann ist dein Faden wieder verbunden.</p>
+      <h2 data-t>Faden flicken</h2>
+      <p class="muted center" style="margin:0" data-t>Ein Tag ohne Lesen ist kein Problem. Lies nach, dann ist dein Faden wieder verbunden.</p>
       <div class="field">
-        <span>Welchen Tag möchtest du flicken?</span>
+        <span data-t>Welchen Tag möchtest du flicken?</span>
         <div class="filters" id="patchDays" style="margin:0"></div>
       </div>
       <p class="patch-rule" id="patchRule"></p>
       <div class="patch-manual" id="patchManualBox" hidden>
-        <label class="field"><span>Wie lange hast du nachgelesen?</span><input type="number" id="patchMin" min="1" max="600"></label>
-        <label class="field"><span>Buch</span><select id="patchBook"></select></label>
+        <label class="field"><span data-t>Wie lange hast du nachgelesen?</span><input type="number" id="patchMin" min="1" max="600"></label>
+        <label class="field"><span data-t>Buch</span><select id="patchBook"></select></label>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn" id="patchManual">Schon nachgelesen</button>
+        <button type="button" class="btn" id="patchManual" data-t>Schon nachgelesen</button>
         <span class="spacer"></span>
-        <button type="button" class="btn" id="patchCancel">Abbrechen</button>
-        <button type="submit" class="btn primary" id="patchGo">Mit Timer nachlesen</button>
+        <button type="button" class="btn" id="patchCancel" data-t>Abbrechen</button>
+        <button type="submit" class="btn primary" id="patchGo" data-t>Mit Timer nachlesen</button>
       </div>
     </form>
   </dialog>
@@ -409,23 +416,23 @@
         <button class="icon-btn" type="button" id="dayNext" aria-label="Weiter">›</button>
       </div>
       <div class="seg-mini day-mode" id="dayMode" role="tablist" aria-label="Ansicht">
-        <button data-dmode="day" class="active" role="tab">Tag</button>
-        <button data-dmode="week" role="tab">Woche</button>
+        <button data-dmode="day" class="active" role="tab" data-t>Tag</button>
+        <button data-dmode="week" role="tab" data-t>Woche</button>
       </div>
       <div id="dayBody" class="day-body"></div>
-      <div class="modal-actions"><span class="spacer"></span><button type="button" class="btn" id="dayClose">Schließen</button></div>
+      <div class="modal-actions"><span class="spacer"></span><button type="button" class="btn" id="dayClose" data-t>Schließen</button></div>
     </div>
   </dialog>
 
   <!-- Bestätigung -->
   <dialog id="confirmDialog" class="modal small">
     <form method="dialog" class="form">
-      <h2>Bist du sicher?</h2>
+      <h2 data-t>Bist du sicher?</h2>
       <p id="confirmText" class="muted" style="margin:0"></p>
       <div class="modal-actions">
         <span class="spacer"></span>
-        <button type="button" class="btn" id="confirmNo">Abbrechen</button>
-        <button type="button" class="btn danger" id="confirmYes">Löschen</button>
+        <button type="button" class="btn" id="confirmNo" data-t>Abbrechen</button>
+        <button type="button" class="btn danger" id="confirmYes" data-t>Löschen</button>
       </div>
     </form>
   </dialog>
@@ -433,7 +440,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=12"></script>
-  <script src="js/app.js?v=12"></script>
+  <script src="js/data.js?v=13"></script>
+  <script src="js/i18n.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
 </body>
 </html>

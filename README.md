@@ -8,7 +8,7 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 
 - **Intro** – der Lesepass mit Leinen-Einband und Goldprägung schlägt sich auf; innen stehen Datum und Zitat des Tages
 - **Heute** – Tagesziel für Minuten und Seiten als zwei Lineale, Stempel „Ziel erreicht“, Zitat des Tages
-- **Lesefaden** – jeder Lesetag ist ein Kreuzstich, Folgetage werden zusammengenäht; eine Lücke lässt den Faden reißen. Verpasste Tage der letzten 7 Tage lassen sich flicken: einmal das Tagesziel in Minuten nachlesen
+- **Lesefaden** – jeder Lesetag ist ein Knoten im Faden (grün = gelesen, gold = Tagesziel erreicht), Folgetage werden verbunden; eine Lücke lässt den Faden reißen. Verpasste Tage der letzten 7 Tage lassen sich flicken: einmal das Tagesziel in Minuten nachlesen
 - **Lesebaum** – wächst mit jedem Lesetag in Folge
 - **Sammelheft** – Wörter sowie wichtige Sätze und Zitate (mit Buch und Seite) sammeln
 - **Tages- und Wochenblick** – Tag im Lesefaden antippen: Minuten, Seiten, Notizen; Woche mit Durchschnitt, Lesetagen und Vergleich zur Vorwoche
@@ -17,6 +17,7 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 - **Timer** – Countdown oder freies Lesen, danach Seite, Satz und neues Wort eintragen
 - **Entdecken** – Buchempfehlungen und Lesetipps je Altersgruppe (Kinder, Jugendliche, Erwachsene)
 - **Erfolge** – 18 Stempel und 6 Lese-Stufen
+- **Sprachen:** Deutsch, English, Türkçe, Bosanski – Oberfläche, Tipps, Buchbeschreibungen und Datumsformate passen sich an; das Zitat des Tages bleibt im deutschen Original mit Übersetzung
 - Hell- und Dunkelmodus, Handy-Ansicht mit Navigationsleiste unten
 
 ## Starten

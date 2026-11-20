@@ -90,6 +90,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .tabs button:hover { color: var(--ink); background: var(--paper-2); }
 .tabs button.active { color: var(--ink); }
 .tabs button.active::after { transform: scaleX(1); }
+.lang-pick { position: relative; display: inline-flex; align-items: center; gap: .3rem; height: 40px; padding: 0 .55rem 0 .6rem; border: 1px solid var(--rule); border-radius: 99px; background: var(--sheet); color: var(--ink); flex-shrink: 0; }
+.lang-pick svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.lang-pick select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: inherit; font-family: var(--font-mono); font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 0 .1rem; cursor: pointer; }
+.lang-pick select:focus { outline: none; }
+.lang-pick:focus-within { outline: 2px solid var(--green); outline-offset: 2px; }
 .icon-btn { border: 1px solid var(--rule); background: var(--sheet); width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; color: var(--ink); }
 .ico svg, .icon-btn svg { width: 18px; height: 18px; display: block; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -103,7 +108,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   .tabs button:hover { background: transparent; }
   .tabs button .ico svg { width: 22px; height: 22px; }
   .tabs button.active { color: var(--green); }
-  .icon-btn { margin-left: auto; }
+  .lang-pick { margin-left: auto; }
   main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
@@ -119,6 +124,8 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .hero-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 .quote { margin: 0; padding: .2rem 0 .2rem 1.4rem; border-left: 2px solid var(--green); max-width: 46ch; justify-self: end; }
 .quote blockquote { margin: 0; font-family: var(--font-display); font-style: italic; font-size: clamp(1.25rem, 2.4vw, 1.6rem); line-height: 1.25; }
+.quote-tr { margin: .45rem 0 0; font-size: .92rem; color: var(--ink-soft); font-style: italic; }
+.fp-tr { margin: 0; font-size: max(3.6cqw, 10px); color: #57635b; font-style: italic; line-height: 1.35; }
 .quote figcaption { margin-top: .5rem; font-family: var(--font-mono); font-size: .75rem; letter-spacing: .08em; color: var(--ink-soft); }
 @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .quote { justify-self: start; } }
 .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
@@ -257,17 +264,27 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .patch-note p { margin: 0; flex: 1; min-width: 0; font-size: .92rem; }
 .patch-note .btn { padding: .45rem .9rem; flex: none; }
 .pn-patch, .pa-patch, .lg-patch { fill: color-mix(in srgb, var(--gold) 26%, var(--sheet)); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: 3 2.5; }
-.pn-x, .pa-x { fill: none; stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; }
+.pn-k, .pa-k circle { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); stroke-width: 1.3; }
+.pn-kw, .pa-k path { fill: none; stroke: color-mix(in srgb, var(--green) 65%, #000); stroke-width: 1.4; stroke-linecap: round; opacity: .75; }
 .patch-art { width: 160px; height: auto; justify-self: center; overflow: visible; }
 .pa-thread { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
 .pa-join { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 12; stroke-dashoffset: 12; animation: joinIn .5s ease 1s forwards; }
 @keyframes joinIn { to { stroke-dashoffset: 0; } }
 .pa-patch { transform-box: fill-box; transform-origin: center; animation: patchIn .6s cubic-bezier(.3,1.4,.5,1) .2s both; }
-.pa-x { stroke-dasharray: 30; stroke-dashoffset: 30; animation: joinIn .4s ease .65s forwards; }
+.pa-k { transform-box: fill-box; transform-origin: center; animation: knotTie .7s cubic-bezier(.3,1.45,.5,1) .55s both; }
 .patch-rule { margin: 0; padding: .6rem .75rem; border-radius: 8px; background: var(--paper); font-size: .9rem; }
 .patch-manual { display: grid; gap: .7rem; }
 .patch-banner { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .9rem; padding: .55rem .8rem; border: 1px dashed var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 8%, var(--sheet)); font-size: .9rem; text-align: left; }
 .faden-legend .lg-patch { stroke-width: 1.2; }
+/* Knoten im Faden: grün = gelesen, gold mit Ring = Tagesziel erreicht */
+.faden .knot { transform-box: fill-box; transform-origin: center; animation: knotTie .7s cubic-bezier(.3,1.45,.5,1) both; }
+@keyframes knotTie { 0% { opacity: 0; transform: scale(1.9) rotate(-140deg); } 55% { opacity: 1; transform: scale(.86) rotate(12deg); } 100% { opacity: 1; transform: none; } }
+.faden .knot .kb { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); stroke-width: 1.4; }
+.faden .knot .kw { fill: none; stroke: color-mix(in srgb, var(--green) 65%, #000); stroke-width: 1.7; stroke-linecap: round; opacity: .75; }
+.faden .knot .ks { fill: #fff; opacity: .5; }
+.faden .knot.gold .kb { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 55%, #000); }
+.faden .knot.gold .kw { stroke: color-mix(in srgb, var(--gold) 45%, #000); }
+.faden .knot .kr { fill: none; stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: 3 3.4; opacity: .8; transform-box: fill-box; transform-origin: center; animation: spin 14s linear infinite; }
 /* Französischer Knoten = Tagesziel erreicht */
 .faden .fknot { transform-box: fill-box; transform-origin: center; animation: knotIn .55s cubic-bezier(.3,1.6,.5,1) both; }
 .faden .fknot-ball { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 60%, #000); stroke-width: 1.2; }
@@ -279,6 +296,10 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .faden-head-right { display: inline-flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; justify-content: flex-end; }
 .faden-head-right .link { font-size: .85rem; }
 .faden-hint { margin: .2rem 0 0; font-size: .8rem; color: var(--ink-soft); }
+.faden-legend .lg-kb { fill: var(--green-2); stroke: color-mix(in srgb, var(--green) 75%, #000); stroke-width: 1.2; }
+.faden-legend .lg-kb.gold { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 55%, #000); }
+.faden-legend .lg-kw { fill: none; stroke: color-mix(in srgb, var(--green) 65%, #000); stroke-width: 1.4; stroke-linecap: round; opacity: .75; }
+.faden-legend .lg-kw.gold { stroke: color-mix(in srgb, var(--gold) 45%, #000); }
 .faden-legend .lg-knot { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 60%, #000); stroke-width: .8; }
 .faden-legend .lg-knot-s { fill: none; stroke: color-mix(in srgb, var(--gold) 55%, #000); stroke-width: .9; }
 
@@ -502,7 +523,7 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
 .seg label { cursor: pointer; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg span { display: grid; gap: .1rem; text-align: center; padding: .65rem .3rem; border: 1px solid var(--rule); border-radius: 8px; font-size: .95rem; transition: all .2s; }
+.seg label > span { display: grid; gap: .1rem; text-align: center; padding: .65rem .3rem; border: 1px solid var(--rule); border-radius: 8px; font-size: .95rem; transition: all .2s; }
 .seg small { font-size: .75rem; }
 .seg input:checked + span { border-color: var(--green); background: var(--green-wash); box-shadow: inset 0 0 0 1px var(--green); }
 .seg input:focus-visible + span { outline: 2px solid var(--green); outline-offset: 2px; }
