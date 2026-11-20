@@ -389,7 +389,7 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .word-form .btn { padding: .5rem .9rem; }
 .words { display: flex; flex-wrap: wrap; gap: .4rem; }
 .word { display: inline-flex; align-items: center; gap: .2rem; padding: .2rem .25rem .2rem .6rem; border-radius: 4px; background: var(--green-wash);
-  font-family: var(--font-display); font-size: 1.15rem; line-height: 1.2; animation: rise .4s both; max-width: 100%; overflow-wrap: anywhere; }
+  font-family: var(--font-read); font-size: .98rem; line-height: 1.35; animation: rise .4s both; max-width: 100%; overflow-wrap: anywhere; }
 .word button { border: 0; background: none; color: var(--ink-soft); font-size: .9rem; padding: 0 .3rem; line-height: 1; border-radius: 3px; }
 .word button:hover { color: var(--danger); }
 .words-empty { color: var(--ink-soft); font-size: .9rem; margin: 0; }
