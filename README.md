@@ -10,7 +10,8 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 - **Heute** – Tagesziel für Minuten und Seiten als zwei Lineale, Stempel „Ziel erreicht“, Zitat des Tages
 - **Lesefaden** – jeder Lesetag ist ein Kreuzstich, Folgetage werden zusammengenäht; eine Lücke lässt den Faden reißen. Verpasste Tage der letzten 7 Tage lassen sich flicken: einmal das Tagesziel in Minuten nachlesen
 - **Lesebaum** – wächst mit jedem Lesetag in Folge
-- **Wortschatz** – neue, schöne oder schwierige Wörter aus den Büchern sammeln
+- **Sammelheft** – Wörter sowie wichtige Sätze und Zitate (mit Buch und Seite) sammeln
+- **Tages- und Wochenblick** – Tag im Lesefaden antippen: Minuten, Seiten, Notizen; Woche mit Durchschnitt, Lesetagen und Vergleich zur Vorwoche
 - **Lesetagebuch** – nach jeder Lesezeit ein Satz zum Gelesenen
 - **Regal** – Bücher mit Autor/in, Seiten, Gattung, Startdatum, Bewertung und Notizen; *„liest seit X Tagen“*
 - **Timer** – Countdown oder freies Lesen, danach Seite, Satz und neues Wort eintragen

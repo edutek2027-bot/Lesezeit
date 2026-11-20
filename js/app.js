@@ -25,11 +25,12 @@
   const STATUS_LABEL = { lesen: "Lese ich", gelesen: "Gelesen", wunsch: "Wunsch" };
 
   // ---------- Zustand ----------
-  const defaultState = () => ({ profile: null, books: [], sessions: [], words: [], timer: null, seenBadges: [], tipIndex: 0 });
+  const defaultState = () => ({ profile: null, books: [], sessions: [], words: [], lines: [], timer: null, seenBadges: [], tipIndex: 0 });
   let state;
   try { state = Object.assign(defaultState(), JSON.parse(localStorage.getItem(STORE_KEY)) || {}); }
   catch { state = defaultState(); }
   if (!Array.isArray(state.words)) state.words = [];
+  if (!Array.isArray(state.lines)) state.lines = [];
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* Speicher nicht verfügbar */ } };
 
   const bookById = (id) => state.books.find((b) => b.id === id);
@@ -112,6 +113,7 @@
     { id: "critic", ico: "✍️", name: "Rezensent/in", desc: "Ein Buch bewertet und Notizen geschrieben", test: () => state.books.some((b) => b.rating && b.notes?.trim()) },
     { id: "words10", ico: "🔤", name: "Wortsammler/in", desc: "10 Wörter im Wortschatz", test: () => state.words.length >= 10 },
     { id: "journal5", ico: "✒️", name: "Tagebuch", desc: "5 Einträge mit einem Satz zum Lesen", test: () => state.sessions.filter((x) => x.note).length >= 5 },
+    { id: "lines5", ico: "📜", name: "Zitatesammler/in", desc: "5 wichtige Sätze gesammelt", test: () => state.lines.length >= 5 },
     { id: "patch1", ico: "🪡", name: "Nicht aufgegeben", desc: "Einen gerissenen Faden geflickt", test: () => state.sessions.some((x) => x.patched) },
     { id: "genres", ico: "🎨", name: "Vielleser/in", desc: "Bücher aus 3 Gattungen", test: () => new Set(state.books.filter((b) => b.status !== "wunsch").map((b) => b.genre)).size >= 3 }
   ];
@@ -278,6 +280,12 @@
     const dir = x1 > 350 ? 1 : -1; // Wende am Zeilenende als Bogen nach außen
     return `M${x1} ${y1} C${x1 + dir * 72} ${y1} ${x2 + dir * 72} ${y2} ${x2} ${y2}`;
   }
+  // Französischer Knoten: kleine goldene Kugel mit umwickeltem Faden
+  function frenchKnot(x, y, dl) {
+    return `<g class="fknot" style="animation-delay:${dl}s"><circle class="fknot-ball" cx="${x}" cy="${y}" r="7"/>
+      <path class="fknot-wrap" d="M${x - 3.6} ${y + .6}a3.7 3.7 0 1 1 3.9 3.3a2 2 0 1 1 -1.3 -3.6"/>
+      <circle class="fknot-shine" cx="${x - 2.4}" cy="${y - 2.6}" r="1.5"/></g>`;
+  }
   function renderThread() {
     const mins = minutesByDay(), pgs = pagesByDay(), now = new Date();
     const days = Array.from({ length: F_DAYS }, (_, i) => dateKey(addDays(now, i - (F_DAYS - 1))));
@@ -294,8 +302,6 @@
       if (i < T && read[i] && read[i + 1]) {
         threads += `<path class="thread" pathLength="1" d="${fSeg(i)}" style="animation-delay:${delay(i) + 0.12}s"/><path class="twist" d="${fSeg(i)}" style="animation-delay:${delay(i) + 0.45}s"/>`;
       }
-      // Anfangsknoten einer Kette
-      if (read[i] && (i === 0 || !read[i - 1])) marks += `<circle class="knot" cx="${x}" cy="${y}" r="6" style="animation-delay:${delay(i)}s"/>`;
       // Gerissener Faden nach dem letzten Tag einer Kette
       if (read[i] && i < T && !read[i + 1]) {
         const [nx, ny] = fPos(i + 1);
@@ -309,10 +315,10 @@
         marks += `<rect class="patch" x="${x - 20}" y="${y - 20}" width="40" height="40" rx="5" transform="rotate(${rot(days[i]) / 2} ${x} ${y})" style="animation-delay:${delay(i) - 0.1}s"/>`;
       }
       if (read[i]) {
-        const s = full[i] ? 15 : 12, dl = delay(i);
+        const s = 12, dl = delay(i);
         marks += `<path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x - s} ${y - s} L${x + s} ${y + s}" style="animation-delay:${dl}s"/>
           <path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x + s} ${y - s} L${x - s} ${y + s}" style="animation-delay:${dl + 0.1}s"/>
-          ${full[i] ? `<circle class="gold" cx="${x}" cy="${y}" r="4.5" style="animation-delay:${dl + 0.25}s"/>` : ""}`;
+          ${full[i] ? frenchKnot(x, y, dl + 0.3) : ""}`;
       } else {
         marks += canPatch.has(days[i])
           ? `<g class="patchable" data-patch="${days[i]}" role="button" tabindex="0" aria-label="${d.toLocaleDateString("de-DE", { day: "numeric", month: "long" })} flicken">
@@ -334,7 +340,14 @@
       if (read[T - 1]) extra += `<path class="pending" d="${fSeg(T - 1)}"/>`;
       extra += needle(tx + 8, ty - 8);
     }
-    $("#faden").innerHTML = `<path class="guide" d="${guide}"/>${threads}${extra}${marks}${labels}`;
+    // Unsichtbare Klickflächen für den Tagesblick (flickbare Löcher öffnen direkt das Flicken)
+    let hits = "";
+    for (let i = 0; i < F_DAYS; i++) {
+      if (canPatch.has(days[i])) continue;
+      const [x, y] = fPos(i);
+      hits += `<circle class="hit" cx="${x}" cy="${y + 8}" r="34" data-day="${days[i]}" role="button" tabindex="0" aria-label="${parseKey(days[i]).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })} ansehen"/>`;
+    }
+    $("#faden").innerHTML = `<path class="guide" d="${guide}"/>${threads}${extra}${marks}${labels}${hits}`;
 
     const st = streak(), best = bestStreak();
     $("#fadenStat").textContent = `Faden ${st} T. · Rekord ${best} T.`;
@@ -385,8 +398,106 @@
   $("#patchDays").addEventListener("click", (e) => { const c = e.target.closest("[data-pday]"); if (c) { patchPick = c.dataset.pday; renderPatchDialog(); } });
   $("#patchCancel").addEventListener("click", () => $("#patchDialog").close());
   $("#patchOpen").addEventListener("click", () => openPatch());
-  $("#faden").addEventListener("click", (e) => { const g = e.target.closest("[data-patch]"); if (g) openPatch(g.dataset.patch); });
-  $("#faden").addEventListener("keydown", (e) => { const g = e.target.closest("[data-patch]"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openPatch(g.dataset.patch); } });
+  const fadenAct = (el) => { const g = el.closest("[data-patch]"); if (g) return openPatch(g.dataset.patch); const h = el.closest("[data-day]"); if (h) openDay(h.dataset.day, "day"); };
+  $("#faden").addEventListener("click", (e) => fadenAct(e.target));
+  $("#faden").addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.closest("[data-patch],[data-day]")) { e.preventDefault(); fadenAct(e.target); } });
+  $("#weekOpen").addEventListener("click", () => openDay(dateKey(), "week"));
+
+  // ---------- Tages- und Wochenblick ----------
+  let dvDay = dateKey(), dvMode = "day";
+  const sessionsOn = (k) => state.sessions.filter((x) => x.date === k);
+  const isoWeek = (d) => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); return Math.ceil(((t - new Date(Date.UTC(t.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7); };
+  const mondayOf = (k) => { const d = parseKey(k); return addDays(d, -((d.getDay() + 6) % 7)); };
+  function openDay(k, mode = "day") {
+    dvDay = k > dateKey() ? dateKey() : k; dvMode = mode;
+    renderDayView();
+    if (!$("#dayDialog").open) $("#dayDialog").showModal();
+  }
+  function renderDayView() {
+    $$("#dayMode button").forEach((b) => b.classList.toggle("active", b.dataset.dmode === dvMode));
+    if (dvMode === "day") renderDayBody(); else renderWeekBody();
+  }
+  function renderDayBody() {
+    const k = dvDay, d = parseKey(k), ss = sessionsOn(k);
+    const m = ss.reduce((a, x) => a + x.minutes, 0), pg = ss.reduce((a, x) => a + (x.pages || 0), 0);
+    const isToday = k === dateKey(), done = goalDone(m, pg), patched = ss.some((x) => x.patched);
+    $("#dayKicker").textContent = isToday ? "Heute" : `KW ${isoWeek(d)}`;
+    $("#dayTitle").textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    $("#dayNext").disabled = isToday;
+    const words = state.words.filter((w) => w.date === k), lines = state.lines.filter((l) => l.date === k);
+    const status = !m ? `<span class="day-status">${isToday ? "Noch kein Stich" : "Nicht gelesen"}</span>`
+      : done ? `<span class="day-status gold">● Ziel erreicht${patched ? " · geflickt" : ""}</span>`
+      : `<span class="day-status ok">✕ Gelesen${patched ? " · geflickt" : ""}</span>`;
+    const canP = patchableDays().includes(k);
+    $("#dayBody").innerHTML = `${status}
+      ${m ? `<div>
+        <div class="ruler-block"><div class="ruler-head"><span>Minuten</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
+        <div class="ruler-block"><div class="ruler-head"><span>Seiten</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
+      </div>
+      <ul class="day-sessions">${ss.map((x) => `<li><strong>${esc(bookById(x.bookId)?.title || "Freies Lesen")}</strong> <span class="muted">· ${x.minutes} Min.${x.pages ? ` · ${x.pages} S.` : ""}${x.patched ? ` · nachgelesen am ${fmtDate(x.readOn)}` : ""}</span>${x.note ? `<p class="entry-note">„${esc(x.note)}“</p>` : ""}</li>`).join("")}</ul>`
+      : `<p class="day-empty">${isToday ? "Heute fehlt noch ein Stich." : canP ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen."}</p>`}
+      ${words.length ? `<div><p class="kicker" style="margin-bottom:.4rem">Neue Wörter</p><div class="words">${words.map((w) => `<span class="word">${esc(w.w)}</span>`).join("")}</div></div>` : ""}
+      ${lines.length ? `<div class="lines">${lines.map((l) => `<figure class="line"><blockquote>„${esc(l.text)}“</blockquote><figcaption>${esc(bookById(l.bookId)?.title || "")}${l.page ? ` · S. ${l.page}` : ""}</figcaption></figure>`).join("")}</div>` : ""}
+      ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">Jetzt lesen</button></div>` : ""}
+      ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">Faden flicken</button></div>` : ""}`;
+  }
+  function renderWeekBody() {
+    const mon = mondayOf(dvDay), todayK = dateKey();
+    const days = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i)));
+    const mins = minutesByDay(), pgs = pagesByDay();
+    const past = days.filter((k) => k <= todayK), n = past.length || 1;
+    const sumM = past.reduce((a, k) => a + (mins[k] || 0), 0), sumP = past.reduce((a, k) => a + (pgs[k] || 0), 0);
+    const readDays = past.filter((k) => mins[k]).length, goals = past.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length;
+    const prev = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i - 7))).reduce((a, k) => a + (mins[k] || 0), 0);
+    const prevAvg = prev / 7, avg = sumM / n;
+    const best = past.reduce((b, k) => ((mins[k] || 0) > (mins[b] || 0) ? k : b), past[0]);
+    const sun = addDays(mon, 6);
+    $("#dayKicker").textContent = `KW ${isoWeek(mon)}`;
+    $("#dayTitle").textContent = `${mon.getDate()}.${mon.getMonth() !== sun.getMonth() ? ` ${mon.toLocaleDateString("de-DE", { month: "short" })}` : ""} – ${sun.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}`;
+    $("#dayNext").disabled = days.includes(todayK);
+    const fmt1 = (v) => v.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+    const max = Math.max(goalMin(), ...days.map((k) => mins[k] || 0));
+    const trend = prev ? Math.round(((avg - prevAvg) / prevAvg) * 100) : null;
+    const notes = [];
+    if (readDays) notes.push(`Stärkster Tag: ${parseKey(best).toLocaleDateString("de-DE", { weekday: "long" })} mit ${mins[best]} Minuten.`);
+    if (trend !== null) notes.push(trend >= 0 ? `Ø ${trend} % mehr Lesezeit pro Tag als in der Vorwoche.` : `Ø ${-trend} % weniger Lesezeit pro Tag als in der Vorwoche.`);
+    else if (readDays) notes.push("In der Vorwoche gab es noch keine Lesezeit zum Vergleichen.");
+    if (past.length < 7) notes.push(`Die Woche läuft noch: Durchschnitt über ${plural(past.length, "Tag", "Tage")}.`);
+    if (!readDays) notes.push("In dieser Woche wurde noch nicht gelesen.");
+    $("#dayBody").innerHTML = `
+      <dl class="wk-tiles">
+        <div class="wk-tile"><dt>Ø Minuten/Tag</dt><dd>${fmt1(avg)}</dd></div>
+        <div class="wk-tile"><dt>Ø Seiten/Tag</dt><dd>${fmt1(sumP / n)}</dd></div>
+        <div class="wk-tile"><dt>Lesetage</dt><dd>${readDays}/${past.length}</dd></div>
+        <div class="wk-tile"><dt>Ziel erreicht</dt><dd>${goals}×</dd></div>
+      </dl>
+      <div class="wk-chart">
+        <div class="wk-goal" data-ratio="${goalMin() / max}"><span>Ziel ${goalMin()}′</span></div>
+        ${days.map((k, i) => { const v = mins[k] || 0, fut = k > todayK; return `<button type="button" class="wk-bar ${k === dvDay ? "sel" : ""} ${fut ? "future" : ""}" data-wday="${k}" ${fut ? "disabled" : ""} aria-label="${parseKey(k).toLocaleDateString("de-DE", { weekday: "long" })}: ${v} Minuten">
+          <div class="col" data-h="${fut ? 100 : (v / max) * 100}">${v ? `<b>${v}</b>` : ""}</div>
+          <span>${goalDone(v, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD[parseKey(k).getDay()]}</span></button>`; }).join("")}
+      </div>
+      <ul class="wk-notes">${notes.map((t) => `<li>${t}</li>`).join("")}</ul>
+      <p class="muted" style="margin:0;font-size:.82rem">Gesamt diese Woche: ${sumM} Minuten · ${sumP} Seiten. Tippe auf einen Balken für den Tag.</p>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $$("#dayBody .wk-bar .col").forEach((c) => (c.style.height = c.dataset.h + "%"));
+      // Ziel-Linie genau auf Höhe der Balkenskala setzen
+      const chart = $("#dayBody .wk-chart"), bar = chart.querySelector(".wk-bar"), lbl = bar.querySelector("span");
+      const labelH = bar.getBoundingClientRect().bottom - lbl.getBoundingClientRect().top + 4;
+      const area = bar.clientHeight - labelH;
+      const g = chart.querySelector(".wk-goal"); g.style.bottom = `${labelH + area * +g.dataset.ratio}px`;
+    }));
+  }
+  $("#dayMode").addEventListener("click", (e) => { const b = e.target.closest("[data-dmode]"); if (b) { dvMode = b.dataset.dmode; renderDayView(); } });
+  $("#dayPrev").addEventListener("click", () => { dvDay = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? -1 : -7)); renderDayView(); });
+  $("#dayNext").addEventListener("click", () => { const n = dateKey(addDays(parseKey(dvDay), dvMode === "day" ? 1 : 7)); dvDay = n > dateKey() ? dateKey() : n; renderDayView(); });
+  $("#dayClose").addEventListener("click", () => $("#dayDialog").close());
+  $("#dayBody").addEventListener("click", (e) => {
+    const w = e.target.closest("[data-wday]"); if (w) { dvDay = w.dataset.wday; dvMode = "day"; renderDayView(); return; }
+    const a = e.target.closest("[data-dv]"); if (!a) return;
+    $("#dayDialog").close();
+    if (a.dataset.dv === "read") go("timer"); else openPatch(dvDay);
+  });
   $("#patchManual").addEventListener("click", () => {
     $("#patchManualBox").hidden = false; $("#patchManual").hidden = true;
     $("#patchMin").value = goalMin(); $("#patchMin").min = goalMin();
@@ -409,9 +520,48 @@
   });
   $("#patchBannerCancel").addEventListener("click", () => { patchPending = null; updateClock(); });
 
+  let collectMode = "words";
+  function renderLines() {
+    const books = state.books.filter((b) => b.status !== "wunsch");
+    const sel = $("#lineBook"), v = sel.value;
+    sel.innerHTML = `<option value="">Buch wählen …</option>` + books.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("");
+    if (v && books.some((b) => b.id === v)) sel.value = v; else if (books.find((b) => b.status === "lesen")) sel.value = books.find((b) => b.status === "lesen").id;
+    const list = [...state.lines].sort((a, b) => b.ts - a.ts);
+    $("#lines").innerHTML = list.length
+      ? list.slice(0, 6).map((l, i) => `<figure class="line" style="animation-delay:${i * 0.04}s"><blockquote>„${esc(l.text)}“</blockquote>
+          <figcaption>${esc(bookById(l.bookId)?.title || "ohne Buch")}${l.page ? ` · S. ${l.page}` : ""} · ${fmtDate(l.date)}</figcaption>
+          <button type="button" data-delline="${l.id}" aria-label="Satz entfernen">×</button></figure>`).join("")
+      : `<p class="words-empty">Halte Sätze fest, die dich berühren, überraschen oder zum Nachdenken bringen. Mit Seitenzahl findest du sie wieder.</p>`;
+  }
+  function renderCollectCount() {
+    const w = state.words.length, l = state.lines.length;
+    $("#wordCount").textContent = [w ? `${w} ${w === 1 ? "Wort" : "Wörter"}` : "", l ? `${l} ${l === 1 ? "Satz" : "Sätze"}` : ""].filter(Boolean).join(" · ");
+  }
+  $("#collectMode").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cmode]"); if (!b) return;
+    collectMode = b.dataset.cmode;
+    $$("#collectMode button").forEach((x) => x.classList.toggle("active", x === b));
+    $("#collectWords").hidden = collectMode !== "words"; $("#collectLines").hidden = collectMode !== "lines";
+    if (collectMode === "lines") renderLines();
+  });
+  $("#lineForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = $("#lineInput").value.trim().replace(/^[„"“»«]+|[“"”«»]+$/g, "").trim();
+    if (!text) { $("#lineInput").focus(); return; }
+    const page = parseInt($("#linePage").value) || null;
+    state.lines.push({ id: uid(), text, bookId: $("#lineBook").value || null, page, date: dateKey(), ts: Date.now() });
+    save(); $("#lineInput").value = ""; $("#linePage").value = "";
+    renderLines(); renderCollectCount(); checkBadges(); toast("📜 Satz gespeichert.");
+  });
+  $("#lines").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-delline]"); if (!b) return;
+    state.lines = state.lines.filter((l) => l.id !== b.dataset.delline); save(); renderLines(); renderCollectCount();
+  });
+
   function renderWords() {
     const list = [...state.words].sort((a, b) => b.ts - a.ts);
-    $("#wordCount").textContent = list.length ? `${list.length} ${list.length === 1 ? "Wort" : "Wörter"}` : "";
+    renderCollectCount();
+    if (collectMode === "lines") renderLines();
     $("#words").innerHTML = list.length
       ? list.slice(0, 18).map((w, i) => `<span class="word" style="animation-delay:${i * 0.03}s" title="${esc(fmtDate(w.date))}${bookById(w.bookId) ? " · " + esc(bookById(w.bookId).title) : ""}">${esc(w.w)}<button type="button" data-delword="${w.id}" aria-label="${esc(w.w)} entfernen">×</button></span>`).join("")
       : `<p class="words-empty">Sammle Wörter, die neu, schön oder schwierig sind. Wer sie aufschreibt, behält sie.</p>`;

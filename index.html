@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=11">
+  <link rel="stylesheet" href="css/styles.css?v=12">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -107,7 +107,7 @@
         </article>
 
         <article class="card wide faden-card">
-          <div class="card-head"><h2>Lesefaden</h2><span class="kicker" id="fadenStat"></span></div>
+          <div class="card-head"><h2>Lesefaden</h2><span class="faden-head-right"><span class="kicker" id="fadenStat"></span><button class="link" type="button" id="weekOpen">Wochenblick →</button></span></div>
           <p class="faden-sub" id="fadenSub"></p>
           <div class="patch-note" id="patchNote" hidden>
             <svg viewBox="0 0 40 40" aria-hidden="true"><rect class="pn-patch" x="6" y="6" width="28" height="28" rx="4" transform="rotate(-8 20 20)"/><path class="pn-x" d="M13 13L27 27M27 13L13 27"/></svg>
@@ -115,22 +115,41 @@
             <button class="btn" id="patchOpen">Faden flicken</button>
           </div>
           <svg class="faden" id="faden" viewBox="-14 -10 728 352" role="img" aria-label="Lesefaden der letzten vier Wochen"></svg>
+          <p class="faden-hint">Tippe auf einen Tag für den Tagesblick.</p>
           <p class="faden-legend">
-            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x full" d="M4 4L16 16M16 4L4 16"/><circle class="lg-gold" cx="10" cy="10" r="2.6"/></svg>Ziel erreicht</span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x" d="M5 5L15 15M15 5L5 15"/></svg>gelesen</span>
+            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x" d="M5 5L15 15M15 5L5 15"/><circle class="lg-knot" cx="10" cy="10" r="4"/><path class="lg-knot-s" d="M8.2 10a1.8 1.8 0 1 1 1.8 1.8"/></svg>Ziel erreicht (Knoten)</span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><rect class="lg-patch" x="2.5" y="2.5" width="15" height="15" rx="2.5"/><path class="lg-x" d="M6 6L14 14M14 6L6 14"/></svg>geflickt</span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg>Faden gerissen</span>
           </p>
         </article>
 
         <article class="card words-card">
-          <div class="card-head"><h2>Wortschatz</h2><span class="kicker" id="wordCount"></span></div>
-          <form class="word-form" id="wordForm">
-            <label class="sr" for="wordInput">Neues Wort</label>
-            <input id="wordInput" maxlength="40" autocomplete="off" placeholder="Neues Wort aus dem Buch …">
-            <button class="btn primary" type="submit" aria-label="Wort speichern">＋</button>
-          </form>
-          <div class="words" id="words"></div>
+          <div class="card-head"><h2>Sammelheft</h2><span class="kicker" id="wordCount"></span></div>
+          <div class="seg-mini collect-mode" id="collectMode" role="tablist" aria-label="Sammlung">
+            <button class="active" data-cmode="words" role="tab">Wörter</button>
+            <button data-cmode="lines" role="tab">Sätze &amp; Zitate</button>
+          </div>
+          <div id="collectWords">
+            <form class="word-form" id="wordForm">
+              <label class="sr" for="wordInput">Neues Wort</label>
+              <input id="wordInput" maxlength="40" autocomplete="off" placeholder="Neues Wort aus dem Buch …">
+              <button class="btn primary" type="submit" aria-label="Wort speichern">＋</button>
+            </form>
+            <div class="words" id="words"></div>
+          </div>
+          <div id="collectLines" hidden>
+            <form class="line-form" id="lineForm">
+              <label class="sr" for="lineInput">Wichtiger Satz oder Zitat</label>
+              <textarea id="lineInput" rows="2" maxlength="400" placeholder="Ein Satz, den du behalten möchtest …"></textarea>
+              <div class="line-meta">
+                <label class="sr" for="lineBook">Buch</label><select id="lineBook"></select>
+                <label class="sr" for="linePage">Seite</label><input id="linePage" type="number" min="1" placeholder="S.">
+                <button class="btn primary" type="submit">Speichern</button>
+              </div>
+            </form>
+            <div class="lines" id="lines"></div>
+          </div>
         </article>
 
         <article class="card wide">
@@ -381,6 +400,23 @@
     </form>
   </dialog>
 
+  <!-- Tages- und Wochenblick -->
+  <dialog id="dayDialog" class="modal day-modal">
+    <div class="form">
+      <div class="day-head">
+        <button class="icon-btn" type="button" id="dayPrev" aria-label="Zurück">‹</button>
+        <div class="day-title"><p class="kicker" id="dayKicker"></p><h2 id="dayTitle"></h2></div>
+        <button class="icon-btn" type="button" id="dayNext" aria-label="Weiter">›</button>
+      </div>
+      <div class="seg-mini day-mode" id="dayMode" role="tablist" aria-label="Ansicht">
+        <button data-dmode="day" class="active" role="tab">Tag</button>
+        <button data-dmode="week" role="tab">Woche</button>
+      </div>
+      <div id="dayBody" class="day-body"></div>
+      <div class="modal-actions"><span class="spacer"></span><button type="button" class="btn" id="dayClose">Schließen</button></div>
+    </div>
+  </dialog>
+
   <!-- Bestätigung -->
   <dialog id="confirmDialog" class="modal small">
     <form method="dialog" class="form">
@@ -397,7 +433,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=11"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/data.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>
