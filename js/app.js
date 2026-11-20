@@ -737,7 +737,7 @@
     const cv = $("#confetti"), ctx = cv.getContext("2d");
     cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
     ctx.scale(devicePixelRatio, devicePixelRatio);
-    const cols = ["#1f5c42", "#3d8a63", "#9fcfb1", "#b48c25", "#f4f2e9"];
+    const cols = ["#2c7a55", "#4f9e77", "#9fcfb1", "#b48c25", "#f4f2e9"];
     const parts = Array.from({ length: 140 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.35,
       vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 13 - 4, r: Math.random() * 6 + 4,
@@ -778,7 +778,7 @@
         setTimeout(() => { intro.remove(); resolve(); }, 800);
       };
       intro.addEventListener("click", finish);
-      setTimeout(finish, 3700);
+      setTimeout(finish, 9100); // genug Zeit, um Datum und Zitat in Ruhe zu lesen
     });
   }
 
