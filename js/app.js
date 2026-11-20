@@ -191,6 +191,39 @@
     ({ uebersicht: renderDashboard, regal: renderShelf, timer: renderTimerView, entdecken: renderDiscover, erfolge: renderBadges }[view] || renderDashboard)();
   }
 
+  // „Heute“-Karte: mit ‹ › zu gestern und früheren Tagen blättern (0 = heute, -1 = gestern …)
+  let goalOffset = 0;
+  function renderGoal() {
+    const d = addDays(new Date(), goalOffset), k = dateKey(d), isToday = goalOffset === 0;
+    const goal = goalMin(), gp = goalPg();
+    const mn = minutesByDay()[k] || 0, pg = pagesByDay()[k] || 0;
+    const rMin = Math.min(1, mn / goal), rPg = Math.min(1, pg / gp);
+    $("#goalTitle").textContent = isToday ? t("Heute") : goalOffset === -1 ? t("Gestern") : fd(d, { weekday: "short", day: "numeric", month: "short" });
+    $("#goalNext").disabled = isToday;
+    $("#goalPrev").disabled = goalOffset <= -60;
+    const fillMin = $("#rulerMin > i"), fillPg = $("#rulerPg > i");
+    fillMin.style.width = "0"; fillPg.style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => { fillMin.style.width = rMin * 100 + "%"; fillPg.style.width = rPg * 100 + "%"; }));
+    countUp($("#goalMinutes"), mn);
+    countUp($("#goalPages"), pg);
+    $("#goalOf").textContent = goal;
+    $("#goalPagesOf").textContent = gp;
+    $("#goalMinutes").parentElement.classList.toggle("ok", rMin >= 1);
+    $("#goalPages").parentElement.classList.toggle("ok", rPg >= 1);
+    const both = rMin >= 1 && rPg >= 1;
+    $("#goalPct").textContent = both ? t("geschafft") : `${Math.round(((rMin + rPg) / 2) * 100)} %`;
+    $("#goalStamp").hidden = !both;
+    const left = [];
+    if (rPg < 1) left.push(tn(gp - pg, "{n} Seite", "{n} Seiten"));
+    if (rMin < 1) left.push(tn(goal - mn, "{n} Minute", "{n} Minuten"));
+    const list = left.join(" " + t("und") + " ");
+    $("#goalHint").textContent = isToday
+      ? (both ? t("Heute ist dein Stempel sicher.") : !mn && !pg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list }))
+      : (both ? t("An diesem Tag hast du dein Ziel erreicht.") : !mn ? t(patchableDays().includes(k) ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.") : t("Es fehlten {list}.", { list }));
+  }
+  $("#goalPrev").addEventListener("click", () => { goalOffset = Math.max(-60, goalOffset - 1); renderGoal(); });
+  $("#goalNext").addEventListener("click", () => { goalOffset = Math.min(0, goalOffset + 1); renderGoal(); });
+
   function renderDashboard() {
     const p = state.profile;
     const h = new Date().getHours();
@@ -204,27 +237,7 @@
     $("#quoteTr").hidden = qTr === q.text;
     $("#quoteTr").textContent = qTr === q.text ? "" : quoted(qTr);
 
-    // Tagesziel als zwei Lineale: Minuten und Seiten
-    const goal = goalMin(), gp = goalPg();
-    const today = minutesByDay()[dateKey()] || 0;
-    const todayPg = pagesByDay()[dateKey()] || 0;
-    const rMin = Math.min(1, today / goal), rPg = Math.min(1, todayPg / gp);
-    const fillMin = $("#rulerMin > i"), fillPg = $("#rulerPg > i");
-    fillMin.style.width = "0"; fillPg.style.width = "0";
-    requestAnimationFrame(() => requestAnimationFrame(() => { fillMin.style.width = rMin * 100 + "%"; fillPg.style.width = rPg * 100 + "%"; }));
-    countUp($("#goalMinutes"), today);
-    countUp($("#goalPages"), todayPg);
-    $("#goalOf").textContent = goal;
-    $("#goalPagesOf").textContent = gp;
-    $("#goalMinutes").parentElement.classList.toggle("ok", rMin >= 1);
-    $("#goalPages").parentElement.classList.toggle("ok", rPg >= 1);
-    const both = rMin >= 1 && rPg >= 1;
-    $("#goalPct").textContent = both ? t("geschafft") : `${Math.round(((rMin + rPg) / 2) * 100)} %`;
-    $("#goalStamp").hidden = !both;
-    const left = [];
-    if (rMin < 1) left.push(tn(goal - today, "{n} Minute", "{n} Minuten"));
-    if (rPg < 1) left.push(tn(gp - todayPg, "{n} Seite", "{n} Seiten"));
-    $("#goalHint").textContent = both ? t("Heute ist dein Stempel sicher.") : !today && !todayPg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list: left.join(" " + t("und") + " ") });
+    renderGoal();
 
     // Lesebaum
     const st = streak();
@@ -261,19 +274,7 @@
       : `<div class="empty"><span class="em">${t("Gerade kein Buch auf dem Nachttisch.")}</span><button class="link" data-nav="entdecken">${t("Empfehlungen ansehen →")}</button></div>`;
     animateProgress($("#currentList"));
 
-    // Woche
-    const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i - 6));
-    const pgMode = chartMode === "pg";
-    const src = pgMode ? pagesByDay() : m;
-    const vals = days.map((d) => src[dateKey(d)] || 0);
-    const max = Math.max(pgMode ? gp : goal, ...vals);
-    $("#weekChart").classList.toggle("pg", pgMode);
-    $("#weekChart").innerHTML = days.map((d, i) => `
-      <div class="bar ${i === 6 ? "today" : ""}" title="${pgMode ? tn(vals[i], "{n} Seite", "{n} Seiten") : tn(vals[i], "{n} Minute", "{n} Minuten")}">
-        <div class="col" data-h="${(vals[i] / max) * 100}">${vals[i] ? `<b>${vals[i]}</b>` : ""}</div>
-        <span>${i === 6 ? t("Heute") : WD(d)}</span>
-      </div>`).join("");
-    requestAnimationFrame(() => requestAnimationFrame(() => $$("#weekChart .col").forEach((c) => (c.style.height = c.dataset.h + "%"))));
+    renderChart();
 
     showTip(false);
   }
@@ -466,7 +467,7 @@
     if (dvMode === "day") renderDayBody(); else renderWeekBody();
   }
   // „· 25 Min. · 18 S. · nachgelesen am 20. Nov.“
-  const sessionMeta = (x) => "· " + t("{n} Min.", { n: x.minutes }) + (x.pages ? " · " + t("{n} S.", { n: x.pages }) : "") + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
+  const sessionMeta = (x) => "· " + (x.pages ? t("{n} S.", { n: x.pages }) + " · " : "") + t("{n} Min.", { n: x.minutes }) + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
   function renderDayBody() {
     const k = dvDay, d = parseKey(k), ss = sessionsOn(k);
     const m = ss.reduce((a, x) => a + x.minutes, 0), pg = ss.reduce((a, x) => a + (x.pages || 0), 0);
@@ -482,8 +483,8 @@
     const canP = patchableDays().includes(k);
     $("#dayBody").innerHTML = `${status}
       ${m ? `<div>
-        <div class="ruler-block"><div class="ruler-head"><span>${t("Minuten")}</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
         <div class="ruler-block"><div class="ruler-head"><span>${t("Seiten")}</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
+        <div class="ruler-block"><div class="ruler-head"><span>${t("Minuten")}</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
       </div>
       <ul class="day-sessions">${ss.map((x) => `<li><strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong> <span class="muted">${sessionMeta(x)}</span>${x.note ? `<p class="entry-note">${esc(quoted(x.note))}</p>` : ""}</li>`).join("")}</ul>`
       : `<p class="day-empty">${t(isToday ? "Heute fehlt noch ein Knoten." : canP ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.")}</p>`}
@@ -492,7 +493,7 @@
       ${isToday && !done ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="read">${t("Jetzt lesen")}</button></div>` : ""}
       ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}`;
   }
-  let wkMode = "min"; // Wochenblick: Minuten oder Seiten
+  let wkMode = "pg"; // Wochenblick: Seiten (Standard) oder Minuten
   function renderWeekBody() {
     const mon = mondayOf(dvDay), todayK = dateKey();
     const days = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i)));
@@ -523,14 +524,14 @@
     if (!readDays) notes.push(t("In dieser Woche wurde noch nicht gelesen."));
     $("#dayBody").innerHTML = `
       <dl class="wk-tiles">
-        <div class="wk-tile"><dt>${t("Ø Minuten/Tag")}</dt><dd>${fmt1(sumM / n)}</dd></div>
         <div class="wk-tile"><dt>${t("Ø Seiten/Tag")}</dt><dd>${fmt1(sumP / n)}</dd></div>
+        <div class="wk-tile"><dt>${t("Ø Minuten/Tag")}</dt><dd>${fmt1(sumM / n)}</dd></div>
         <div class="wk-tile"><dt>${t("Lesetage")}</dt><dd>${readDays}/${past.length}</dd></div>
         <div class="wk-tile"><dt>${t("Ziel erreicht")}</dt><dd>${goals}×</dd></div>
       </dl>
       <div class="seg-mini wk-mode" id="wkMode" role="tablist" aria-label="${t("Diagramm zeigt")}">
-        <button type="button" data-wkm="min" class="${pgMode ? "" : "active"}" role="tab">${t("Minuten")}</button>
         <button type="button" data-wkm="pg" class="${pgMode ? "active" : ""}" role="tab">${t("Seiten")}</button>
+        <button type="button" data-wkm="min" class="${pgMode ? "" : "active"}" role="tab">${t("Minuten")}</button>
       </div>
       <div class="wk-chart ${pgMode ? "pg" : ""}">
         <div class="wk-goal" data-ratio="${goalV / max}"><span>${pgMode ? t("Ziel {n} S.", { n: goalV }) : t("Ziel {n}′", { n: goalV })}</span></div>
@@ -539,7 +540,7 @@
           <span>${goalDone(mins[k] || 0, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD(parseKey(k))}</span></button>`; }).join("")}
       </div>
       <ul class="wk-notes">${notes.map((t) => `<li>${t}</li>`).join("")}</ul>
-      <p class="muted" style="margin:0;font-size:.82rem">${t("Gesamt diese Woche: {m} Minuten · {p} Seiten. Tippe auf einen Balken für den Tag.", { m: sumM, p: sumP })}</p>`;
+      <p class="muted" style="margin:0;font-size:.82rem">${t("Gesamt diese Woche: {p} Seiten · {m} Minuten. Tippe auf einen Balken für den Tag.", { m: sumM, p: sumP })}</p>`;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       $$("#dayBody .wk-bar .col").forEach((c) => (c.style.height = c.dataset.h + "%"));
       // Ziel-Linie genau auf Höhe der Balkenskala setzen
@@ -644,12 +645,42 @@
     state.words = state.words.filter((w) => w.id !== b.dataset.delword); save(); renderWords(); $("#statWords").textContent = state.words.length;
   });
 
-  let chartMode = "min";
+  let chartMode = "pg", chartSel = null;
+  function renderChart() {
+    const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i - 6));
+    const keys = days.map((d) => dateKey(d));
+    if (!keys.includes(chartSel)) chartSel = keys[6];
+    const pgMode = chartMode === "pg", mins = minutesByDay(), pgs = pagesByDay();
+    const src = pgMode ? pgs : mins;
+    const vals = keys.map((k) => src[k] || 0);
+    const max = Math.max(pgMode ? goalPg() : goalMin(), ...vals);
+    $("#weekChart").classList.toggle("pg", pgMode);
+    $("#weekChart").innerHTML = days.map((d, i) => `
+      <button type="button" class="bar ${keys[i] === chartSel ? "sel" : ""}" data-cday="${keys[i]}" aria-label="${fd(d, { weekday: "long", day: "numeric", month: "long" })}: ${tn(pgs[keys[i]] || 0, "{n} Seite", "{n} Seiten")}, ${tn(mins[keys[i]] || 0, "{n} Minute", "{n} Minuten")}">
+        <div class="col" data-h="${(vals[i] / max) * 100}">${vals[i] ? `<b>${vals[i]}</b>` : ""}</div>
+        <span>${i === 6 ? t("Heute") : WD(d)}</span>
+      </button>`).join("");
+    requestAnimationFrame(() => requestAnimationFrame(() => $$("#weekChart .col").forEach((c) => (c.style.height = c.dataset.h + "%"))));
+    renderChartInfo();
+  }
+  function renderChartInfo() {
+    const k = chartSel, d = parseKey(k), pg = pagesByDay()[k] || 0, mn = minutesByDay()[k] || 0;
+    const label = k === dateKey() ? t("Heute") : fd(d, { weekday: "long", day: "numeric", month: "long" });
+    $("#chartInfo").innerHTML = `<span><strong>${esc(label)}</strong> · <b class="ci-pg">${tn(pg, "{n} Seite", "{n} Seiten")}</b> · ${tn(mn, "{n} Minute", "{n} Minuten")}</span>
+      <button type="button" class="link" data-open-day="${k}">${t("Tagesblick →")}</button>`;
+  }
+  $("#weekChart").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cday]"); if (!b) return;
+    chartSel = b.dataset.cday;
+    $$("#weekChart .bar").forEach((x) => x.classList.toggle("sel", x === b));
+    renderChartInfo();
+  });
+  $("#chartInfo").addEventListener("click", (e) => { const b = e.target.closest("[data-open-day]"); if (b) openDay(b.dataset.openDay, "day"); });
   $("#chartMode").addEventListener("click", (e) => {
     const b = e.target.closest("[data-mode]"); if (!b) return;
     chartMode = b.dataset.mode;
     $$("#chartMode button").forEach((x) => x.classList.toggle("active", x === b));
-    renderDashboard();
+    renderChart();
   });
 
   function allTips() { return [...D.tips[group()], ...D.tips.alle]; }

@@ -399,13 +399,25 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 
 /* ---------- Wochen-Diagramm ---------- */
 .bars { display: flex; align-items: flex-end; gap: .55rem; height: 170px; padding-top: 1.3rem; border-bottom: 1px solid var(--ink); }
-.bar { flex: 1; display: grid; grid-template-rows: 1fr auto; height: 100%; text-align: center; gap: .3rem; }
+.bar { flex: 1; display: grid; grid-template-rows: 1fr auto; height: 100%; text-align: center; gap: .3rem; border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; border-radius: 4px; }
+.bar:hover .col { filter: brightness(1.08); }
 .bar .col { align-self: end; justify-self: center; width: min(26px, 100%); background: color-mix(in srgb, var(--green) 55%, var(--sheet)); height: 0; position: relative; transition: height 1s cubic-bezier(.2,.8,.2,1); min-height: 2px; }
-.bar.today .col { background: var(--green); }
+.bar.sel .col { background: var(--green); }
+.bar.sel span { color: var(--ink); font-weight: 600; }
 .bar .col b { position: absolute; top: -1.25rem; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: .68rem; font-weight: 500; color: var(--ink-soft); }
 .bar span { font-family: var(--font-mono); font-size: .66rem; color: var(--ink-soft); }
 .bars.pg .bar .col { background: color-mix(in srgb, var(--gold) 60%, var(--sheet)); }
-.bars.pg .bar.today .col { background: var(--gold); }
+.bars.pg .bar.sel .col { background: var(--gold); }
+.chart-info { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; flex-wrap: wrap; margin-top: .7rem; font-size: .9rem; color: var(--ink-soft); animation: rise .3s both; }
+.chart-info strong { color: var(--ink); }
+.chart-info .ci-pg { color: color-mix(in srgb, var(--gold) 75%, var(--ink)); }
+.chart-info .link { font-size: .85rem; }
+.goal-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .45rem; }
+.goal-head h2 { text-align: center; font-size: 1.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal-head .kicker { min-width: 3.4rem; text-align: right; }
+.nav-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--rule); background: var(--sheet); font-size: 1.15rem; line-height: 1; display: grid; place-items: center; color: var(--ink); transition: background .2s; }
+.nav-btn:hover:not(:disabled) { background: var(--paper-2); }
+.nav-btn:disabled { opacity: .3; cursor: not-allowed; }
 .seg-mini { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; padding: 2px; }
 .seg-mini button { border: 0; background: none; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; padding: .25rem .5rem; border-radius: 4px; color: var(--ink-soft); }
 .seg-mini button.active { background: var(--ink); color: var(--paper); }
