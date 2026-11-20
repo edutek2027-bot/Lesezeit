@@ -1077,7 +1077,7 @@
     const len = tn(minutes, "{n} Minute", "{n} Minuten");
     $("#finishText").textContent = (b ? t("Du hast {len} in „{book}“ gelesen.", { len, book: b.title }) : t("Du hast {len} gelesen.", { len }))
       + (patchOk ? " " + t("Damit flickst du {day}.", { day: longDay(tm.patchFor) }) : tm.patchFor ? " " + t("Zum Flicken fehlten {n} Minuten, die Zeit zählt für heute.", { n: goalMin() - minutes }) : "");
-    $("#finishStampMin").textContent = `${minutes}′`;
+    $("#finishStampMin").textContent = t("{n} Min.", { n: minutes });
     $("#finishNote").value = ""; $("#finishWord").value = "";
     finishBook = b; finishMode = b ? "page" : "count";
     $("#finishPage").value = "";
