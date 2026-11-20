@@ -8,7 +8,7 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 
 - **Intro** – der Lesepass mit Leinen-Einband und Goldprägung schlägt sich auf; innen stehen Datum und Zitat des Tages
 - **Heute** – Tagesziel für Minuten und Seiten als zwei Lineale, Stempel „Ziel erreicht“, Zitat des Tages
-- **Lesepass** – Monatsblatt, jeder Lesetag bekommt einen Stempel (voll = Tagesziel geschafft)
+- **Lesefaden** – jeder Lesetag ist ein Kreuzstich, Folgetage werden zusammengenäht; eine Lücke lässt den Faden reißen
 - **Lesebaum** – wächst mit jedem Lesetag in Folge
 - **Wortschatz** – neue, schöne oder schwierige Wörter aus den Büchern sammeln
 - **Lesetagebuch** – nach jeder Lesezeit ein Satz zum Gelesenen

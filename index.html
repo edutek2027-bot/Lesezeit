@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=9">
+  <link rel="stylesheet" href="css/styles.css?v=10">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -92,7 +92,6 @@
           <div class="card-head"><h2>Lesebaum</h2><span class="kicker" id="treeStage"></span></div>
           <svg class="tree" id="tree" viewBox="0 0 140 110" role="img" aria-label="Lesebaum"></svg>
           <p class="big"><strong id="streakDays">0</strong> <span id="streakWord">Tage in Folge</span></p>
-          <div class="week-dots" id="weekDots"></div>
         </article>
 
         <article class="card stats-card">
@@ -107,11 +106,15 @@
           </dl>
         </article>
 
-        <article class="card wide pass-card">
-          <div class="card-head"><h2>Lesepass</h2><span class="kicker" id="passMonth"></span></div>
-          <div class="pass-week" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-          <div class="pass" id="pass"></div>
-          <p class="pass-legend"><span><i class="ps full"></i>Ziel erreicht</span><span><i class="ps"></i>gelesen</span><span id="passCount"></span></p>
+        <article class="card wide faden-card">
+          <div class="card-head"><h2>Lesefaden</h2><span class="kicker" id="fadenStat"></span></div>
+          <p class="faden-sub" id="fadenSub"></p>
+          <svg class="faden" id="faden" viewBox="-14 -10 728 352" role="img" aria-label="Lesefaden der letzten vier Wochen"></svg>
+          <p class="faden-legend">
+            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x full" d="M4 4L16 16M16 4L4 16"/><circle class="lg-gold" cx="10" cy="10" r="2.6"/></svg>Ziel erreicht</span>
+            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-x" d="M5 5L15 15M15 5L5 15"/></svg>gelesen</span>
+            <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg>Faden gerissen</span>
+          </p>
         </article>
 
         <article class="card words-card">
@@ -355,7 +358,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=9"></script>
-  <script src="js/app.js?v=9"></script>
+  <script src="js/data.js?v=10"></script>
+  <script src="js/app.js?v=10"></script>
 </body>
 </html>

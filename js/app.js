@@ -181,11 +181,6 @@
     $("#streakWord").textContent = st === 1 ? "Tag in Folge" : "Tage in Folge";
     renderTree(st);
     const m = minutesByDay();
-    $("#weekDots").innerHTML = Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(new Date(), i - 6);
-      const on = !!m[dateKey(d)];
-      return `<div><i class="${on ? "on" : ""}" style="animation-delay:${0.3 + i * 0.07}s">${on ? "✓" : ""}</i>${WD[d.getDay()]}</div>`;
-    }).join("");
 
     // Zahlen
     const t = totals();
@@ -196,7 +191,7 @@
     countUp($("#statSessions"), t.sessions);
     $("#statBest").textContent = `${bestStreak()} T.`;
 
-    renderPass();
+    renderThread();
     renderWords();
 
     // Aktuelle Bücher
@@ -268,28 +263,76 @@
       </g></g>`;
   }
 
-  // Lesepass: ein Monatsblatt, jeder Lesetag bekommt einen Stempel
-  function renderPass() {
-    const now = new Date(), y = now.getFullYear(), mo = now.getMonth();
-    const first = new Date(y, mo, 1), daysIn = new Date(y, mo + 1, 0).getDate();
-    const offset = (first.getDay() + 6) % 7; // Montag = 0
-    const mins = minutesByDay(), pgs = pagesByDay(), todayK = dateKey();
-    $("#passMonth").textContent = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
-    let cells = "", count = 0, full = 0, n = 0;
-    for (let i = 0; i < offset; i++) cells += `<div class="pc blank"></div>`;
-    for (let d = 1; d <= daysIn; d++) {
-      const k = dateKey(new Date(y, mo, d)), m = mins[k] || 0, pg = pgs[k] || 0;
-      const cls = k === todayK ? "today" : k > todayK ? "future" : "";
-      let st = "";
-      if (m) {
-        const done = goalDone(m, pg);
-        count++; if (done) full++;
-        st = `<i class="ps ${done ? "full" : ""}" style="--r:${rot(k)}deg;animation-delay:${0.4 + n++ * 0.05}s">${m}′</i>`;
+  // Lesefaden: die letzten 4 Wochen als Schlangenlinie. Jeder Lesetag ist ein Kreuzstich,
+  // aufeinanderfolgende Lesetage werden mit Faden verbunden, eine Lücke lässt ihn reißen.
+  const F_DAYS = 28, F_COLS = 7, F_COLW = 100, F_ROWH = 84;
+  function fPos(i) {
+    const rows = F_DAYS / F_COLS, r = Math.floor(i / F_COLS), c = i % F_COLS;
+    const ltr = (rows - 1 - r) % 2 === 0; // letzte Zeile (mit „heute“) läuft von links nach rechts
+    return [50 + (ltr ? c : F_COLS - 1 - c) * F_COLW, 42 + r * F_ROWH];
+  }
+  function fSeg(i) {
+    const [x1, y1] = fPos(i), [x2, y2] = fPos(i + 1);
+    if (y1 === y2) return `M${x1} ${y1} L${x2} ${y2}`;
+    const dir = x1 > 350 ? 1 : -1; // Wende am Zeilenende als Bogen nach außen
+    return `M${x1} ${y1} C${x1 + dir * 72} ${y1} ${x2 + dir * 72} ${y2} ${x2} ${y2}`;
+  }
+  function renderThread() {
+    const mins = minutesByDay(), pgs = pagesByDay(), now = new Date();
+    const days = Array.from({ length: F_DAYS }, (_, i) => dateKey(addDays(now, i - (F_DAYS - 1))));
+    const read = days.map((k) => (mins[k] || 0) > 0);
+    const full = days.map((k) => goalDone(mins[k] || 0, pgs[k] || 0));
+    const T = F_DAYS - 1, delay = (i) => 0.35 + i * 0.075;
+    let guide = "", threads = "", marks = "", labels = "", extra = "";
+    for (let i = 0; i < T; i++) guide += fSeg(i) + " ";
+    for (let i = 0; i < F_DAYS; i++) {
+      const [x, y] = fPos(i), d = parseKey(days[i]);
+      // Faden zum nächsten Tag
+      if (i < T && read[i] && read[i + 1]) {
+        threads += `<path class="thread" pathLength="1" d="${fSeg(i)}" style="animation-delay:${delay(i) + 0.12}s"/><path class="twist" d="${fSeg(i)}" style="animation-delay:${delay(i) + 0.45}s"/>`;
       }
-      cells += `<div class="pc ${cls}" title="${parseKey(k).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}${m ? `: ${m} Min., ${pg} Seiten` : ""}"><span class="pd">${d}</span>${st}</div>`;
+      // Anfangsknoten einer Kette
+      if (read[i] && (i === 0 || !read[i - 1])) marks += `<circle class="knot" cx="${x}" cy="${y}" r="6" style="animation-delay:${delay(i)}s"/>`;
+      // Gerissener Faden nach dem letzten Tag einer Kette
+      if (read[i] && i < T && !read[i + 1]) {
+        const [nx, ny] = fPos(i + 1);
+        const sx = ny === y ? Math.sign(nx - x) : (x > 350 ? 1 : -1), sy = ny === y ? 0 : 1;
+        const ex = x + sx * 30, ey = y + sy * 24;
+        extra += `<g class="fray" style="animation-delay:${delay(i) + 0.2}s"><path d="M${x} ${y} L${ex} ${ey}"/>
+          <path class="fiber" d="M${ex} ${ey} q${sx * 8 || 6} ${sy ? 8 : -6} ${sx * 15 || 4} ${sy ? 15 : -5}"/>
+          <path class="fiber" d="M${ex} ${ey} q${sx * 9 || -6} ${sy ? 4 : 5} ${sx * 16 || -4} ${sy ? 12 : 9}" style="animation-delay:-1.2s"/></g>`;
+      }
+      if (read[i]) {
+        const s = full[i] ? 15 : 12, dl = delay(i);
+        marks += `<path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x - s} ${y - s} L${x + s} ${y + s}" style="animation-delay:${dl}s"/>
+          <path class="x ${full[i] ? "full" : ""}" pathLength="1" d="M${x + s} ${y - s} L${x - s} ${y + s}" style="animation-delay:${dl + 0.1}s"/>
+          ${full[i] ? `<circle class="gold" cx="${x}" cy="${y}" r="4.5" style="animation-delay:${dl + 0.25}s"/>` : ""}`;
+      } else {
+        marks += `<circle class="hole" cx="${x}" cy="${y}" r="5.5"/>`;
+      }
+      const first = i === 0 || d.getDate() === 1;
+      labels += `<text class="lbl ${i === T ? "today" : ""}" x="${x}" y="${y + 36}">${i === T ? "Heute" : first ? `${d.getDate()}.${d.getMonth() + 1}.` : d.getDate()}</text>`;
     }
-    $("#pass").innerHTML = cells;
-    $("#passCount").textContent = `${count} ${count === 1 ? "Stempel" : "Stempel"} · ${full} × Ziel`;
+    // Nadel: nach dem heutigen Stich – oder wartend über dem heutigen Loch
+    const [tx, ty] = fPos(T), endDelay = delay(T) + 0.4;
+    const needle = (x, y) => `<g class="needle" transform="translate(${x} ${y}) rotate(-45)" style="animation-delay:${endDelay}s"><g class="needle-move">
+        <path class="needle-body" d="M0 -3.2 L58 -1.6 Q66 0 58 1.6 L0 3.2 Q-4 0 0 -3.2Z" transform="translate(-6 0)"/>
+        <ellipse class="needle-eye" cx="1" cy="0" rx="4" ry="1.3"/></g></g>`;
+    if (read[T]) {
+      extra += `<path class="needle-thread" d="M${tx} ${ty} q14 -2 18 -18" style="opacity:0;animation:fadeIn .4s ease ${endDelay}s forwards"/>` + needle(tx + 18, ty - 18);
+    } else {
+      extra += `<circle class="today-ring" cx="${tx}" cy="${ty}" r="14"/>`;
+      if (read[T - 1]) extra += `<path class="pending" d="${fSeg(T - 1)}"/>`;
+      extra += needle(tx + 8, ty - 8);
+    }
+    $("#faden").innerHTML = `<path class="guide" d="${guide}"/>${threads}${extra}${marks}${labels}`;
+
+    const st = streak(), best = bestStreak();
+    $("#fadenStat").textContent = `Faden ${st} T. · Rekord ${best} T.`;
+    $("#fadenSub").textContent = read[T]
+      ? `Heutiger Stich gesetzt. Dein Faden ist ${plural(st, "Tag", "Tage")} lang.`
+      : st > 0 ? `Heute fehlt noch ein Stich, sonst reißt dein Faden von ${plural(st, "Tag", "Tagen")}.`
+      : "Jeder Lesetag ist ein Stich. Lies heute und fang einen neuen Faden an.";
   }
 
   function renderWords() {
@@ -624,6 +667,7 @@
     const pgHit = beforePg < goalPg() && beforePg + pages >= goalPg();
     if (finished) celebrateFinish(b);
     else if (isToday && !wasDone && nowDone) { confetti(); toast("🎯 Tagesziel erreicht – Minuten und Seiten geschafft!"); }
+    else if (isToday && beforeMin === 0) toast(`🧵 Neuer Stich! Dein Lesefaden ist jetzt ${plural(streak(), "Tag", "Tage")} lang.`);
     else if (isToday && minHit) toast(`⏱️ Minutenziel geschafft! Noch ${goalPg() - beforePg - pages} Seiten.`);
     else if (isToday && pgHit) toast(`📄 Seitenziel geschafft! Noch ${goalMin() - beforeMin - minutes} Minuten.`);
     else toast(`✓ ${minutes} Min.${pages ? ` und ${pages} Seiten` : ""} eingetragen.`);
