@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=16">
+  <link rel="stylesheet" href="css/styles.css?v=17">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -217,6 +217,11 @@
             <span data-t>Welches Buch liest du?</span>
             <select id="timerBook"></select>
           </label>
+          <label class="timer-start-page" id="timerStartWrap" hidden>
+            <span data-t>Du startest auf Seite</span>
+            <input type="number" min="0" inputmode="numeric" id="timerStartPage">
+            <small id="timerStartOf"></small>
+          </label>
           <div class="patch-banner" id="patchBanner" hidden>
             <span id="patchBannerText"></span>
             <button class="link" type="button" id="patchBannerCancel" data-t>nicht flicken</button>
@@ -374,7 +379,11 @@
       <div class="stamp finish-stamp" aria-hidden="true"><span data-t>Gelesen</span><b id="finishStampMin">20′</b></div>
       <h2 data-t>Gut gelesen!</h2>
       <p id="finishText" class="muted"></p>
-      <label class="field"><span id="finishPageLbl" data-t>Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
+      <div class="finish-pages">
+        <label class="field"><span id="finishPageLbl">Auf welcher Seite bist du jetzt?</span><input type="number" min="0" inputmode="numeric" id="finishPage"></label>
+        <p class="finish-calc" id="finishCalc" aria-live="polite"></p>
+        <button type="button" class="link finish-mode" id="finishMode"></button>
+      </div>
       <label class="field"><span><span data-t>Ein Satz zu heute</span> <small data-t>(optional)</small></span><input id="finishNote" maxlength="200" placeholder="Was ist passiert? Was hat dich überrascht?"></label>
       <label class="field"><span><span data-t>Neues Wort entdeckt?</span> <small data-t>(optional)</small></span><input id="finishWord" maxlength="40" autocomplete="off" placeholder="z. B. Sehnsucht"></label>
       <div class="modal-actions">
@@ -446,8 +455,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=16"></script>
-  <script src="js/i18n.js?v=16"></script>
-  <script src="js/app.js?v=16"></script>
+  <script src="js/data.js?v=17"></script>
+  <script src="js/i18n.js?v=17"></script>
+  <script src="js/app.js?v=17"></script>
 </body>
 </html>

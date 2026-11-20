@@ -475,6 +475,16 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .reader-book .page-flip { fill: var(--green-wash); stroke: var(--green); stroke-width: 2.2; transform-origin: 32px 25px; opacity: 0; }
 .running .reader-book .page-flip { animation: flip 2.6s ease-in-out infinite; }
 @keyframes flip { 0% { transform: scaleX(1); opacity: 1; } 55%, 100% { transform: scaleX(-1); opacity: 0; } }
+.timer-start-page { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: .7rem; font-size: .9rem; color: var(--ink-soft); flex-wrap: wrap; }
+.timer-start-page input { width: 5.5rem; font: inherit; font-weight: 700; text-align: center; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: .35rem .5rem; }
+.timer-start-page input:focus { outline: none; border-color: var(--green); }
+.timer-start-page input:disabled { opacity: .6; }
+.finish-pages { display: grid; gap: .35rem; padding: .75rem; border-radius: 10px; background: var(--paper); border: 1px solid var(--rule); }
+.finish-pages input { font-size: 1.2rem; font-weight: 700; }
+.finish-calc { margin: 0; font-size: .92rem; color: var(--ink-soft); min-height: 1.3em; }
+.finish-calc.ok { color: var(--green); font-weight: 700; }
+.finish-calc.warn { color: color-mix(in srgb, var(--gold) 70%, var(--ink)); font-weight: 700; }
+.finish-mode { justify-self: start; font-size: .82rem; }
 .timer-actions { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
 
 /* ---------- Formulare ---------- */

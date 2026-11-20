@@ -978,12 +978,30 @@
     $("#timerStop").disabled = !tm;
     $$("#timerPresets .chip").forEach((c) => { c.disabled = !!tm; c.classList.toggle("active", +c.dataset.min === (tm ? tm.target : preset)); });
     $("#timerBook").disabled = !!tm;
+    renderStartPage();
     const pf = tm ? tm.patchFor : patchPending;
     $("#patchBanner").hidden = !pf;
     if (pf) $("#patchBannerText").textContent = "🪡 " + t("Flicken für {day} · {n} Min. am Stück", { day: longDay(pf), n: goalMin() });
     $("#patchBannerCancel").hidden = !!tm;
     if (!booting && target && tm && el >= target) finishTimer(true);
   }
+  function renderStartPage() {
+    const b = bookById($("#timerBook").value), wrap = $("#timerStartWrap");
+    wrap.hidden = !b;
+    if (!b) return;
+    const inp = $("#timerStartPage");
+    if (document.activeElement !== inp) inp.value = b.currentPage || 0;
+    inp.disabled = !!state.timer;
+    $("#timerStartOf").textContent = b.pages ? t("von {n}", { n: b.pages }) : "";
+  }
+  $("#timerBook").addEventListener("change", renderStartPage);
+  $("#timerStartPage").addEventListener("change", (e) => {
+    const b = bookById($("#timerBook").value); if (!b) return;
+    let v = Math.max(0, parseInt(e.target.value) || 0);
+    if (b.pages) v = Math.min(b.pages, v);
+    b.currentPage = v; b.updated = Date.now(); e.target.value = v; save();
+    toast(t("Startseite gespeichert: {n}.", { n: v }));
+  });
   function startTick() { clearInterval(tickHandle); tickHandle = setInterval(updateClock, 500); }
   $("#timerPresets").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (!c || state.timer) return; preset = +c.dataset.min; updateClock(); });
   $("#timerStart").addEventListener("click", () => {
@@ -1015,21 +1033,51 @@
       + (patchOk ? " " + t("Damit flickst du {day}.", { day: longDay(tm.patchFor) }) : tm.patchFor ? " " + t("Zum Flicken fehlten {n} Minuten, die Zeit zählt für heute.", { n: goalMin() - minutes }) : "");
     $("#finishStampMin").textContent = `${minutes}′`;
     $("#finishNote").value = ""; $("#finishWord").value = "";
-    $("#finishPageLbl").textContent = t(b ? "Auf welcher Seite bist du jetzt?" : "Wie viele Seiten hast du gelesen?");
-    $("#finishPage").value = b ? b.currentPage || "" : "";
-    if (b?.pages) $("#finishPage").max = b.pages; else $("#finishPage").removeAttribute("max");
+    finishBook = b; finishMode = b ? "page" : "count";
+    $("#finishPage").value = "";
+    renderFinishPages();
     $("#finishDialog").showModal();
   }
-  $("#finishForm").addEventListener("submit", (e) => {
-    e.preventDefault();
+  // Seiten nach dem Lesen: aktuelle Seite (mit Live-Rechnung) oder direkt die Zahl gelesener Seiten
+  let finishBook = null, finishMode = "page";
+  function renderFinishPages() {
+    const b = finishBook, from = b ? b.currentPage || 0 : 0;
+    $("#finishPageLbl").textContent = finishMode === "page" ? t("Auf welcher Seite bist du jetzt?") : t("Wie viele Seiten hast du gelesen?");
+    $("#finishPage").placeholder = finishMode === "page" ? t("z. B. {n}", { n: from + 10 }) : t("z. B. 12");
+    $("#finishMode").hidden = !b;
+    $("#finishMode").textContent = finishMode === "page" ? t("Stattdessen gelesene Seiten eingeben") : t("Stattdessen aktuelle Seite eingeben");
+    updateFinishCalc();
+  }
+  function updateFinishCalc() {
+    const b = finishBook, from = b ? b.currentPage || 0 : 0, raw = $("#finishPage").value.trim(), v = parseInt(raw);
+    const el = $("#finishCalc");
+    el.classList.remove("warn", "ok");
+    if (!b) { el.textContent = raw && v >= 0 ? t("{len} gelesen.", { len: tn(v, "{n} Seite", "{n} Seiten") }) : ""; if (raw) el.classList.add("ok"); return; }
+    if (finishMode === "count") {
+      if (!raw) { el.textContent = t("Zuletzt warst du auf Seite {n}.", { n: from }); return; }
+      const to = b.pages ? Math.min(b.pages, from + v) : from + v;
+      el.textContent = t("Neue aktuelle Seite: {n}.", { n: to }); el.classList.add("ok"); return;
+    }
+    if (!raw) { el.textContent = t("Zuletzt warst du auf Seite {n}.", { n: from }); return; }
+    const to = b.pages ? Math.min(b.pages, v) : v;
+    if (to < from) { el.textContent = t("Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.", { a: from, b: to }); el.classList.add("warn"); return; }
+    const n = to - from;
+    el.textContent = t("Von Seite {a} bis {b}: {len} gelesen.", { a: from, b: to, len: tn(n, "{n} Seite", "{n} Seiten") }) + (b.pages && to >= b.pages ? " 🎉" : "");
+    el.classList.add(n ? "ok" : "warn");
+  }
+  $("#finishPage").addEventListener("input", updateFinishCalc);
+  $("#finishMode").addEventListener("click", () => { finishMode = finishMode === "page" ? "count" : "page"; $("#finishPage").value = ""; renderFinishPages(); $("#finishPage").focus(); });
+  function submitFinish() {
     if (pendingSession) {
       const v = parseInt($("#finishPage").value);
       const extra = { note: $("#finishNote").value, word: $("#finishWord").value };
-      logSession(bookById(pendingSession.bookId) ? { ...pendingSession, ...extra, toPage: v } : { ...pendingSession, ...extra, pagesRead: v });
+      logSession(finishBook && finishMode === "page" ? { ...pendingSession, ...extra, toPage: v } : { ...pendingSession, ...extra, pagesRead: v });
     }
     pendingSession = null; $("#finishDialog").close();
-  });
-  $("#finishDialog").addEventListener("cancel", () => { if (pendingSession) logSession(pendingSession); pendingSession = null; });
+  }
+  $("#finishForm").addEventListener("submit", (e) => { e.preventDefault(); submitFinish(); });
+  // Esc übernimmt die Eingaben, statt sie zu verwerfen
+  $("#finishDialog").addEventListener("cancel", (e) => { e.preventDefault(); submitFinish(); });
 
   function logSession({ bookId, minutes, toPage, pagesRead, note = "", word = "", date = dateKey(), patched = false }) {
     const b = bookById(bookId);

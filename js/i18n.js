@@ -416,6 +416,17 @@ window.LZ_I18N = {
     "Bitte mindestens 1 Minute eintragen.": "Please enter at least 1 minute.",
     "Diesen Eintrag löschen?": "Delete this entry?",
     "Eintrag gelöscht.": "Entry deleted.",
+    "Du startest auf Seite": "You start on page",
+    "von {n}": "of {n}",
+    "Startseite gespeichert: {n}.": "Start page saved: {n}.",
+    "z. B. {n}": "e.g. {n}",
+    "Stattdessen gelesene Seiten eingeben": "Enter pages read instead",
+    "Stattdessen aktuelle Seite eingeben": "Enter current page instead",
+    "{len} gelesen.": "{len} read.",
+    "Zuletzt warst du auf Seite {n}.": "Last time you were on page {n}.",
+    "Neue aktuelle Seite: {n}.": "New current page: {n}.",
+    "Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.": "Page {b} is before your last page ({a}). Is that right? Otherwise enter the pages read directly.",
+    "Von Seite {a} bis {b}: {len} gelesen.": "From page {a} to {b}: {len} read.",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -834,6 +845,17 @@ window.LZ_I18N = {
     "Bitte mindestens 1 Minute eintragen.": "Lütfen en az 1 dakika gir.",
     "Diesen Eintrag löschen?": "Bu kayıt silinsin mi?",
     "Eintrag gelöscht.": "Kayıt silindi.",
+    "Du startest auf Seite": "Başladığın sayfa",
+    "von {n}": "/ {n}",
+    "Startseite gespeichert: {n}.": "Başlangıç sayfası kaydedildi: {n}.",
+    "z. B. {n}": "örn. {n}",
+    "Stattdessen gelesene Seiten eingeben": "Bunun yerine okunan sayfa sayısını gir",
+    "Stattdessen aktuelle Seite eingeben": "Bunun yerine bulunduğun sayfayı gir",
+    "{len} gelesen.": "{len} okundu.",
+    "Zuletzt warst du auf Seite {n}.": "En son {n}. sayfadaydın.",
+    "Neue aktuelle Seite: {n}.": "Yeni sayfan: {n}.",
+    "Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.": "{b}. sayfa, son sayfandan ({a}) önce. Doğru mu? Değilse okunan sayfa sayısını doğrudan gir.",
+    "Von Seite {a} bis {b}: {len} gelesen.": "{a}. sayfadan {b}. sayfaya: {len} okundu.",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1252,6 +1274,17 @@ window.LZ_I18N = {
     "Bitte mindestens 1 Minute eintragen.": "Upiši najmanje 1 minutu.",
     "Diesen Eintrag löschen?": "Izbrisati ovaj zapis?",
     "Eintrag gelöscht.": "Zapis je izbrisan.",
+    "Du startest auf Seite": "Počinješ na stranici",
+    "von {n}": "od {n}",
+    "Startseite gespeichert: {n}.": "Početna stranica sačuvana: {n}.",
+    "z. B. {n}": "npr. {n}",
+    "Stattdessen gelesene Seiten eingeben": "Umjesto toga upiši broj pročitanih stranica",
+    "Stattdessen aktuelle Seite eingeben": "Umjesto toga upiši trenutnu stranicu",
+    "{len} gelesen.": "Pročitano: {len}.",
+    "Zuletzt warst du auf Seite {n}.": "Zadnji put si bio/la na stranici {n}.",
+    "Neue aktuelle Seite: {n}.": "Nova trenutna stranica: {n}.",
+    "Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.": "Stranica {b} je prije tvoje zadnje stranice ({a}). Je li to tačno? Inače direktno upiši broj pročitanih stranica.",
+    "Von Seite {a} bis {b}: {len} gelesen.": "Od stranice {a} do {b}: pročitano {len}.",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };
