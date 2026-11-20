@@ -55,6 +55,16 @@ window.LZ_DATA = {
     ]
   },
 
+  quotes: [
+    { text: "Ein Buch muss die Axt sein für das gefrorene Meer in uns.", by: "Franz Kafka" },
+    { text: "Und jedem Anfang wohnt ein Zauber inne.", by: "Hermann Hesse" },
+    { text: "Die Grenzen meiner Sprache bedeuten die Grenzen meiner Welt.", by: "Ludwig Wittgenstein" },
+    { text: "Es gibt nichts Gutes, außer: Man tut es.", by: "Erich Kästner" },
+    { text: "Bücher sind nur dickere Briefe an Freunde.", by: "Jean Paul" },
+    { text: "Lesen ist ein großes Wunder.", by: "Marie von Ebner-Eschenbach" },
+    { text: "Ein Raum ohne Bücher ist wie ein Körper ohne Seele.", by: "Cicero zugeschrieben" }
+  ],
+
   mottos: [
     "Wer liest, erlebt tausend Leben.",
     "Ein Buch ist ein Garten, den man in der Tasche trägt.",

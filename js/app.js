@@ -22,16 +22,20 @@
   const COVER_COLORS = ["#2d6a4f", "#40916c", "#1b4332", "#52796f", "#3a5a40", "#588157", "#2f5d62", "#5f7a3a", "#a1862f", "#35614f"];
   const coverColor = (t) => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COVER_COLORS[h % COVER_COLORS.length]; };
   const GENRE_EMOJI = { Roman: "📘", Abenteuer: "🗺️", Fantasy: "🐉", Krimi: "🔎", Sachbuch: "🔬", Comic: "💥", Klassiker: "🎩", Jugendbuch: "🎒", Kinderbuch: "🧸", Biografie: "👤", Lyrik: "🪶", Sonstiges: "📗" };
-  const STATUS_LABEL = { lesen: "Lese ich", gelesen: "Gelesen ✓", wunsch: "Wunsch" };
+  const STATUS_LABEL = { lesen: "Lese ich", gelesen: "Gelesen", wunsch: "Wunsch" };
 
   // ---------- Zustand ----------
-  const defaultState = () => ({ profile: null, books: [], sessions: [], timer: null, seenBadges: [], tipIndex: 0 });
+  const defaultState = () => ({ profile: null, books: [], sessions: [], words: [], timer: null, seenBadges: [], tipIndex: 0 });
   let state;
   try { state = Object.assign(defaultState(), JSON.parse(localStorage.getItem(STORE_KEY)) || {}); }
   catch { state = defaultState(); }
+  if (!Array.isArray(state.words)) state.words = [];
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* Speicher nicht verfügbar */ } };
 
   const bookById = (id) => state.books.find((b) => b.id === id);
+  const dayOfYear = (d = new Date()) => Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  const quoteOfDay = () => D.quotes[dayOfYear() % D.quotes.length];
+  const rot = (k) => { let h = 0; for (const c of k) h = (h * 33 + c.charCodeAt(0)) >>> 0; return (h % 23) - 14; }; // feste "Stempel-Schräge" je Datum
   const group = () => state.profile?.group || "erwachsene";
 
   // ---------- Kennzahlen ----------
@@ -106,6 +110,8 @@
     { id: "early", ico: "🌅", name: "Frühaufsteher/in", desc: "Vor 8 Uhr gelesen", test: () => state.sessions.some((s) => s.hour != null && s.hour < 8) },
     { id: "owl", ico: "🦉", name: "Nachteule", desc: "Nach 21 Uhr gelesen", test: () => state.sessions.some((s) => s.hour != null && s.hour >= 21) },
     { id: "critic", ico: "✍️", name: "Rezensent/in", desc: "Ein Buch bewertet und Notizen geschrieben", test: () => state.books.some((b) => b.rating && b.notes?.trim()) },
+    { id: "words10", ico: "🔤", name: "Wortsammler/in", desc: "10 Wörter im Wortschatz", test: () => state.words.length >= 10 },
+    { id: "journal5", ico: "✒️", name: "Tagebuch", desc: "5 Einträge mit einem Satz zum Lesen", test: () => state.sessions.filter((x) => x.note).length >= 5 },
     { id: "genres", ico: "🎨", name: "Vielleser/in", desc: "Bücher aus 3 Gattungen", test: () => new Set(state.books.filter((b) => b.status !== "wunsch").map((b) => b.genre)).size >= 3 }
   ];
   let quietBadges = false;
@@ -141,22 +147,20 @@
     const p = state.profile;
     const h = new Date().getHours();
     const hello = h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend";
-    $("#greeting").textContent = p?.name ? `${hello}, ${p.name}!` : `${hello}!`;
-    $("#todayLabel").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
-    $("#motto").textContent = D.mottos[new Date().getDate() % D.mottos.length];
+    $("#greeting").textContent = p?.name ? `${hello}, ${p.name}.` : `${hello}.`;
+    $("#todayLabel").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" }).replace(",", " ·");
+    const q = quoteOfDay();
+    $("#quoteText").textContent = `„${q.text}“`;
+    $("#quoteBy").textContent = "— " + q.by;
 
-    // Tagesziel: äußerer Ring = Minuten, innerer Ring = Seiten
+    // Tagesziel als zwei Lineale: Minuten und Seiten
     const goal = goalMin(), gp = goalPg();
     const today = minutesByDay()[dateKey()] || 0;
     const todayPg = pagesByDay()[dateKey()] || 0;
     const rMin = Math.min(1, today / goal), rPg = Math.min(1, todayPg / gp);
-    const ring = $("#goalRing"), ring2 = $("#goalRing2");
-    ring.style.strokeDashoffset = 326.7; ring2.style.strokeDashoffset = 238.8;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      ring.style.strokeDashoffset = 326.7 * (1 - rMin);
-      ring2.style.strokeDashoffset = 238.8 * (1 - rPg);
-    }));
-    ring.classList.toggle("done", rMin >= 1);
+    const fillMin = $("#rulerMin > i"), fillPg = $("#rulerPg > i");
+    fillMin.style.width = "0"; fillPg.style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => { fillMin.style.width = rMin * 100 + "%"; fillPg.style.width = rPg * 100 + "%"; }));
     countUp($("#goalMinutes"), today);
     countUp($("#goalPages"), todayPg);
     $("#goalOf").textContent = goal;
@@ -164,11 +168,12 @@
     $("#goalMinutes").parentElement.classList.toggle("ok", rMin >= 1);
     $("#goalPages").parentElement.classList.toggle("ok", rPg >= 1);
     const both = rMin >= 1 && rPg >= 1;
-    $("#goalCheck").innerHTML = both ? `<span class="check">✓</span>` : `<span class="pct">${Math.round(((rMin + rPg) / 2) * 100)} %</span>`;
+    $("#goalPct").textContent = both ? "geschafft" : `${Math.round(((rMin + rPg) / 2) * 100)} %`;
+    $("#goalStamp").hidden = !both;
     const left = [];
     if (rMin < 1) left.push(`${goal - today} Minuten`);
     if (rPg < 1) left.push(`${gp - todayPg} Seiten`);
-    $("#goalHint").textContent = both ? "Beide Ziele geschafft – großartig!" : !today && !todayPg ? "Noch nicht gelesen – starte mit 10 Minuten." : `Noch ${left.join(" und ")}.`;
+    $("#goalHint").textContent = both ? "Heute ist dein Stempel sicher." : !today && !todayPg ? "Noch nicht gelesen. Zehn Minuten reichen für den Anfang." : `Noch ${left.join(" und ")}.`;
 
     // Lesebaum
     const st = streak();
@@ -179,7 +184,7 @@
     $("#weekDots").innerHTML = Array.from({ length: 7 }, (_, i) => {
       const d = addDays(new Date(), i - 6);
       const on = !!m[dateKey(d)];
-      return `<div><i class="${on ? "on" : ""}" style="animation-delay:${i * 0.07}s">${on ? "✓" : ""}</i>${WD[d.getDay()]}</div>`;
+      return `<div><i class="${on ? "on" : ""}" style="animation-delay:${0.3 + i * 0.07}s">${on ? "✓" : ""}</i>${WD[d.getDay()]}</div>`;
     }).join("");
 
     // Zahlen
@@ -187,7 +192,12 @@
     countUp($("#statBooks"), t.finished);
     countUp($("#statPages"), t.pages);
     $("#statHours").textContent = t.minutes < 60 ? `${t.minutes} Min.` : `${(t.minutes / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Std.`;
+    countUp($("#statWords"), state.words.length);
     countUp($("#statSessions"), t.sessions);
+    $("#statBest").textContent = `${bestStreak()} T.`;
+
+    renderPass();
+    renderWords();
 
     // Aktuelle Bücher
     const cur = state.books.filter((b) => b.status === "lesen");
@@ -202,7 +212,7 @@
           </div>
           <span class="since">${sinceText(b)}</span>
         </button>`).join("")
-      : `<div class="empty"><span class="em">📖</span>Du liest gerade kein Buch.<br><button class="link" data-nav="entdecken">Lass dich inspirieren →</button></div>`;
+      : `<div class="empty"><span class="em">Gerade kein Buch auf dem Nachttisch.</span><button class="link" data-nav="entdecken">Empfehlungen ansehen →</button></div>`;
     animateProgress($("#currentList"));
 
     // Woche
@@ -225,9 +235,9 @@
   // Der Baum wächst mit jedem Lesetag in Folge: Keimling → junger Baum → blühender Baum
   const LEAVES = [[63,55,-35],[77,55,35],[70,40,0],[58,46,-30],[82,46,30],[50,56,-50],[90,56,50],[64,32,-15],[76,32,15],
     [44,64,-60],[96,62,60],[58,60,-20],[82,61,20],[70,25,0],[52,40,-35],[88,40,35],[66,48,-10],[75,49,10]];
-  const LEAF_FILLS = ["var(--accent)", "var(--accent-2)", "var(--mint)"];
+  const LEAF_FILLS = ["var(--green)", "var(--green-2)", "var(--mint)"];
   function treeStage(n) {
-    if (n === 0) return "Samen – lies heute, dann keimt er";
+    if (n === 0) return "Samen";
     if (n < 3) return "Keimling";
     if (n < 7) return "Junger Baum";
     if (n < 14) return "Kräftiger Baum";
@@ -257,6 +267,53 @@
         ${leaves}${blooms}
       </g></g>`;
   }
+
+  // Lesepass: ein Monatsblatt, jeder Lesetag bekommt einen Stempel
+  function renderPass() {
+    const now = new Date(), y = now.getFullYear(), mo = now.getMonth();
+    const first = new Date(y, mo, 1), daysIn = new Date(y, mo + 1, 0).getDate();
+    const offset = (first.getDay() + 6) % 7; // Montag = 0
+    const mins = minutesByDay(), pgs = pagesByDay(), todayK = dateKey();
+    $("#passMonth").textContent = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    let cells = "", count = 0, full = 0, n = 0;
+    for (let i = 0; i < offset; i++) cells += `<div class="pc blank"></div>`;
+    for (let d = 1; d <= daysIn; d++) {
+      const k = dateKey(new Date(y, mo, d)), m = mins[k] || 0, pg = pgs[k] || 0;
+      const cls = k === todayK ? "today" : k > todayK ? "future" : "";
+      let st = "";
+      if (m) {
+        const done = goalDone(m, pg);
+        count++; if (done) full++;
+        st = `<i class="ps ${done ? "full" : ""}" style="--r:${rot(k)}deg;animation-delay:${0.4 + n++ * 0.05}s">${m}′</i>`;
+      }
+      cells += `<div class="pc ${cls}" title="${parseKey(k).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}${m ? `: ${m} Min., ${pg} Seiten` : ""}"><span class="pd">${d}</span>${st}</div>`;
+    }
+    $("#pass").innerHTML = cells;
+    $("#passCount").textContent = `${count} ${count === 1 ? "Stempel" : "Stempel"} · ${full} × Ziel`;
+  }
+
+  function renderWords() {
+    const list = [...state.words].sort((a, b) => b.ts - a.ts);
+    $("#wordCount").textContent = list.length ? `${list.length} ${list.length === 1 ? "Wort" : "Wörter"}` : "";
+    $("#words").innerHTML = list.length
+      ? list.slice(0, 18).map((w, i) => `<span class="word" style="animation-delay:${i * 0.03}s" title="${esc(fmtDate(w.date))}${bookById(w.bookId) ? " · " + esc(bookById(w.bookId).title) : ""}">${esc(w.w)}<button type="button" data-delword="${w.id}" aria-label="${esc(w.w)} entfernen">×</button></span>`).join("")
+      : `<p class="words-empty">Sammle Wörter, die neu, schön oder schwierig sind. Wer sie aufschreibt, behält sie.</p>`;
+  }
+  function addWord(word, bookId = null, date = dateKey()) {
+    const w = word.trim().replace(/\s+/g, " ");
+    if (!w) return false;
+    if (state.words.some((x) => x.w.toLowerCase() === w.toLowerCase())) { toast(`„${w}“ steht schon in deinem Wortschatz.`); return false; }
+    state.words.push({ id: uid(), w, bookId: bookId || null, date, ts: Date.now() });
+    return true;
+  }
+  $("#wordForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (addWord($("#wordInput").value)) { save(); $("#wordInput").value = ""; renderWords(); countUp($("#statWords"), state.words.length); checkBadges(); }
+  });
+  $("#words").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-delword]"); if (!b) return;
+    state.words = state.words.filter((w) => w.id !== b.dataset.delword); save(); renderWords(); $("#statWords").textContent = state.words.length;
+  });
 
   let chartMode = "min";
   $("#chartMode").addEventListener("click", (e) => {
@@ -346,7 +403,7 @@
     $("#levelCard").innerHTML = `
       <span class="lv-ico">${lv.ico}</span>
       <div>
-        <p class="eyebrow">Stufe ${idx + 1} von ${D.levels.length}</p>
+        <p class="kicker">Stufe ${idx + 1} von ${D.levels.length}</p>
         <h2>${lv.name}</h2>
         <p class="muted" style="margin:.2rem 0 .4rem">${pts} Lesepunkte${next ? ` · noch ${next.min - pts} bis „${next.name}“` : " · Höchste Stufe erreicht!"}</p>
         <div class="progress"><i data-w="${prog}"></i></div>
@@ -357,8 +414,8 @@
     $("#badgeCount").textContent = `${un.length} von ${BADGES.length} freigeschaltet`;
     $("#badges").innerHTML = BADGES.map((b, i) => {
       const ok = b.test();
-      return `<article class="card badge ${ok ? "unlocked" : "locked"}" style="animation-delay:${i * 0.04}s">
-        <div class="medal">${ok ? b.ico : "🔒"}</div><h3>${b.name}</h3><p>${b.desc}</p></article>`;
+      return `<article class="card badge ${ok ? "unlocked" : "locked"}" style="animation-delay:${i * 0.04}s;--r:${rot(b.id)}deg">
+        <div class="medal">${ok ? b.ico : "offen"}</div><h3>${b.name}</h3><p>${b.desc}</p></article>`;
     }).join("");
   }
 
@@ -389,7 +446,7 @@
   const bookDialog = $("#bookDialog");
   let editingId = null, rating = 0;
   function renderStars() {
-    $("#fStars").innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} Sterne" class="${n <= rating ? "on" : ""}" data-star="${n}">⭐</button>`).join("");
+    $("#fStars").innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} Sterne" class="${n <= rating ? "on" : ""}" data-star="${n}">★</button>`).join("");
   }
   $("#fStars").addEventListener("click", (e) => { const s = e.target.closest("[data-star]"); if (!s) return; rating = +s.dataset.star === rating ? 0 : +s.dataset.star; renderStars(); });
 
@@ -460,7 +517,7 @@
 
   // ---------- Timer ----------
   let preset = 20, tickHandle = null;
-  const CIRC = 603.2;
+  const CIRC = 578;
   function fillBookSelects() {
     const reading = state.books.filter((b) => b.status === "lesen");
     const opts = reading.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">Ohne bestimmtes Buch</option>`;
@@ -477,10 +534,13 @@
     fillBookSelects();
     $("#manualDate").value ||= dateKey();
     $("#manualDate").max = dateKey();
-    const recent = [...state.sessions].sort((a, b) => b.ts - a.ts).slice(0, 6);
+    const recent = [...state.sessions].sort((a, b) => b.ts - a.ts).slice(0, 8);
     $("#sessionLog").innerHTML = recent.length
-      ? recent.map((s) => `<li><span>${esc(bookById(s.bookId)?.title || "Freies Lesen")}${s.pages ? ` · ${s.pages} S.` : ""}</span><span>${s.minutes} Min. · ${fmtDate(s.date)}</span></li>`).join("")
-      : `<li><span class="muted">Noch keine Einträge – leg los!</span></li>`;
+      ? recent.map((s, i) => `<li style="animation-delay:${i * 0.04}s"><time>${fmtDate(s.date)}</time><div>
+          <strong>${esc(bookById(s.bookId)?.title || "Freies Lesen")}</strong> <span class="entry-meta">· ${s.minutes} Min.${s.pages ? ` · ${s.pages} S.` : ""}</span>
+          ${s.note ? `<p class="entry-note">„${esc(s.note)}“</p>` : ""}
+          ${s.word ? `<span class="word">${esc(s.word)}</span>` : ""}</div></li>`).join("")
+      : `<li><time>—</time><span class="muted">Noch keine Einträge. Nach jeder Lesezeit kannst du hier einen Satz notieren.</span></li>`;
     updateClock();
   }
   function updateClock() {
@@ -496,7 +556,7 @@
     $("#clockRing").style.strokeDashoffset = target ? CIRC * Math.min(1, ratio) : CIRC * (1 - ratio);
     const running = !!t?.running;
     $(".timer-card").classList.toggle("running", running);
-    $("#timerStart").textContent = running ? "❚❚ Pause" : t ? "▶ Weiter" : "▶ Start";
+    $("#timerStart").textContent = running ? "Pause" : t ? "Weiter" : "Start";
     $("#timerStop").disabled = !t;
     $$("#timerPresets .chip").forEach((c) => { c.disabled = !!t; c.classList.toggle("active", +c.dataset.min === (t ? t.target : preset)); });
     $("#timerBook").disabled = !!t;
@@ -524,6 +584,8 @@
     pendingSession = { bookId: t.bookId, minutes };
     const b = bookById(t.bookId);
     $("#finishText").textContent = `Du hast ${plural(minutes, "Minute", "Minuten")} gelesen${b ? ` in „${b.title}“` : ""}.`;
+    $("#finishStampMin").textContent = `${minutes}′`;
+    $("#finishNote").value = ""; $("#finishWord").value = "";
     $("#finishPageLbl").textContent = b ? "Auf welcher Seite bist du jetzt?" : "Wie viele Seiten hast du gelesen?";
     $("#finishPage").value = b ? b.currentPage || "" : "";
     if (b?.pages) $("#finishPage").max = b.pages; else $("#finishPage").removeAttribute("max");
@@ -533,13 +595,14 @@
     e.preventDefault();
     if (pendingSession) {
       const v = parseInt($("#finishPage").value);
-      logSession(bookById(pendingSession.bookId) ? { ...pendingSession, toPage: v } : { ...pendingSession, pagesRead: v });
+      const extra = { note: $("#finishNote").value, word: $("#finishWord").value };
+      logSession(bookById(pendingSession.bookId) ? { ...pendingSession, ...extra, toPage: v } : { ...pendingSession, ...extra, pagesRead: v });
     }
     pendingSession = null; $("#finishDialog").close();
   });
   $("#finishDialog").addEventListener("cancel", () => { if (pendingSession) logSession(pendingSession); pendingSession = null; });
 
-  function logSession({ bookId, minutes, toPage, pagesRead, date = dateKey() }) {
+  function logSession({ bookId, minutes, toPage, pagesRead, note = "", word = "", date = dateKey() }) {
     const b = bookById(bookId);
     let pages = !b && Number.isFinite(pagesRead) ? Math.max(0, Math.min(2000, pagesRead)) : 0;
     const beforeMin = minutesByDay()[date] || 0, beforePg = pagesByDay()[date] || 0;
@@ -549,7 +612,9 @@
       b.currentPage = np; b.updated = Date.now();
       if (!b.startDate) b.startDate = date;
     }
-    state.sessions.push({ id: uid(), bookId: bookId || null, date, minutes, pages, hour: date === dateKey() ? new Date().getHours() : null, ts: Date.now() });
+    note = note.trim().slice(0, 200); word = word.trim().slice(0, 40);
+    if (word && !addWord(word, bookId, date)) word = "";
+    state.sessions.push({ id: uid(), bookId: bookId || null, date, minutes, pages, note, word, hour: date === dateKey() ? new Date().getHours() : null, ts: Date.now() });
     let finished = false;
     if (b && b.pages && b.currentPage >= b.pages && b.status !== "gelesen") { b.status = "gelesen"; b.endDate = date; finished = true; }
     save();
@@ -571,8 +636,9 @@
     const date = $("#manualDate").value || dateKey();
     if (date > dateKey()) { toast("Das Datum liegt in der Zukunft."); return; }
     const bookId = $("#manualBook").value, v = parseInt($("#manualPage").value);
-    logSession(bookById(bookId) ? { bookId, minutes, toPage: v, date } : { bookId, minutes, pagesRead: v, date });
-    $("#manualPage").value = "";
+    const note = $("#manualNote").value;
+    logSession(bookById(bookId) ? { bookId, minutes, toPage: v, note, date } : { bookId, minutes, pagesRead: v, note, date });
+    $("#manualPage").value = ""; $("#manualNote").value = "";
   });
 
   $("#manualBook").addEventListener("change", () => {
@@ -599,8 +665,8 @@
   const profileDialog = $("#profileDialog");
   function openProfile() {
     const p = state.profile;
-    $("#profileTitle").textContent = p ? "Profil & Einstellungen" : "Willkommen bei Lesezeit!";
-    $("#profileIntro").textContent = p ? "Hier kannst du Name, Altersgruppe und Tagesziel ändern." : "Ein paar Minuten am Tag machen den Unterschied. Lass uns kurz einrichten:";
+    $("#profileTitle").textContent = p ? "Dein Lesepass" : "Willkommen bei Lesezeit";
+    $("#profileIntro").textContent = p ? "Name, Altersgruppe und Tagesziele ändern." : "Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:";
     $("#pName").value = p?.name || "";
     $$("#pGroup input").forEach((r) => (r.checked = r.value === (p?.group || "erwachsene")));
     $("#pGoal").value = p?.goal || 20; $("#pGoalOut").textContent = $("#pGoal").value;
@@ -627,7 +693,7 @@
     const first = !state.profile;
     state.profile = readProfile(); save();
     profileDialog.close(); render();
-    if (first) { confetti(); toast(`Schön, dass du da bist, ${state.profile.name}! 📚`); }
+    if (first) { confetti(); toast(`Dein Lesepass ist bereit, ${state.profile.name}.`); }
   });
   profileDialog.addEventListener("cancel", (e) => { if (!state.profile) e.preventDefault(); });
   $("#resetAll").addEventListener("click", async () => {
@@ -638,7 +704,7 @@
     if (!$("#pName").value.trim()) $("#pName").value = "Lea";
     state.profile = readProfile();
     loadDemo(); profileDialog.close(); render(); fillBookSelects();
-    toast("Beispieldaten geladen – schau dich um! 👀");
+    toast("Beispieldaten geladen. Schau dich um!");
   });
 
   function loadDemo() {
@@ -652,7 +718,9 @@
     const b3 = addBook({ ...recos[2], status: "gelesen", currentPage: recos[2].pages, startDate: k(24), endDate: k(11), rating: 5, notes: "Hat mich total gepackt!" });
     addBook({ ...recos[3], status: "wunsch", startDate: null });
     const plan = [[0, 15, b1, 12], [1, 25, b1, 18], [2, 20, b2, 14], [3, 30, b1, 20], [4, 10, b1, 8], [6, 22, b1, 15], [7, 35, b1, 25], [11, 40, b3, 40], [12, 25, b3, 20], [13, 30, b3, 28]];
-    for (const [d, minutes, b, pages] of plan) state.sessions.push({ id: uid(), bookId: b.id, date: k(d), minutes, pages, hour: d % 3 === 0 ? 21 : 18, ts: Date.now() - d * 86400000 });
+    const notes = { 0: "Endlich wird klar, warum die beiden losfahren.", 3: "Das Kapitel war spannend, ich wollte nicht aufhören.", 7: "Eine Stelle habe ich zweimal gelesen, so schön war sie." };
+    for (const [d, minutes, b, pages] of plan) state.sessions.push({ id: uid(), bookId: b.id, date: k(d), minutes, pages, note: notes[d] || "", word: "", hour: d % 3 === 0 ? 21 : 18, ts: Date.now() - d * 86400000 });
+    ["Sehnsucht", "beiläufig", "Fernweh", "verblüfft", "Abenteuer", "flüstern"].forEach((w, i) => state.words.push({ id: uid(), w, bookId: b1.id, date: k(i), ts: Date.now() - i * 86400000 }));
     state.seenBadges = BADGES.filter((b) => b.test()).map((b) => b.id);
     quietBadges = false;
     save();
@@ -669,37 +737,37 @@
     const cv = $("#confetti"), ctx = cv.getContext("2d");
     cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
     ctx.scale(devicePixelRatio, devicePixelRatio);
-    const cols = ["#2d6a4f", "#52b788", "#c9a227", "#95d5b2", "#1b4332"];
+    const cols = ["#1f5c42", "#3d8a63", "#9fcfb1", "#b48c25", "#f4f2e9"];
     const parts = Array.from({ length: 140 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.35,
       vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 13 - 4, r: Math.random() * 6 + 4,
-      c: cols[(Math.random() * cols.length) | 0], a: Math.random() * 6, va: (Math.random() - 0.5) * 0.4
+      c: cols[(Math.random() * cols.length) | 0], a: Math.random() * 6, va: (Math.random() - 0.5) * 0.4, leaf: Math.random() < 0.6
     }));
     const t0 = performance.now();
     (function frame(t) {
       ctx.clearRect(0, 0, innerWidth, innerHeight);
       for (const p of parts) {
         p.vy += 0.35; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.a += p.va;
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); ctx.restore();
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c;
+        if (p.leaf) { ctx.beginPath(); ctx.ellipse(0, 0, p.r * 0.9, p.r * 0.42, 0, 0, Math.PI * 2); ctx.fill(); }
+        else { ctx.fillRect(-p.r / 2, -p.r / 3, p.r, p.r * 0.66); }
+        ctx.restore();
       }
       if (t - t0 < 3200) requestAnimationFrame(frame); else ctx.clearRect(0, 0, innerWidth, innerHeight);
     })(t0);
   }
-  function buildSky() {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const glyphs = ["A", "ä", "ß", "Ö", "g", "&", "Q", "ü", "„", "R", "e", "§"];
-    $(".sky").innerHTML = Array.from({ length: 14 }, (_, i) =>
-      `<span style="left:${(i * 7.3 + Math.random() * 5) % 100}%;--s:${24 + Math.random() * 40}px;--d:${22 + Math.random() * 18}s;--delay:${-Math.random() * 30}s">${glyphs[i % glyphs.length]}</span>`).join("");
-  }
-
   function runIntro() {
     const intro = $("#intro");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!intro || reduce) { intro?.remove(); document.body.classList.remove("intro-on"); return Promise.resolve(); }
-    $("#introWord").innerHTML = [..."Lesezeit"].map((c, i) => `<span style="animation-delay:${0.9 + i * 0.07}s">${c}</span>`).join("");
-    const g = ["L", "e", "s", "a", "ß", "ö", "Z", "t", "&", "„", "i", "W"];
-    $("#introGlyphs").innerHTML = Array.from({ length: 18 }, (_, i) =>
-      `<span style="--x:${Math.random() * 95}%;--y:${Math.random() * 90}%;--s:${30 + Math.random() * 70}px;--r:${(Math.random() - 0.5) * 30}deg;--dl:${Math.random() * 0.8}s">${g[i % g.length]}</span>`).join("");
+    const q = quoteOfDay();
+    const p = state.profile;
+    const readDays = Object.keys(minutesByDay()).length;
+    $("#coverOwner").textContent = p?.name ? `von ${p.name}` : "Jeden Tag ein paar Seiten";
+    $("#coverNo").textContent = `Lesetag Nr. ${String(readDays + (minutesByDay()[dateKey()] ? 0 : 1)).padStart(3, "0")}`;
+    $("#fpDate").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    $("#fpQuote").textContent = `„${q.text}“`;
+    $("#fpBy").textContent = "— " + q.by;
     return new Promise((resolve) => {
       let done = false;
       const finish = () => {
@@ -707,17 +775,16 @@
         intro.classList.add("out");
         document.body.classList.remove("intro-on");
         render();
-        setTimeout(() => { intro.remove(); resolve(); }, 1000);
+        setTimeout(() => { intro.remove(); resolve(); }, 800);
       };
       intro.addEventListener("click", finish);
-      setTimeout(finish, 2900);
+      setTimeout(finish, 3700);
     });
   }
 
   // ---------- Start ----------
   $("#nextTip").addEventListener("click", () => showTip(true));
   window.addEventListener("hashchange", () => go(location.hash.slice(1)));
-  buildSky();
   fillBookSelects();
   go(location.hash.slice(1) || "uebersicht");
   if (state.timer) startTick();

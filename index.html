@@ -2,113 +2,125 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Lesezeit – Leseförderung</title>
-  <meta name="description" content="Lesezeit: Leseförderung für Schülerinnen, Schüler und Erwachsene – Bücherregal, Lese-Timer, Lesesträhne, Tipps und Erfolge.">
+  <meta name="description" content="Lesezeit: dein Lesepass für jeden Tag – Lesezeit, Seiten, Stempel, Wortschatz und Lesetagebuch. Für Kinder, Jugendliche und Erwachsene.">
+  <meta name="theme-color" content="#173d2c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=6">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=8">
 </head>
 <body class="intro-on">
-  <!-- Intro-Animation -->
+  <!-- Intro: Der Lesepass wird aufgeschlagen -->
   <div class="intro" id="intro" aria-hidden="true">
-    <div class="intro-glyphs" id="introGlyphs"></div>
-    <div class="intro-center">
-      <svg class="intro-book" viewBox="0 0 120 80">
-        <path class="ib-page" d="M60 14 C46 6 22 6 6 10 V72 C22 68 46 68 60 76 Z"/>
-        <path class="ib-page" d="M60 14 C74 6 98 6 114 10 V72 C98 68 74 68 60 76 Z"/>
-        <g>
-          <path class="ib-flip" d="M60 14 C74 6 98 6 114 10 V72 C98 68 74 68 60 76 Z"/>
-          <path class="ib-flip" d="M60 14 C74 6 98 6 114 10 V72 C98 68 74 68 60 76 Z"/>
-          <path class="ib-flip" d="M60 14 C74 6 98 6 114 10 V72 C98 68 74 68 60 76 Z"/>
-        </g>
-        <path class="ib-line" d="M16 24 C28 21 40 21 50 25" style="animation-delay:1.75s"/>
-        <path class="ib-line" d="M16 34 C28 31 40 31 50 35" style="animation-delay:1.85s"/>
-        <path class="ib-line" d="M16 44 C28 41 40 41 50 45" style="animation-delay:1.95s"/>
-        <path class="ib-line" d="M70 25 C80 21 92 21 104 24" style="animation-delay:1.5s"/>
-        <path class="ib-line" d="M70 35 C80 31 92 31 104 34" style="animation-delay:1.6s"/>
-        <path class="ib-line" d="M70 45 C80 41 92 41 104 44" style="animation-delay:1.7s"/>
-      </svg>
-      <h1 class="intro-word" id="introWord" aria-label="Lesezeit"></h1>
-      <p class="intro-tag">Jeden Tag ein paar Seiten</p>
-      <div class="intro-line"><i></i></div>
+    <div class="cover-stage" id="coverStage">
+      <div class="first-page">
+        <p class="fp-date" id="fpDate"></p>
+        <p class="fp-quote" id="fpQuote"></p>
+        <p class="fp-by" id="fpBy"></p>
+        <div class="stamp fp-stamp"><span>Heute</span><b>lesen</b></div>
+      </div>
+      <div class="cover">
+        <div class="cover-front">
+          <div class="cover-frame">
+            <span class="cover-kicker">Lesepass</span>
+            <span class="cover-title">Lesezeit</span>
+            <span class="cover-rule"></span>
+            <span class="cover-owner" id="coverOwner">Jeden Tag ein paar Seiten</span>
+          </div>
+          <span class="cover-no" id="coverNo"></span>
+        </div>
+        <div class="cover-back"></div>
+      </div>
     </div>
     <div class="intro-skip">Tippen zum Überspringen</div>
   </div>
 
-  <!-- Schwebende Buchstaben im Hintergrund -->
-  <div class="sky" aria-hidden="true"></div>
-
   <header class="topbar">
     <a class="brand" href="#uebersicht" data-nav="uebersicht">
-      <svg class="brand-book" viewBox="0 0 64 48" aria-hidden="true">
-        <path class="page-l" d="M32 10 C22 4 10 4 4 7 V42 C10 39 22 39 32 45 Z"/>
-        <path class="page-r" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
-        <path class="page-flip" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
-      </svg>
+      <span class="brand-mark" aria-hidden="true">Lz</span>
       <span>Lesezeit</span>
     </a>
     <nav class="tabs" aria-label="Hauptnavigation">
-      <button data-nav="uebersicht" class="active"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><span class="lbl">Übersicht</span></button>
-      <button data-nav="regal"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><path d="M15.5 5.4l3.6-.9 3.4 14.6-3.6.9z"/></svg></span><span class="lbl">Mein Regal</span></button>
-      <button data-nav="timer"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg></span><span class="lbl">Lese-Timer</span></button>
+      <button data-nav="uebersicht" class="active"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/><path d="M9 14.5l2 2 4-4"/></svg></span><span class="lbl">Heute</span></button>
+      <button data-nav="regal"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><path d="M15.5 5.4l3.6-.9 3.4 14.6-3.6.9z"/></svg></span><span class="lbl">Regal</span></button>
+      <button data-nav="timer"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg></span><span class="lbl">Timer</span></button>
       <button data-nav="entdecken"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span><span class="lbl">Entdecken</span></button>
-      <button data-nav="erfolge"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></svg></span><span class="lbl">Erfolge</span></button>
+      <button data-nav="erfolge"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="6.5"/><circle cx="12" cy="10" r="3.5"/><path d="M8.5 15.5L7 22l5-2.5 5 2.5-1.5-6.5"/></svg></span><span class="lbl">Erfolge</span></button>
     </nav>
     <button class="icon-btn" id="profileBtn" title="Profil &amp; Einstellungen" aria-label="Profil und Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
   </header>
 
   <main id="app">
-    <!-- ÜBERSICHT -->
+    <!-- HEUTE -->
     <section class="view active" id="view-uebersicht">
       <div class="hero">
-        <div>
-          <p class="eyebrow" id="todayLabel"></p>
-          <h1 id="greeting">Willkommen!</h1>
-          <p class="sub" id="motto"></p>
+        <div class="hero-main">
+          <p class="kicker" id="todayLabel"></p>
+          <h1 id="greeting">Willkommen.</h1>
+          <div class="hero-actions">
+            <button class="btn primary" data-nav="timer">Jetzt lesen</button>
+            <button class="btn" id="quickAddBtn">Buch hinzufügen</button>
+          </div>
         </div>
-        <div class="hero-actions">
-          <button class="btn primary" data-nav="timer">▶ Jetzt lesen</button>
-          <button class="btn" id="quickAddBtn">＋ Buch hinzufügen</button>
-        </div>
+        <figure class="quote">
+          <blockquote id="quoteText"></blockquote>
+          <figcaption id="quoteBy"></figcaption>
+        </figure>
       </div>
 
       <div class="grid-dash">
         <article class="card goal-card">
-          <h2>Tagesziel</h2>
-          <div class="ring-wrap">
-            <svg class="ring" viewBox="0 0 120 120">
-              <circle class="ring-bg" cx="60" cy="60" r="52"/>
-              <circle class="ring-fg" id="goalRing" cx="60" cy="60" r="52"/>
-              <circle class="ring-bg ring-in" cx="60" cy="60" r="38"/>
-              <circle class="ring-fg2" id="goalRing2" cx="60" cy="60" r="38"/>
-            </svg>
-            <div class="ring-label" id="goalCheck" aria-hidden="true"></div>
+          <div class="card-head"><h2>Heute</h2><span class="kicker" id="goalPct">0 %</span></div>
+          <div class="ruler-block">
+            <div class="ruler-head"><span>Minuten</span><strong><span id="goalMinutes">0</span> / <span id="goalOf">20</span></strong></div>
+            <div class="ruler" id="rulerMin"><i></i></div>
           </div>
-          <div class="goal-legend">
-            <div><i class="dot min"></i><span>Minuten</span><strong><span id="goalMinutes">0</span> / <span id="goalOf">20</span></strong></div>
-            <div><i class="dot pg"></i><span>Seiten</span><strong><span id="goalPages">0</span> / <span id="goalPagesOf">15</span></strong></div>
+          <div class="ruler-block">
+            <div class="ruler-head"><span>Seiten</span><strong><span id="goalPages">0</span> / <span id="goalPagesOf">15</span></strong></div>
+            <div class="ruler pg" id="rulerPg"><i></i></div>
           </div>
-          <p class="muted center" id="goalHint"></p>
+          <div class="goal-foot">
+            <p class="goal-hint" id="goalHint"></p>
+            <div class="stamp goal-stamp" id="goalStamp" hidden><span>Ziel</span><b>erreicht</b></div>
+          </div>
         </article>
 
         <article class="card tree-card">
-          <h2>Dein Lesebaum</h2>
+          <div class="card-head"><h2>Lesebaum</h2><span class="kicker" id="treeStage"></span></div>
           <svg class="tree" id="tree" viewBox="0 0 140 110" role="img" aria-label="Lesebaum"></svg>
           <p class="big"><strong id="streakDays">0</strong> <span id="streakWord">Tage in Folge</span></p>
-          <p class="tree-stage" id="treeStage"></p>
           <div class="week-dots" id="weekDots"></div>
         </article>
 
         <article class="card stats-card">
-          <h2>Deine Zahlen</h2>
-          <div class="stats">
-            <div class="stat"><strong id="statBooks">0</strong><span>Bücher beendet</span></div>
-            <div class="stat"><strong id="statPages">0</strong><span>Seiten gelesen</span></div>
-            <div class="stat"><strong id="statHours">0</strong><span>Lesezeit gesamt</span></div>
-            <div class="stat"><strong id="statSessions">0</strong><span>Lese-Einheiten</span></div>
-          </div>
+          <div class="card-head"><h2>In Zahlen</h2><span class="kicker">gesamt</span></div>
+          <dl class="stats">
+            <div class="stat"><dt>Bücher beendet</dt><dd id="statBooks">0</dd></div>
+            <div class="stat"><dt>Seiten</dt><dd id="statPages">0</dd></div>
+            <div class="stat"><dt>Lesezeit</dt><dd id="statHours">0</dd></div>
+            <div class="stat"><dt>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
+            <div class="stat"><dt>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
+            <div class="stat"><dt>Längste Serie</dt><dd id="statBest">0</dd></div>
+          </dl>
+        </article>
+
+        <article class="card wide pass-card">
+          <div class="card-head"><h2>Lesepass</h2><span class="kicker" id="passMonth"></span></div>
+          <div class="pass-week" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+          <div class="pass" id="pass"></div>
+          <p class="pass-legend"><span><i class="ps full"></i>Ziel erreicht</span><span><i class="ps"></i>gelesen</span><span id="passCount"></span></p>
+        </article>
+
+        <article class="card words-card">
+          <div class="card-head"><h2>Wortschatz</h2><span class="kicker" id="wordCount"></span></div>
+          <form class="word-form" id="wordForm">
+            <label class="sr" for="wordInput">Neues Wort</label>
+            <input id="wordInput" maxlength="40" autocomplete="off" placeholder="Neues Wort aus dem Buch …">
+            <button class="btn primary" type="submit" aria-label="Wort speichern">＋</button>
+          </form>
+          <div class="words" id="words"></div>
         </article>
 
         <article class="card wide">
@@ -121,7 +133,7 @@
 
         <article class="card chart-card">
           <div class="card-head">
-            <h2>Die letzten 7 Tage</h2>
+            <h2>7 Tage</h2>
             <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
               <button class="active" data-mode="min" role="tab">Minuten</button>
               <button data-mode="pg" role="tab">Seiten</button>
@@ -130,10 +142,10 @@
           <div class="bars" id="weekChart"></div>
         </article>
 
-        <article class="card tip-card">
-          <h2>Tipp des Tages</h2>
+        <article class="card tip-card full">
+          <span class="kicker">Tipp</span>
           <div class="tip" id="tipOfDay"></div>
-          <button class="link" id="nextTip">Noch ein Tipp ↻</button>
+          <button class="link" id="nextTip">Nächster Tipp →</button>
         </article>
       </div>
     </section>
@@ -141,8 +153,8 @@
     <!-- REGAL -->
     <section class="view" id="view-regal">
       <div class="section-head">
-        <h1>Mein Bücherregal</h1>
-        <button class="btn primary" id="addBookBtn">＋ Buch hinzufügen</button>
+        <div><p class="kicker">Meine Bücher</p><h1>Bücherregal</h1></div>
+        <button class="btn primary" id="addBookBtn">Buch hinzufügen</button>
       </div>
       <div class="filters" role="tablist" id="shelfFilters">
         <button class="chip active" data-filter="alle">Alle</button>
@@ -156,7 +168,7 @@
     <!-- TIMER -->
     <section class="view" id="view-timer">
       <div class="section-head">
-        <h1>Lese-Timer</h1>
+        <div><p class="kicker">Konzentriert lesen</p><h1>Lese-Timer</h1></div>
       </div>
       <div class="timer-layout">
         <article class="card timer-card">
@@ -173,37 +185,40 @@
           </div>
           <div class="clock">
             <svg viewBox="0 0 220 220" class="clock-svg">
-              <circle class="clock-bg" cx="110" cy="110" r="96"/>
-              <circle class="clock-fg" id="clockRing" cx="110" cy="110" r="96"/>
+              <circle class="clock-ticks" cx="110" cy="110" r="104"/>
+              <circle class="clock-bg" cx="110" cy="110" r="92"/>
+              <circle class="clock-fg" id="clockRing" cx="110" cy="110" r="92"/>
             </svg>
             <div class="clock-face">
-              <div class="reader" id="reader" aria-hidden="true">
-                <span class="reader-book">📖</span>
-                <span class="z">z</span><span class="z">z</span>
-              </div>
+              <svg class="reader-book" viewBox="0 0 64 48" aria-hidden="true">
+                <path class="page-l" d="M32 10 C22 4 10 4 4 7 V42 C10 39 22 39 32 45 Z"/>
+                <path class="page-r" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
+                <path class="page-flip" d="M32 10 C42 4 54 4 60 7 V42 C54 39 42 39 32 45 Z"/>
+              </svg>
               <strong id="clockTime">20:00</strong>
-              <span id="clockMode" class="muted">Countdown</span>
+              <span id="clockMode" class="kicker">Countdown</span>
             </div>
           </div>
           <div class="timer-actions">
-            <button class="btn primary big" id="timerStart">▶ Start</button>
-            <button class="btn big" id="timerStop" disabled>■ Beenden</button>
+            <button class="btn primary big" id="timerStart">Start</button>
+            <button class="btn big" id="timerStop" disabled>Beenden</button>
           </div>
         </article>
 
         <article class="card">
-          <h2>Manuell eintragen</h2>
-          <p class="muted">Du hast ohne Timer gelesen? Kein Problem – trag es hier ein.</p>
+          <h2>Nachtragen</h2>
+          <p class="muted">Ohne Timer gelesen? Trag es hier ein.</p>
           <form id="manualForm" class="form">
             <label class="field"><span>Buch</span><select id="manualBook"></select></label>
             <div class="row">
               <label class="field"><span>Minuten</span><input type="number" min="1" max="600" id="manualMin" required value="20"></label>
               <label class="field"><span id="manualPageLbl">Bis Seite</span><input type="number" min="0" id="manualPage" placeholder="z. B. 84"></label>
             </div>
+            <label class="field"><span>Ein Satz zum Lesen <small>(optional)</small></span><input id="manualNote" maxlength="200" placeholder="Was ist passiert?"></label>
             <label class="field"><span>Datum</span><input type="date" id="manualDate" required></label>
             <button class="btn primary" type="submit">Eintragen</button>
           </form>
-          <h2 class="mt">Letzte Lese-Einheiten</h2>
+          <h2 class="mt">Lesetagebuch</h2>
           <ul class="log" id="sessionLog"></ul>
         </article>
       </div>
@@ -212,7 +227,7 @@
     <!-- ENTDECKEN -->
     <section class="view" id="view-entdecken">
       <div class="section-head">
-        <h1>Entdecken</h1>
+        <div><p class="kicker">Empfehlungen &amp; Tipps</p><h1>Entdecken</h1></div>
       </div>
       <div class="filters" id="recoFilters">
         <button class="chip" data-group="kinder">Kinder (6–10)</button>
@@ -228,7 +243,7 @@
     <!-- ERFOLGE -->
     <section class="view" id="view-erfolge">
       <div class="section-head">
-        <h1>Erfolge</h1>
+        <div><p class="kicker">Stempel &amp; Stufen</p><h1>Erfolge</h1></div>
         <p class="muted" id="badgeCount"></p>
       </div>
       <div class="level card" id="levelCard"></div>
@@ -280,43 +295,45 @@
   <!-- Profil-Dialog / Onboarding -->
   <dialog id="profileDialog" class="modal">
     <form method="dialog" id="profileForm" class="form">
-      <div class="onboard-art" aria-hidden="true">📚✨</div>
-      <h2 id="profileTitle">Willkommen bei Lesezeit!</h2>
-      <p class="muted" id="profileIntro">Ein paar Minuten am Tag machen den Unterschied. Lass uns kurz einrichten:</p>
+      <div class="stamp onboard-stamp" aria-hidden="true"><span>Lese</span><b>pass</b></div>
+      <h2 id="profileTitle">Dein Lesepass</h2>
+      <p class="muted" id="profileIntro">Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:</p>
       <label class="field"><span>Wie heißt du?</span><input id="pName" maxlength="40" required autocomplete="given-name" placeholder="Vorname"></label>
       <div class="field">
         <span>Ich bin …</span>
         <div class="seg" id="pGroup">
-          <label><input type="radio" name="group" value="kinder"><span>🧒 Kind<br><small>6–10 Jahre</small></span></label>
-          <label><input type="radio" name="group" value="jugend"><span>🧑‍🎓 Jugendlich<br><small>11–17 Jahre</small></span></label>
-          <label><input type="radio" name="group" value="erwachsene" checked><span>🧑 Erwachsen<br><small>18+</small></span></label>
+          <label><input type="radio" name="group" value="kinder"><span>Kind<small>6–10 Jahre</small></span></label>
+          <label><input type="radio" name="group" value="jugend"><span>Jugendlich<small>11–17 Jahre</small></span></label>
+          <label><input type="radio" name="group" value="erwachsene" checked><span>Erwachsen<small>18+</small></span></label>
         </div>
       </div>
-      <label class="field"><span>Tägliches Ziel – Lesezeit: <strong id="pGoalOut">20</strong> Minuten</span>
+      <label class="field"><span>Tagesziel Lesezeit: <strong id="pGoalOut">20</strong> Minuten</span>
         <input type="range" id="pGoal" min="5" max="90" step="5" value="20">
       </label>
-      <label class="field"><span>Tägliches Ziel – Seiten: <strong id="pGoalPagesOut">15</strong> Seiten</span>
+      <label class="field"><span>Tagesziel Seiten: <strong id="pGoalPagesOut">15</strong> Seiten</span>
         <input type="range" id="pGoalPages" min="5" max="100" step="5" value="15">
       </label>
       <div class="modal-actions">
         <button type="button" class="btn danger" id="resetAll" hidden>Alle Daten löschen</button>
         <span class="spacer"></span>
         <button type="button" class="btn" id="demoData">Beispieldaten laden</button>
-        <button type="submit" class="btn primary">Los geht's!</button>
+        <button type="submit" class="btn primary">Speichern</button>
       </div>
     </form>
   </dialog>
 
-  <!-- Seiten nach Timer -->
+  <!-- Nach dem Lesen -->
   <dialog id="finishDialog" class="modal small">
     <form method="dialog" id="finishForm" class="form">
-      <div class="onboard-art" aria-hidden="true">🎉</div>
-      <h2>Super gelesen!</h2>
+      <div class="stamp finish-stamp" aria-hidden="true"><span>Gelesen</span><b id="finishStampMin">20′</b></div>
+      <h2>Gut gelesen!</h2>
       <p id="finishText" class="muted"></p>
       <label class="field"><span id="finishPageLbl">Auf welcher Seite bist du jetzt?</span><input type="number" min="0" id="finishPage"></label>
+      <label class="field"><span>Ein Satz zu heute <small>(optional)</small></span><input id="finishNote" maxlength="200" placeholder="Was ist passiert? Was hat dich überrascht?"></label>
+      <label class="field"><span>Neues Wort entdeckt? <small>(optional)</small></span><input id="finishWord" maxlength="40" autocomplete="off" placeholder="z. B. Sehnsucht"></label>
       <div class="modal-actions">
         <span class="spacer"></span>
-        <button type="submit" class="btn primary">Speichern</button>
+        <button type="submit" class="btn primary">In den Lesepass eintragen</button>
       </div>
     </form>
   </dialog>
@@ -337,7 +354,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/data.js?v=8"></script>
+  <script src="js/app.js?v=8"></script>
 </body>
 </html>
