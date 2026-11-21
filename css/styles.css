@@ -523,6 +523,22 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .log .word { font-size: .95rem; margin-top: .3rem; padding: .05rem .45rem; }
 
 /* ---------- Entdecken ---------- */
+.reco-head { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.reco-head h2 { margin: 0; }
+.reco-head .btn { padding: .45rem .9rem; font-size: .88rem; }
+.reco-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .4rem; }
+.reco-tools { display: inline-flex; gap: .2rem; flex: none; }
+.icon-mini { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink-soft); font-size: .8rem; line-height: 1; display: grid; place-items: center; }
+.icon-mini:hover { color: var(--ink); border-color: var(--green); }
+.icon-mini[data-reco-del]:hover { color: var(--danger); border-color: var(--danger); }
+.tag.own { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
+.reco-restore { margin: .8rem 0 0; font-size: .88rem; }
+.phone-box { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .9rem; align-items: center; padding: .8rem; border: 1px dashed var(--rule); border-radius: 10px; background: var(--paper); }
+.phone-box img { width: 112px; height: 112px; border-radius: 6px; background: #fff; padding: 4px; image-rendering: pixelated; }
+.phone-box strong { display: block; margin-bottom: .2rem; }
+.phone-box p { margin: 0 0 .5rem; font-size: .84rem; color: var(--ink-soft); }
+.phone-box .btn { padding: .45rem .9rem; font-size: .88rem; }
+@media (max-width: 420px) { .phone-box { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; } }
 .reco-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .reco { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: .9rem; animation: rise .5s both; }
 .reco .mini-cover { width: 64px; height: 92px; font-size: 1.7rem; }

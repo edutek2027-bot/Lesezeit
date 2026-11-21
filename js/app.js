@@ -42,7 +42,7 @@
   }
   const quoted = (x) => t("„{q}“", { q: x });
   // Statische Texte im HTML einmal erfassen (data-t, Platzhalter, ARIA-Labels, Titel)
-  const ATTRS = ["placeholder", "aria-label", "title"];
+  const ATTRS = ["placeholder", "aria-label", "title", "alt"];
   $$("[data-t]").forEach((el) => (el.dataset.tsrc = el.textContent.trim()));
   ATTRS.forEach((a) => $$(`[${a}]`).forEach((el) => (el.dataset["src" + a.replace("-", "")] = el.getAttribute(a))));
   function applyStatic() {
@@ -75,6 +75,9 @@
   catch { state = defaultState(); }
   if (!Array.isArray(state.words)) state.words = [];
   if (!Array.isArray(state.lines)) state.lines = [];
+  if (!Array.isArray(state.recoHidden)) state.recoHidden = [];
+  if (!Array.isArray(state.recoCustom)) state.recoCustom = [];
+  if (!state.recoEdits || typeof state.recoEdits !== "object") state.recoEdits = {};
   lang = LOCALES[state.lang] ? state.lang : (LOCALES[(navigator.language || "de").slice(0, 2)] ? navigator.language.slice(0, 2) : "de");
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* Speicher nicht verfügbar */ } };
 
@@ -813,34 +816,104 @@
     renderShelf();
   });
 
-  function renderDiscover(g = group()) {
+  // Empfehlungen: eingebaute (übersetzbar) + eigene; beide lassen sich bearbeiten oder entfernen
+  let discGroup = null;
+  function recoList(g) {
+    const builtin = D.recommendations[g].map((r, i) => {
+      const id = `${g}:${i}`, ed = state.recoEdits[id];
+      return { ...r, ...(ed || {}), id, builtin: true, edited: !!ed, group: g };
+    }).filter((r) => !state.recoHidden.includes(r.id));
+    return [...builtin, ...state.recoCustom.filter((r) => r.group === g)];
+  }
+  const recoById = (id) => {
+    for (const g of Object.keys(D.recommendations)) { const r = recoList(g).find((x) => x.id === id); if (r) return r; }
+    return null;
+  };
+  function renderDiscover(g = discGroup || group()) {
+    discGroup = g;
     $$("#recoFilters .chip").forEach((c) => c.classList.toggle("active", c.dataset.group === g));
     const have = new Set(state.books.map((b) => b.title.toLowerCase()));
-    $("#recoGrid").innerHTML = D.recommendations[g].map((r, i) => `
-      <article class="card reco" style="animation-delay:${i * 0.06}s">
-        <div class="mini-cover" style="--c:${coverColor(r.title)}">${r.emoji}</div>
+    const list = recoList(g);
+    const txt = (r) => (r.builtin && !r.edited ? t(r.text) : r.text || "");
+    $("#recoGrid").innerHTML = list.map((r, i) => `
+      <article class="card reco" style="animation-delay:${Math.min(i, 8) * 0.06}s">
+        <div class="mini-cover" style="--c:${coverColor(r.title)}">${r.emoji || GENRE_EMOJI[r.genre] || "📘"}</div>
         <div>
-          <h3>${esc(r.title)}</h3>
-          <p class="by">${esc(r.author)}</p>
-          <div class="tags"><span class="tag">${esc(t(r.genre))}</span><span class="tag">${t("ca. {n} Seiten", { n: r.pages })}</span></div>
-          <p>${esc(t(r.text))}</p>
+          <div class="reco-top"><h3>${esc(r.title)}</h3>
+            <span class="reco-tools">
+              <button type="button" class="icon-mini" data-reco-edit="${r.id}" aria-label="${esc(t("{t} bearbeiten", { t: r.title }))}" title="${t("Bearbeiten")}">✎</button>
+              <button type="button" class="icon-mini" data-reco-del="${r.id}" aria-label="${esc(t("„{t}“ aus den Empfehlungen entfernen?", { t: r.title }))}" title="${t("Entfernen")}">✕</button>
+            </span></div>
+          <p class="by">${esc(r.author || "")}</p>
+          <div class="tags"><span class="tag">${esc(t(r.genre))}</span>${r.pages ? `<span class="tag">${t("ca. {n} Seiten", { n: r.pages })}</span>` : ""}${r.builtin ? "" : `<span class="tag own">${t("Eigene")}</span>`}</div>
+          <p>${esc(txt(r))}</p>
           ${have.has(r.title.toLowerCase())
             ? `<button class="btn" disabled>✓ ${t("Im Regal")}</button>`
-            : `<button class="btn" data-wish="${g}|${i}">＋ ${t("Wunschliste")}</button> <button class="btn primary" data-start="${g}|${i}">${t("Jetzt lesen")}</button>`}
+            : `<button class="btn" data-wish="${r.id}">＋ ${t("Wunschliste")}</button> <button class="btn primary" data-start="${r.id}">${t("Jetzt lesen")}</button>`}
         </div>
-      </article>`).join("");
+      </article>`).join("") || `<p class="words-empty">${t("Keine Empfehlungen in dieser Gruppe. Füge eigene hinzu!")}</p>`;
+    const hidden = state.recoHidden.filter((id) => id.startsWith(g + ":")).length;
+    $("#recoRestore").hidden = !hidden;
+    $("#recoRestore").innerHTML = hidden ? `<button type="button" class="link" id="recoRestoreBtn">${t("Ausgeblendete Empfehlungen wiederherstellen ({n})", { n: hidden })}</button>` : "";
     $("#tipsGrid").innerHTML = [...D.tips[g], ...D.tips.alle].map((tp, i) => `
       <article class="card" style="animation-delay:${i * 0.05}s"><span class="tip-ico">${tp.ico}</span><h3>${esc(t(tp.title))}</h3><p>${esc(t(tp.text))}</p></article>`).join("");
   }
   $("#recoFilters").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (c) renderDiscover(c.dataset.group); });
-  $("#recoGrid").addEventListener("click", (e) => {
+  $("#recoGrid").addEventListener("click", async (e) => {
+    const ed = e.target.closest("[data-reco-edit]"); if (ed) { openReco(ed.dataset.recoEdit); return; }
+    const del = e.target.closest("[data-reco-del]"); if (del) { await deleteReco(del.dataset.recoDel); return; }
     const b = e.target.closest("[data-wish],[data-start]"); if (!b) return;
-    const [g, i] = (b.dataset.wish || b.dataset.start).split("|");
-    const r = D.recommendations[g][+i];
+    const r = recoById(b.dataset.wish || b.dataset.start); if (!r) return;
+    const g = discGroup;
     const status = b.dataset.start ? "lesen" : "wunsch";
     addBook({ title: r.title, author: r.author, pages: r.pages, genre: r.genre, emoji: r.emoji, status, startDate: status === "lesen" ? dateKey() : null });
     toast(status === "lesen" ? "📖 " + t("Viel Spaß mit „{t}“!", { t: r.title }) : "⭐ " + t("„{t}“ steht auf deiner Wunschliste.", { t: r.title }));
     renderDiscover(g);
+  });
+
+  // Empfehlung bearbeiten / hinzufügen / entfernen
+  let recoEditId = null;
+  function openReco(id = null) {
+    recoEditId = id;
+    const r = id ? recoById(id) : null;
+    $("#recoDialogTitle").textContent = t(r ? "Empfehlung bearbeiten" : "Empfehlung hinzufügen");
+    $("#rTitle").value = r?.title || "";
+    $("#rAuthor").value = r?.author || "";
+    $("#rPages").value = r?.pages || "";
+    $("#rGenre").value = r?.genre || "Roman";
+    $("#rGroup").value = r?.group || discGroup || group();
+    $("#rGroup").disabled = !!r?.builtin;
+    $("#rText").value = r ? (r.builtin && !r.edited ? t(r.text) : r.text || "") : "";
+    $("#recoDelete").hidden = !r;
+    $("#recoDialog").showModal();
+  }
+  async function deleteReco(id) {
+    const r = recoById(id); if (!r) return;
+    if (!(await askConfirm(t("„{t}“ aus den Empfehlungen entfernen?", { t: r.title })))) return false;
+    if (r.builtin) { if (!state.recoHidden.includes(id)) state.recoHidden.push(id); }
+    else state.recoCustom = state.recoCustom.filter((x) => x.id !== id);
+    save(); renderDiscover(); toast(t("Empfehlung entfernt."));
+    return true;
+  }
+  $("#recoAdd").addEventListener("click", () => openReco());
+  $("#recoCancel").addEventListener("click", () => $("#recoDialog").close());
+  $("#recoDelete").addEventListener("click", async () => { if (recoEditId && (await deleteReco(recoEditId))) $("#recoDialog").close(); });
+  $("#recoForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const data = { title: $("#rTitle").value.trim(), author: $("#rAuthor").value.trim(), pages: parseInt($("#rPages").value) || null, genre: $("#rGenre").value, text: $("#rText").value.trim() };
+    if (!data.title) return;
+    const r = recoEditId ? recoById(recoEditId) : null;
+    if (r?.builtin) state.recoEdits[r.id] = data;
+    else if (r) Object.assign(state.recoCustom.find((x) => x.id === r.id), data, { group: $("#rGroup").value });
+    else state.recoCustom.push({ id: "c" + uid(), group: $("#rGroup").value, ...data });
+    save(); $("#recoDialog").close();
+    renderDiscover(r?.builtin ? discGroup : $("#rGroup").value);
+    toast(t("Gespeichert ✓"));
+  });
+  $("#recoRestore").addEventListener("click", (e) => {
+    if (!e.target.closest("#recoRestoreBtn")) return;
+    state.recoHidden = state.recoHidden.filter((id) => !id.startsWith(discGroup + ":"));
+    save(); renderDiscover();
   });
 
   function renderBadges() {
@@ -1497,6 +1570,20 @@
     }).join("");
   }
   $("#quilt").addEventListener("click", (e) => { const b = e.target.closest("[data-qm]"); if (b && !b.disabled) celebrateQ({ type: "view", m: b.dataset.qm }); });
+
+  // ---------- Als App installieren (Android: Chrome, Samsung Internet) ----------
+  let installEvt = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; $("#installBtn").hidden = false; });
+  window.addEventListener("appinstalled", () => { installEvt = null; $("#installBtn").hidden = true; toast(t("Lesezeit ist jetzt auf deinem Startbildschirm.")); });
+  $("#installBtn").addEventListener("click", async () => {
+    if (!installEvt) return;
+    installEvt.prompt();
+    try { await installEvt.userChoice; } catch { /* abgebrochen */ }
+    installEvt = null; $("#installBtn").hidden = true;
+  });
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch { /* z. B. in eingebetteten Ansichten nicht erlaubt */ }
+  }
 
   // ---------- Sprachwechsel ----------
   function setLang(l) {
