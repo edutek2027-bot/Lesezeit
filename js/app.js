@@ -101,7 +101,13 @@
   const PAGE_DEFAULT = { kinder: 10, jugend: 15, erwachsene: 20 };
   const goalMin = () => state.profile?.goal || 20;
   const goalPg = () => state.profile?.goalPages || PAGE_DEFAULT[group()];
-  const goalDone = (min, pg) => min >= goalMin() && pg >= goalPg();
+  // Ein Tagesziel: entweder Seiten oder Minuten (Standard: Seiten)
+  const goalType = () => (state.profile?.goalType === "minutes" ? "minutes" : "pages");
+  const goalIsPages = () => goalType() === "pages";
+  const goalTarget = () => (goalIsPages() ? goalPg() : goalMin());
+  const goalVal = (min, pg) => (goalIsPages() ? pg : min);
+  const goalLen = (n) => (goalIsPages() ? tn(n, "{n} Seite", "{n} Seiten") : tn(n, "{n} Minute", "{n} Minuten"));
+  const goalDone = (min, pg) => goalVal(min, pg) >= goalTarget();
   // Ein Tag zählt als Lesetag, wenn Minuten ODER Seiten eingetragen sind
   function readSet() {
     const r = new Set();
@@ -152,7 +158,7 @@
   const BADGES = [
     { id: "first-book", ico: "📗", name: "Regal eröffnet", desc: "Erstes Buch hinzugefügt", test: () => state.books.length >= 1 },
     { id: "first-session", ico: "⏱️", name: "Los geht's", desc: "Erste Lese-Einheit", test: () => state.sessions.length >= 1 },
-    { id: "goal", ico: "🎯", name: "Ziel erreicht", desc: "Minuten- und Seitenziel an einem Tag geschafft", test: () => { const pm = pagesByDay(); return Object.entries(minutesByDay()).some(([k, m]) => goalDone(m, pm[k] || 0)); } },
+    { id: "goal", ico: "🎯", name: "Ziel erreicht", desc: "Tagesziel an einem Tag erreicht", test: () => { const pm = pagesByDay(); return Object.entries(minutesByDay()).some(([k, m]) => goalDone(m, pm[k] || 0)); } },
     { id: "streak3", ico: "🌱", name: "Drei am Stück", desc: "3 Tage in Folge gelesen", test: () => bestStreak() >= 3 },
     { id: "streak7", ico: "🌳", name: "Wochen-Held", desc: "7 Tage in Folge gelesen", test: () => bestStreak() >= 7 },
     { id: "streak30", ico: "🏆", name: "Gewohnheit!", desc: "30 Tage in Folge gelesen", test: () => bestStreak() >= 30 },
@@ -206,31 +212,27 @@
   let goalOffset = 0;
   function renderGoal() {
     const d = addDays(new Date(), goalOffset), k = dateKey(d), isToday = goalOffset === 0;
-    const goal = goalMin(), gp = goalPg();
     const mn = minutesByDay()[k] || 0, pg = pagesByDay()[k] || 0;
-    const rMin = Math.min(1, mn / goal), rPg = Math.min(1, pg / gp);
+    const target = goalTarget(), v = goalVal(mn, pg), r = Math.min(1, v / target), done = r >= 1;
     $("#goalTitle").textContent = isToday ? t("Heute") : goalOffset === -1 ? t("Gestern") : fd(d, { weekday: "short", day: "numeric", month: "short" });
     $("#goalNext").disabled = isToday;
     $("#goalPrev").disabled = goalOffset <= -60;
-    const fillMin = $("#rulerMin > i"), fillPg = $("#rulerPg > i");
-    fillMin.style.width = "0"; fillPg.style.width = "0";
-    requestAnimationFrame(() => requestAnimationFrame(() => { fillMin.style.width = rMin * 100 + "%"; fillPg.style.width = rPg * 100 + "%"; }));
-    countUp($("#goalMinutes"), mn);
-    countUp($("#goalPages"), pg);
-    $("#goalOf").textContent = goal;
-    $("#goalPagesOf").textContent = gp;
-    $("#goalMinutes").parentElement.classList.toggle("ok", rMin >= 1);
-    $("#goalPages").parentElement.classList.toggle("ok", rPg >= 1);
-    const both = rMin >= 1 && rPg >= 1;
-    $("#goalPct").textContent = both ? t("geschafft") : `${Math.round(((rMin + rPg) / 2) * 100)} %`;
-    $("#goalStamp").hidden = !both;
-    const left = [];
-    if (rPg < 1) left.push(tn(gp - pg, "{n} Seite", "{n} Seiten"));
-    if (rMin < 1) left.push(tn(goal - mn, "{n} Minute", "{n} Minuten"));
-    const list = left.join(" " + t("und") + " ");
+    $("#goalLbl").textContent = t(goalIsPages() ? "Seiten" : "Minuten");
+    const fill = $("#rulerGoal > i");
+    fill.style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = r * 100 + "%"; }));
+    countUp($("#goalVal"), v);
+    $("#goalOfV").textContent = target;
+    $("#goalVal").parentElement.classList.toggle("ok", done);
+    // der andere Wert nur zur Info
+    const other = goalIsPages() ? mn : pg;
+    $("#goalOther").textContent = other ? (goalIsPages() ? tn(mn, "{n} Minute", "{n} Minuten") : tn(pg, "{n} Seite", "{n} Seiten")) + " " + t("zusätzlich eingetragen") : "";
+    $("#goalPct").textContent = done ? t("geschafft") : `${Math.round(r * 100)} %`;
+    $("#goalStamp").hidden = !done;
+    const list = goalLen(target - v);
     $("#goalHint").textContent = isToday
-      ? (both ? t("Heute ist dein Stempel sicher.") : !mn && !pg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list }))
-      : (both ? t("An diesem Tag hast du dein Ziel erreicht.") : !mn && !pg ? t(patchableDays().includes(k) ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.") : t("Es fehlten {list}.", { list }));
+      ? (done ? t("Heute ist dein Stempel sicher.") : !mn && !pg ? t("Noch nicht gelesen. Zehn Minuten reichen für den Anfang.") : t("Noch {list}.", { list }))
+      : (done ? t("An diesem Tag hast du dein Ziel erreicht.") : !mn && !pg ? t(patchableDays().includes(k) ? "An diesem Tag ist der Faden gerissen. Du kannst ihn noch flicken." : "An diesem Tag wurde nicht gelesen.") : t("Es fehlten {list}.", { list }));
   }
   $("#goalEdit").addEventListener("click", () => openDay(dateKey(addDays(new Date(), goalOffset)), "day"));
   $("#goalPrev").addEventListener("click", () => { goalOffset = Math.max(-60, goalOffset - 1); renderGoal(); });
@@ -437,8 +439,8 @@
     if (gaps.length) {
       const last = fd(parseKey(gaps[gaps.length - 1]), { weekday: "long", day: "numeric", month: "long" });
       $("#patchNoteText").textContent = gaps.length === 1
-        ? t("Am {day} ist der Faden gerissen. Lies {n} Minuten nach, dann flickst du ihn.", { day: last, n: goalMin() })
-        : t("{count} Tage lassen sich noch flicken. Pro Tag liest du {n} Minuten nach.", { count: gaps.length, n: goalMin() });
+        ? t("Am {day} ist der Faden gerissen. Lies {len} nach, dann flickst du ihn.", { day: last, len: goalLen(goalTarget()) })
+        : t("{count} Tage lassen sich noch flicken. Pro Tag liest du {len} nach.", { count: gaps.length, len: goalLen(goalTarget()) });
     }
   }
 
@@ -470,7 +472,7 @@
   }
   function renderPatchDialog() {
     $("#patchDays").innerHTML = patchableDays().map((k) => `<button type="button" class="chip ${k === patchPick ? "active" : ""}" data-pday="${k}">${fd(parseKey(k), { weekday: "short", day: "numeric", month: "short" })}</button>`).join("");
-    $("#patchRule").textContent = t("Lies einmal {n} Minuten am Stück nach. Die Zeit zählt dann für {day}, nicht für heute.", { n: goalMin(), day: longDay(patchPick) });
+    $("#patchRule").textContent = t("Lies einmal {len} am Stück nach. Das zählt dann für {day}, nicht für heute.", { len: goalLen(goalTarget()), day: longDay(patchPick) });
   }
   $("#patchDays").addEventListener("click", (e) => { const c = e.target.closest("[data-pday]"); if (c) { patchPick = c.dataset.pday; renderPatchDialog(); } });
   $("#patchCancel").addEventListener("click", () => $("#patchDialog").close());
@@ -569,8 +571,8 @@
     const canP = patchableDays().includes(k);
     $("#dayBody").innerHTML = `${status}
       ${m || pg ? `<div>
-        <div class="ruler-block"><div class="ruler-head"><span>${t("Seiten")}</span><strong class="${pg >= goalPg() ? "ok" : ""}">${pg} / ${goalPg()}</strong></div><div class="ruler pg"><i style="width:${Math.min(100, (pg / goalPg()) * 100)}%"></i></div></div>
-        <div class="ruler-block"><div class="ruler-head"><span>${t("Minuten")}</span><strong class="${m >= goalMin() ? "ok" : ""}">${m} / ${goalMin()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (m / goalMin()) * 100)}%"></i></div></div>
+        <div class="ruler-block"><div class="ruler-head"><span>${t(goalIsPages() ? "Seiten" : "Minuten")}</span><strong class="${goalVal(m, pg) >= goalTarget() ? "ok" : ""}">${goalVal(m, pg)} / ${goalTarget()}</strong></div><div class="ruler"><i style="width:${Math.min(100, (goalVal(m, pg) / goalTarget()) * 100)}%"></i></div></div>
+        ${(goalIsPages() ? m : pg) ? `<p class="goal-other">${goalIsPages() ? tn(m, "{n} Minute", "{n} Minuten") : tn(pg, "{n} Seite", "{n} Seiten")} ${t("zusätzlich eingetragen")}</p>` : ""}
       </div>
       <ul class="day-sessions">${ss.map((x) => editSid === x.id ? sessionForm(x) : `<li><div class="ds-row"><span><strong>${esc(bookById(x.bookId)?.title || t("Freies Lesen"))}</strong> <span class="muted">${sessionMeta(x)}</span></span>
         <button type="button" class="link ds-edit" data-edit-s="${x.id}" aria-label="${t("Eintrag bearbeiten")}">✎ ${t("Bearbeiten")}</button></div>${x.note ? `<p class="entry-note">${esc(quoted(x.note))}</p>` : ""}</li>`).join("")}</ul>`
@@ -581,8 +583,9 @@
       ${canP ? `<div class="day-actions"><button class="btn primary" type="button" data-dv="patch">${t("Faden flicken")}</button></div>` : ""}
       ${editSid === "new" ? `<ul class="day-sessions">${sessionForm(null)}</ul>` : `<div class="day-actions"><button class="btn" type="button" data-add-s>＋ ${t("Seiten & Minuten eintragen")}</button></div>`}`;
   }
-  let wkMode = "pg"; // Wochenblick: Seiten (Standard) oder Minuten
+  let wkMode = null; // Wochenblick: startet mit dem Maß des Tagesziels
   function renderWeekBody() {
+    if (!wkMode) wkMode = goalIsPages() ? "pg" : "min";
     const mon = mondayOf(dvDay), todayK = dateKey();
     const days = Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i)));
     const mins = minutesByDay(), pgs = pagesByDay();
@@ -622,7 +625,7 @@
         <button type="button" data-wkm="min" class="${pgMode ? "" : "active"}" role="tab">${t("Minuten")}</button>
       </div>
       <div class="wk-chart ${pgMode ? "pg" : ""}">
-        <div class="wk-goal" data-ratio="${goalV / max}"><span>${pgMode ? t("Ziel {n} S.", { n: goalV }) : t("Ziel {n}′", { n: goalV })}</span></div>
+        ${pgMode === goalIsPages() ? `<div class="wk-goal" data-ratio="${goalV / max}"><span>${pgMode ? t("Ziel {n} S.", { n: goalV }) : t("Ziel {n}′", { n: goalV })}</span></div>` : ""}
         ${days.map((k) => { const v = src[k] || 0, fut = k > todayK; return `<button type="button" class="wk-bar ${k === dvDay ? "sel" : ""} ${fut ? "future" : ""}" data-wday="${k}" ${fut ? "disabled" : ""} aria-label="${fd(parseKey(k), { weekday: "long" })}: ${pgMode ? tn(v, "{n} Seite", "{n} Seiten") : tn(v, "{n} Minute", "{n} Minuten")}">
           <div class="col" data-h="${fut ? 100 : (v / max) * 100}">${v ? `<b>${v}</b>` : ""}</div>
           <span>${goalDone(mins[k] || 0, pgs[k] || 0) ? `<i class="kn"></i>` : ""}${WD(parseKey(k))}</span></button>`; }).join("")}
@@ -635,7 +638,7 @@
       const chart = $("#dayBody .wk-chart"), bar = chart.querySelector(".wk-bar"), lbl = bar.querySelector("span");
       const labelH = bar.getBoundingClientRect().bottom - lbl.getBoundingClientRect().top + 4;
       const area = bar.clientHeight - labelH;
-      const g = chart.querySelector(".wk-goal"); g.style.bottom = `${labelH + area * +g.dataset.ratio}px`;
+      const g = chart.querySelector(".wk-goal"); if (g) g.style.bottom = `${labelH + area * +g.dataset.ratio}px`;
     }));
   }
   $("#dayBody").addEventListener("click", (e) => { const b = e.target.closest("[data-wkm]"); if (b) { wkMode = b.dataset.wkm; renderWeekBody(); } });
@@ -656,7 +659,8 @@
   });
   $("#patchManual").addEventListener("click", () => {
     $("#patchManualBox").hidden = false; $("#patchManual").hidden = true;
-    $("#patchMin").value = goalMin(); $("#patchMin").min = goalMin();
+    $("#patchMinLbl").textContent = t(goalIsPages() ? "Wie viele Seiten hast du nachgelesen?" : "Wie lange hast du nachgelesen?");
+    $("#patchMin").value = goalTarget(); $("#patchMin").min = goalTarget();
     $("#patchBook").innerHTML = state.books.filter((b) => b.status === "lesen").map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">${t("Ohne bestimmtes Buch")}</option>`;
     $("#patchGo").textContent = t("Flicken");
   });
@@ -665,9 +669,9 @@
     if (!patchPick) return;
     if (!$("#patchManualBox").hidden) {
       const m = parseInt($("#patchMin").value) || 0;
-      if (m < goalMin()) { toast(t("Zum Flicken brauchst du mindestens {n} Minuten.", { n: goalMin() })); return; }
+      if (m < goalTarget()) { toast(t("Zum Flicken brauchst du mindestens {len}.", { len: goalLen(goalTarget()) })); return; }
       $("#patchDialog").close();
-      logSession({ bookId: $("#patchBook").value, minutes: m, date: patchPick, patched: true });
+      logSession(goalIsPages() ? { bookId: $("#patchBook").value, minutes: 0, pagesRead: m, date: patchPick, patched: true } : { bookId: $("#patchBook").value, minutes: m, date: patchPick, patched: true });
       return;
     }
     patchPending = patchPick; preset = goalMin();
@@ -738,8 +742,10 @@
     state.words = state.words.filter((w) => w.id !== b.dataset.delword); save(); renderWords(); $("#statWords").textContent = state.words.length;
   });
 
-  let chartMode = "pg", chartSel = null;
+  let chartMode = null, chartSel = null;
   function renderChart() {
+    if (!chartMode) chartMode = goalIsPages() ? "pg" : "min";
+    $$("#chartMode button").forEach((x) => x.classList.toggle("active", x.dataset.mode === chartMode));
     const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i - 6));
     const keys = days.map((d) => dateKey(d));
     if (!keys.includes(chartSel)) chartSel = keys[6];
@@ -1146,12 +1152,13 @@
     if (ms < 30000) { toast(t("Unter 30 Sekunden – das zählt noch nicht.") + " 😉"); return; }
     if (auto) chime();
     const minutes = Math.max(1, Math.round(ms / 60000));
-    const patchOk = tm.patchFor && minutes >= goalMin() && patchableDays().includes(tm.patchFor);
-    pendingSession = patchOk ? { bookId: tm.bookId, minutes, date: tm.patchFor, patched: true } : { bookId: tm.bookId, minutes };
+    const canPatchNow = tm.patchFor && patchableDays().includes(tm.patchFor);
+    const patchOk = canPatchNow && !goalIsPages() && minutes >= goalMin();
+    pendingSession = patchOk ? { bookId: tm.bookId, minutes, date: tm.patchFor, patched: true } : { bookId: tm.bookId, minutes, patchCandidate: canPatchNow && goalIsPages() ? tm.patchFor : null };
     const b = bookById(tm.bookId);
     const len = tn(minutes, "{n} Minute", "{n} Minuten");
     $("#finishText").textContent = (b ? t("Du hast {len} in „{book}“ gelesen.", { len, book: b.title }) : t("Du hast {len} gelesen.", { len }))
-      + (patchOk ? " " + t("Damit flickst du {day}.", { day: longDay(tm.patchFor) }) : tm.patchFor ? " " + t("Zum Flicken fehlten {n} Minuten, die Zeit zählt für heute.", { n: goalMin() - minutes }) : "");
+      + (patchOk ? " " + t("Damit flickst du {day}.", { day: longDay(tm.patchFor) }) : pendingSession.patchCandidate ? " " + t("Mit mindestens {len} flickst du {day}.", { len: goalLen(goalPg()), day: longDay(tm.patchFor) }) : tm.patchFor ? " " + t("Zum Flicken fehlten {len}, das zählt für heute.", { len: goalLen(goalMin() - minutes) }) : "");
     $("#finishStampMin").textContent = t("{n} Min.", { n: minutes });
     $("#finishNote").value = ""; $("#finishWord").value = "";
     finishBook = b; finishMode = b ? "page" : "count";
@@ -1191,6 +1198,13 @@
   function submitFinish() {
     if (pendingSession) {
       const v = parseInt($("#finishPage").value);
+      // Seitenziel + Flicken per Timer: erst jetzt steht fest, ob genug Seiten gelesen wurden
+      const pc = pendingSession.patchCandidate; delete pendingSession.patchCandidate;
+      if (pc) {
+        const b0 = finishBook, from = b0 ? b0.currentPage || 0 : 0;
+        const read = finishBook && finishMode === "page" ? Math.max(0, (b0.pages ? Math.min(v, b0.pages) : v) - from) : v || 0;
+        if (read >= goalPg()) Object.assign(pendingSession, { date: pc, patched: true });
+      }
       const extra = { note: $("#finishNote").value, word: $("#finishWord").value };
       logSession(finishBook && finishMode === "page" ? { ...pendingSession, ...extra, toPage: v } : { ...pendingSession, ...extra, pagesRead: v });
     }
@@ -1221,15 +1235,11 @@
     save();
     const isToday = date === dateKey();
     const wasDone = goalDone(beforeMin, beforePg), nowDone = goalDone(beforeMin + minutes, beforePg + pages);
-    const minHit = beforeMin < goalMin() && beforeMin + minutes >= goalMin();
-    const pgHit = beforePg < goalPg() && beforePg + pages >= goalPg();
     const stLen = tn(streak(), "{n} Tag", "{n} Tage");
     if (patched) { confetti(); toast("🪡 " + (streak() > 1 ? t("Geflickt! Dein Faden ist wieder verbunden – {len} lang.", { len: stLen }) : t("Geflickt! Dein Faden ist wieder verbunden."))); if (finished) setTimeout(() => celebrateFinish(b), 3400); }
     else if (finished) celebrateFinish(b);
     else if (isToday && !wasDone && nowDone) { celebrateQ({ type: "day", date }); }
     else if (isToday && !wasRead && (minutes || pages)) toast("🧵 " + t("Neuer Knoten! Dein Lesefaden ist jetzt {len} lang.", { len: stLen }));
-    else if (isToday && minHit) toast("⏱️ " + t("Minutenziel geschafft! Noch {len}.", { len: tn(goalPg() - beforePg - pages, "{n} Seite", "{n} Seiten") }));
-    else if (isToday && pgHit) toast("📄 " + t("Seitenziel geschafft! Noch {len}.", { len: tn(goalMin() - beforeMin - minutes, "{n} Minute", "{n} Minuten") }));
     else toast("✓ " + (pages && minutes ? t("{n} Min. und {p} Seiten eingetragen.", { n: minutes, p: pages }) : pages ? t("{len} eingetragen.", { len: tn(pages, "{n} Seite", "{n} Seiten") }) : t("{n} Min. eingetragen.", { n: minutes })));
     checkBadges(); render();
   }
@@ -1278,29 +1288,40 @@
     profileTexts();
     $("#pName").value = p?.name || "";
     $$("#pGroup input").forEach((r) => (r.checked = r.value === (p?.group || "erwachsene")));
-    $("#pGoal").value = p?.goal || 20; $("#pGoalOut").textContent = $("#pGoal").value;
-    $("#pGoalPages").value = p?.goalPages || PAGE_DEFAULT[p?.group || "erwachsene"]; $("#pGoalPagesOut").textContent = $("#pGoalPages").value;
+    $$("#pGoalType input").forEach((r) => (r.checked = r.value === (p?.goalType === "minutes" ? "minutes" : "pages")));
+    setGoalSlider(p?.goalType === "minutes" ? p?.goal || 20 : p?.goalPages || PAGE_DEFAULT[p?.group || "erwachsene"]);
     $("#resetAll").hidden = !p;
     $("#demoData").hidden = state.books.length > 0;
     profileDialog.showModal();
   }
   $("#profileBtn").addEventListener("click", openProfile);
+  const pGoalType = () => $("#pGoalType input:checked")?.value || "pages";
+  function setGoalSlider(v) {
+    const pages = pGoalType() === "pages", sl = $("#pGoal");
+    sl.max = pages ? 100 : 90; sl.value = v;
+    $("#pGoalOut").textContent = sl.value;
+    $("#pGoalUnit").textContent = t(pages ? "Seiten" : "Minuten");
+  }
   $("#pGoal").addEventListener("input", (e) => ($("#pGoalOut").textContent = e.target.value));
-  $("#pGoalPages").addEventListener("input", (e) => ($("#pGoalPagesOut").textContent = e.target.value));
+  $("#pGoalType").addEventListener("change", () => {
+    const p = state.profile, g = $("#pGroup input:checked")?.value || "erwachsene";
+    setGoalSlider(pGoalType() === "pages" ? p?.goalPages || PAGE_DEFAULT[g] : p?.goal || { kinder: 15, jugend: 20, erwachsene: 20 }[g]);
+  });
   $("#pGroup").addEventListener("change", (e) => {
     const g = { kinder: 15, jugend: 20, erwachsene: 20 }[e.target.value];
     if (!state.profile) {
-      $("#pGoal").value = g; $("#pGoalOut").textContent = g;
-      $("#pGoalPages").value = PAGE_DEFAULT[e.target.value]; $("#pGoalPagesOut").textContent = PAGE_DEFAULT[e.target.value];
+      setGoalSlider(pGoalType() === "pages" ? PAGE_DEFAULT[e.target.value] : g);
     }
   });
   function readProfile() {
-    return { name: $("#pName").value.trim(), group: $("#pGroup input:checked")?.value || "erwachsene", goal: +$("#pGoal").value, goalPages: +$("#pGoalPages").value };
+    return { name: $("#pName").value.trim(), group: $("#pGroup input:checked")?.value || "erwachsene", goalType: pGoalType(),
+      goal: pGoalType() === "minutes" ? +$("#pGoal").value : state.profile?.goal || 20,
+      goalPages: pGoalType() === "pages" ? +$("#pGoal").value : state.profile?.goalPages || PAGE_DEFAULT[$("#pGroup input:checked")?.value || "erwachsene"] };
   }
   $("#profileForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const first = !state.profile;
-    state.profile = readProfile(); save();
+    state.profile = readProfile(); chartMode = wkMode = null; save();
     profileDialog.close(); render();
     if (first) { confetti(); toast(t("Dein Lesepass ist bereit, {name}.", { name: state.profile.name })); }
   });
@@ -1311,7 +1332,7 @@
   });
   $("#demoData").addEventListener("click", () => {
     if (!$("#pName").value.trim()) $("#pName").value = "Lea";
-    state.profile = readProfile();
+    state.profile = readProfile(); chartMode = wkMode = null;
     loadDemo(); profileDialog.close(); render(); fillBookSelects();
     toast(t("Beispieldaten geladen. Schau dich um!"));
   });
@@ -1590,7 +1611,7 @@
     if (!LOCALES[l] || l === lang) return;
     lang = l; state.lang = l; save();
     applyStatic(); fillBookSelects(); updateClock(); renderStars();
-    if (profileDialog.open) profileTexts();
+    if (profileDialog.open) { profileTexts(); $("#pGoalUnit").textContent = t(pGoalType() === "pages" ? "Seiten" : "Minuten"); }
     render();
   }
   $("#langSel").addEventListener("change", (e) => setLang(e.target.value));

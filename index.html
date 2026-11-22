@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=30">
+  <link rel="stylesheet" href="css/styles.css?v=31">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -84,45 +84,6 @@
       </div>
 
       <div class="grid-dash">
-        <article class="card goal-card">
-          <div class="card-head goal-head">
-            <button class="nav-btn" type="button" id="goalPrev" aria-label="Vorheriger Tag">‹</button>
-            <h2 id="goalTitle">Heute</h2>
-            <button class="nav-btn" type="button" id="goalNext" aria-label="Nächster Tag" disabled>›</button>
-            <span class="kicker" id="goalPct">0 %</span>
-          </div>
-          <div class="ruler-block">
-            <div class="ruler-head"><span data-t>Seiten</span><strong><span id="goalPages">0</span> / <span id="goalPagesOf">15</span></strong></div>
-            <div class="ruler pg" id="rulerPg"><i></i></div>
-          </div>
-          <div class="ruler-block">
-            <div class="ruler-head"><span data-t>Minuten</span><strong><span id="goalMinutes">0</span> / <span id="goalOf">20</span></strong></div>
-            <div class="ruler" id="rulerMin"><i></i></div>
-          </div>
-          <div class="goal-foot">
-            <div><p class="goal-hint" id="goalHint"></p><button class="link goal-edit" type="button" id="goalEdit" data-t>Tag bearbeiten →</button></div>
-            <div class="stamp goal-stamp" id="goalStamp" hidden><span data-t>Ziel</span><b data-t>erreicht</b></div>
-          </div>
-        </article>
-
-        <article class="card tree-card">
-          <div class="card-head"><h2 data-t>Lesebaum</h2><span class="kicker" id="treeStage"></span></div>
-          <svg class="tree" id="tree" viewBox="0 0 140 110" role="img" aria-label="Lesebaum"></svg>
-          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord" data-t>Tage in Folge</span></p>
-        </article>
-
-        <article class="card stats-card">
-          <div class="card-head"><h2 data-t>In Zahlen</h2><span class="kicker" data-t>gesamt</span></div>
-          <dl class="stats">
-            <div class="stat"><dt data-t>Bücher beendet</dt><dd id="statBooks">0</dd></div>
-            <div class="stat"><dt data-t>Seiten</dt><dd id="statPages">0</dd></div>
-            <div class="stat"><dt data-t>Lesezeit</dt><dd id="statHours">0</dd></div>
-            <div class="stat"><dt data-t>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
-            <div class="stat"><dt data-t>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
-            <div class="stat"><dt data-t>Längste Serie</dt><dd id="statBest">0</dd></div>
-          </dl>
-        </article>
-
         <article class="card wide faden-card">
           <div class="card-head"><h2 data-t>Lesefaden</h2><span class="faden-head-right"><span class="kicker" id="fadenStat"></span><button class="link" type="button" id="weekOpen" data-t>Wochenblick →</button></span></div>
           <p class="faden-sub" id="fadenSub"></p>
@@ -145,6 +106,42 @@
             <span><svg viewBox="-12 -12 24 24" aria-hidden="true"><rect class="lg-patch" x="-10.5" y="-10.5" width="21" height="21" rx="3"/><circle class="lg-kb" r="6.5"/></svg><span data-t>geflickt</span></span>
             <span><svg viewBox="0 0 20 20" aria-hidden="true"><path class="lg-fray" d="M2 10H11M11 10q4-3 7-2M11 10q4 3 7 4"/></svg><span data-t>Faden gerissen</span></span>
           </p>
+        </article>
+
+        <article class="card goal-card">
+          <div class="card-head goal-head">
+            <button class="nav-btn" type="button" id="goalPrev" aria-label="Vorheriger Tag">‹</button>
+            <h2 id="goalTitle">Heute</h2>
+            <button class="nav-btn" type="button" id="goalNext" aria-label="Nächster Tag" disabled>›</button>
+            <span class="kicker" id="goalPct">0 %</span>
+          </div>
+          <div class="ruler-block">
+            <div class="ruler-head"><span id="goalLbl">Seiten</span><strong><span id="goalVal">0</span> / <span id="goalOfV">20</span></strong></div>
+            <div class="ruler" id="rulerGoal"><i></i></div>
+          </div>
+          <p class="goal-other" id="goalOther"></p>
+          <div class="goal-foot">
+            <div><p class="goal-hint" id="goalHint"></p><button class="link goal-edit" type="button" id="goalEdit" data-t>Tag bearbeiten →</button></div>
+            <div class="stamp goal-stamp" id="goalStamp" hidden><span data-t>Ziel</span><b data-t>erreicht</b></div>
+          </div>
+        </article>
+
+        <article class="card tree-card">
+          <div class="card-head"><h2 data-t>Lesebaum</h2><span class="kicker" id="treeStage"></span></div>
+          <svg class="tree" id="tree" viewBox="0 0 140 110" role="img" aria-label="Lesebaum"></svg>
+          <p class="big"><strong id="streakDays">0</strong> <span id="streakWord" data-t>Tage in Folge</span></p>
+        </article>
+
+        <article class="card stats-card">
+          <div class="card-head"><h2 data-t>In Zahlen</h2><span class="kicker" data-t>gesamt</span></div>
+          <dl class="stats">
+            <div class="stat"><dt data-t>Bücher beendet</dt><dd id="statBooks">0</dd></div>
+            <div class="stat"><dt data-t>Seiten</dt><dd id="statPages">0</dd></div>
+            <div class="stat"><dt data-t>Lesezeit</dt><dd id="statHours">0</dd></div>
+            <div class="stat"><dt data-t>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
+            <div class="stat"><dt data-t>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
+            <div class="stat"><dt data-t>Längste Serie</dt><dd id="statBest">0</dd></div>
+          </dl>
         </article>
 
         <article class="card chart-card">
@@ -409,11 +406,15 @@
           <label><input type="radio" name="group" value="erwachsene" checked><span><span data-t>Erwachsen</span><small>18+</small></span></label>
         </div>
       </div>
-      <label class="field"><span><span data-t>Tagesziel Lesezeit</span>: <strong id="pGoalOut">20</strong> <span data-t>Minuten</span></span>
-        <input type="range" id="pGoal" min="5" max="90" step="5" value="20">
-      </label>
-      <label class="field"><span><span data-t>Tagesziel Seiten</span>: <strong id="pGoalPagesOut">15</strong> <span data-t>Seiten</span></span>
-        <input type="range" id="pGoalPages" min="5" max="100" step="5" value="15">
+      <div class="field">
+        <span data-t>Mein Tagesziel</span>
+        <div class="seg seg-2" id="pGoalType">
+          <label><input type="radio" name="gtype" value="pages" checked><span><span data-t>Seiten</span></span></label>
+          <label><input type="radio" name="gtype" value="minutes"><span><span data-t>Minuten</span></span></label>
+        </div>
+      </div>
+      <label class="field"><span><strong id="pGoalOut">20</strong> <span id="pGoalUnit">Seiten</span> <span data-t>pro Tag</span></span>
+        <input type="range" id="pGoal" min="5" max="100" step="5" value="20">
       </label>
       <div class="phone-box">
         <img src="icons/qr-lesezeit.png" width="112" height="112" alt="QR-Code: Lesezeit auf dem Handy öffnen">
@@ -469,7 +470,7 @@
       </div>
       <p class="patch-rule" id="patchRule"></p>
       <div class="patch-manual" id="patchManualBox" hidden>
-        <label class="field"><span data-t>Wie lange hast du nachgelesen?</span><input type="number" id="patchMin" min="1" max="600"></label>
+        <label class="field"><span id="patchMinLbl">Wie lange hast du nachgelesen?</span><input type="number" id="patchMin" min="1" max="2000"></label>
         <label class="field"><span data-t>Buch</span><select id="patchBook"></select></label>
       </div>
       <div class="modal-actions">
@@ -527,8 +528,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=30"></script>
-  <script src="js/i18n.js?v=30"></script>
-  <script src="js/app.js?v=30"></script>
+  <script src="js/data.js?v=31"></script>
+  <script src="js/i18n.js?v=31"></script>
+  <script src="js/app.js?v=31"></script>
 </body>
 </html>
