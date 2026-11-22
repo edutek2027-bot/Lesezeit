@@ -208,6 +208,23 @@
     ({ uebersicht: renderDashboard, regal: renderShelf, timer: renderTimerView, entdecken: renderDiscover, erfolge: renderBadges }[view] || renderDashboard)();
   }
 
+  // Garnrolle: jede gelesene Einheit wickelt den Faden weiter auf (12 Lagen = Tagesziel)
+  function spoolSvg(r) {
+    const N = 12, H = 104 / N, rows = Math.round(r * N);
+    let wraps = "";
+    for (let i = 0; i < rows; i++) {
+      const y = 126 - (i + 1) * H, bulge = Math.sin(((i + .5) / N) * Math.PI) * 6;
+      wraps += `<g class="sp-wrap" style="animation-delay:${.15 + i * .07}s"><rect x="${30 - bulge}" y="${y.toFixed(1)}" width="${60 + 2 * bulge}" height="${(H + .4).toFixed(1)}" rx="4"/><path d="M${33 - bulge} ${(y + H * .55).toFixed(1)}L${87 + bulge} ${(y + H * .3).toFixed(1)}"/></g>`;
+    }
+    const topY = 126 - rows * H, end = rows
+      ? `<path class="sp-end" style="animation-delay:${.2 + rows * .07}s" d="M${88 + (rows > 2 ? 4 : 0)} ${(topY + H * .5).toFixed(1)}C108 ${(topY + 4).toFixed(1)} 112 ${(topY + 24).toFixed(1)} 104 ${Math.min(140, topY + 34).toFixed(1)}"/>`
+      : "";
+    const ticks = [.25, .5, .75].map((q) => `<path class="sp-tick" d="M42 ${(126 - q * 104).toFixed(1)}h36"/>`).join("");
+    return `<rect class="sp-core" x="38" y="20" width="44" height="108"/>${ticks}${wraps}${end}
+      <rect class="sp-flange" x="12" y="8" width="96" height="14" rx="5"/><rect class="sp-flange" x="12" y="126" width="96" height="14" rx="5"/>
+      <circle class="sp-hole" cx="60" cy="15" r="3"/><circle class="sp-hole" cx="60" cy="133" r="3"/>
+      ${r >= 1 ? `<g class="sp-knot" style="animation-delay:${.3 + rows * .07}s"><circle cx="104" cy="${Math.min(140, topY + 34).toFixed(1)}" r="6"/><path d="M100 ${(Math.min(140, topY + 34) - 2).toFixed(1)}q4 -3 8 0M99.5 ${(Math.min(140, topY + 34) + 1.5).toFixed(1)}q4.5 -3 9 0"/></g>` : ""}`;
+  }
   // „Heute“-Karte: mit ‹ › zu gestern und früheren Tagen blättern (0 = heute, -1 = gestern …)
   let goalOffset = 0;
   function renderGoal() {
@@ -218,12 +235,11 @@
     $("#goalNext").disabled = isToday;
     $("#goalPrev").disabled = goalOffset <= -60;
     $("#goalLbl").textContent = t(goalIsPages() ? "Seiten" : "Minuten");
-    const fill = $("#rulerGoal > i");
-    fill.style.width = "0";
-    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = r * 100 + "%"; }));
+    $("#goalSpool").innerHTML = spoolSvg(r);
+    $("#goalSpool").classList.toggle("done", done);
     countUp($("#goalVal"), v);
     $("#goalOfV").textContent = target;
-    $("#goalVal").parentElement.classList.toggle("ok", done);
+    $("#goalVal").closest(".spool-num").classList.toggle("ok", done);
     // der andere Wert nur zur Info
     const other = goalIsPages() ? mn : pg;
     $("#goalOther").textContent = other ? (goalIsPages() ? tn(mn, "{n} Minute", "{n} Minuten") : tn(pg, "{n} Seite", "{n} Seiten")) + " " + t("zusätzlich eingetragen") : "";

@@ -732,3 +732,27 @@ body.intro-on { overflow: hidden; }
   .patch-note p { flex: 1 1 calc(100% - 3.5rem); }
   .patch-note .btn { margin-left: auto; }
 }
+
+/* Heute: Garnrolle statt Lineal */
+.spool-box { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 1rem; margin: .5rem 0 .9rem; }
+.spool { width: 112px; height: auto; overflow: visible; }
+.sp-core { fill: color-mix(in srgb, var(--gold) 22%, var(--paper)); stroke: var(--rule); }
+.sp-tick { stroke: var(--rule); stroke-dasharray: 2 3; }
+.sp-flange { fill: color-mix(in srgb, var(--gold) 45%, var(--sheet)); stroke: color-mix(in srgb, var(--gold) 70%, var(--ink) 10%); }
+.sp-hole { fill: var(--sheet); stroke: color-mix(in srgb, var(--gold) 70%, var(--ink) 10%); }
+.sp-wrap rect { fill: var(--green); }
+.sp-wrap path { stroke: color-mix(in srgb, #fff 35%, var(--green)); stroke-width: 1; fill: none; opacity: .7; }
+.sp-wrap { transform-box: fill-box; transform-origin: center; animation: spWind .45s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes spWind { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
+.sp-end { fill: none; stroke: var(--green); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 60; stroke-dashoffset: 60; animation: spEnd .6s ease-out forwards; }
+@keyframes spEnd { to { stroke-dashoffset: 0; } }
+.sp-knot { transform-box: fill-box; transform-origin: center; animation: stampIn .5s cubic-bezier(.3,1.3,.5,1) both; }
+.sp-knot circle { fill: var(--green); }
+.sp-knot path { stroke: color-mix(in srgb, #fff 45%, var(--green)); stroke-width: 1.2; fill: none; }
+.spool-info { display: grid; gap: .25rem; min-width: 0; }
+.spool-lbl { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.spool-num { font-family: var(--font-display); font-weight: 400; font-size: 3rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.spool-num small { font-size: 1.3rem; color: var(--ink-soft); }
+.spool-num.ok { color: var(--green); }
+.spool-info .goal-other { margin: .2rem 0 0; }
+@media (prefers-reduced-motion: reduce) { .sp-wrap, .sp-end, .sp-knot { animation: none; stroke-dashoffset: 0; } }
