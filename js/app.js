@@ -1458,7 +1458,7 @@
         setTimeout(() => { intro.remove(); resolve(); }, 800);
       };
       intro.addEventListener("click", finish);
-      setTimeout(finish, 9100); // genug Zeit, um Datum und Zitat in Ruhe zu lesen
+      setTimeout(finish, 9800); // genug Zeit, um Datum und Zitat in Ruhe zu lesen
     });
   }
 

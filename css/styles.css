@@ -674,7 +674,7 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
   background-size: 22px 22px, 100% 100%; transition: opacity .7s ease, transform .9s cubic-bezier(.6,0,.2,1); }
 .intro.out { opacity: 0; transform: scale(1.06); pointer-events: none; }
 .cover-stage { position: relative; width: min(320px, 44vw); aspect-ratio: 3 / 4.2; container-type: inline-size; transform-style: preserve-3d;
-  animation: stageIn .9s cubic-bezier(.2,.8,.2,1) both, stageCenter 1.2s cubic-bezier(.65,0,.25,1) 1.55s forwards; }
+  animation: stageIn .9s cubic-bezier(.2,.8,.2,1) both, stageCenter 1.2s cubic-bezier(.65,0,.25,1) 3.3s forwards; }
 @keyframes stageIn { from { opacity: 0; transform: translateY(40px) rotateX(18deg) scale(.92); } to { opacity: 1; transform: none; } }
 @keyframes stageCenter { to { transform: translateX(50%); } }
 .first-page { position: absolute; inset: 0; background: #f8f6ee; border-radius: 2px 8px 8px 2px; padding: 12cqw 11cqw 40cqw; display: flex; flex-direction: column; justify-content: center; gap: 3cqw;
@@ -683,10 +683,10 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .fp-date { margin: 0; font-family: var(--font-mono); font-size: max(4.2cqw, 10px); letter-spacing: .12em; text-transform: uppercase; color: #2c7a55; }
 .fp-quote { margin: 0; font-family: var(--font-read); font-weight: 500; font-size: 6.8cqw; line-height: 1.36; }
 .fp-by { margin: 0; font-family: var(--font-mono); font-size: max(4cqw, 10px); color: #57635b; }
-.fp-stamp { --c: #2f8059; position: absolute; right: 8cqw; bottom: 7cqw; width: 34cqw; box-shadow: inset 0 0 0 3px #f8f6ee, inset 0 0 0 4.5px #2f8059; animation: stampIn .5s cubic-bezier(.3,1.3,.5,1) 2.55s both; }
+.fp-stamp { --c: #2f8059; position: absolute; right: 8cqw; bottom: 7cqw; width: 34cqw; box-shadow: inset 0 0 0 3px #f8f6ee, inset 0 0 0 4.5px #2f8059; animation: stampIn .5s cubic-bezier(.3,1.3,.5,1) 4.3s both; }
 .fp-stamp span { font-size: 3.3cqw; }
 .fp-stamp b { font-size: 8cqw; }
-.cover { position: absolute; inset: 0; transform-origin: left center; transform-style: preserve-3d; animation: coverOpen 1.2s cubic-bezier(.65,0,.25,1) 1.55s forwards; }
+.cover { position: absolute; inset: 0; transform-origin: left center; transform-style: preserve-3d; animation: coverOpen 1.2s cubic-bezier(.65,0,.25,1) 3.3s forwards; }
 @keyframes coverOpen { to { transform: rotateY(-178deg); } }
 .cover-front, .cover-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 3px 10px 10px 3px; }
 .cover-front { background-color: #2f7354;
@@ -709,17 +709,17 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .cover-rule { width: 22cqw; height: 1px; background: rgba(217,184,101,.7); }
 .intro-skip { position: absolute; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center; font-family: var(--font-mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: #4d6b5b; animation: fadeOut .4s ease 2.5s forwards; }
 @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
-.intro-next { position: absolute; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: .6rem; opacity: 0; animation: fadeIn .6s ease 2.9s forwards; }
+.intro-next { position: absolute; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: .6rem; opacity: 0; animation: fadeIn .6s ease 4.6s forwards; }
 @keyframes fadeIn { to { opacity: 1; } }
 .intro-next span { font-family: var(--font-body); font-weight: 700; background: #2c7a55; color: #fff; padding: .65rem 1.4rem; border-radius: 8px; white-space: nowrap; }
 .intro-next i { display: block; width: 140px; height: 2px; background: rgba(44,122,85,.2); border-radius: 2px; overflow: hidden; }
-.intro-next i::after { content: ""; display: block; height: 100%; width: 0; background: #2c7a55; animation: introTimer 6.2s linear 2.9s forwards; }
+.intro-next i::after { content: ""; display: block; height: 100%; width: 0; background: #2c7a55; animation: introTimer 5s linear 4.6s forwards; }
 @keyframes introTimer { to { width: 100%; } }
 body.intro-on { overflow: hidden; }
 /* Handy: Seite groß und mittig, der Einband klappt nach links aus dem Bild */
 @media (max-width: 600px) {
   .cover-stage { width: min(70vw, 300px); animation: stageIn .9s cubic-bezier(.2,.8,.2,1) both; }
-  .cover { animation: coverOpen 1.2s cubic-bezier(.65,0,.25,1) 1.55s forwards, fadeOut .5s ease 2.4s forwards; }
+  .cover { animation: coverOpen 1.2s cubic-bezier(.65,0,.25,1) 3.3s forwards, fadeOut .5s ease 4.15s forwards; }
 }
 
 @media (prefers-reduced-motion: reduce) {
