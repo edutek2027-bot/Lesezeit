@@ -262,13 +262,8 @@
 
     renderGoal();
 
-    // Leseblume: wächst langfristig mit allen gelesenen Seiten (bzw. Minuten) – sie welkt nie
-    const tt = totals(), units = goalIsPages() ? tt.pages : tt.minutes;
-    $("#streakDays").textContent = units.toLocaleString(NUMLOC());
-    $("#streakWord").textContent = goalIsPages() ? tn(units, "Seite gelesen", "Seiten gelesen") : tn(units, "Minute gelesen", "Minuten gelesen");
-    const rest = PETAL_UNIT - (units % PETAL_UNIT);
-    $("#petalNext").textContent = t("Noch {len} bis zum nächsten Blütenblatt.", { len: goalLen(rest) });
-    renderTree(Math.floor(units / PETAL_UNIT));
+    // Leseschal: jeder Lesetag strickt eine Reihe (grün = Ziel erreicht, orange = gelesen)
+    renderScarf();
     const m = minutesByDay();
 
     // Zahlen
@@ -304,48 +299,41 @@
     showTip(false);
   }
 
-  // Leseblume: alle 10 Seiten (bzw. Minuten) ein Blütenblatt. Mit 7 Blättern ist die Blume voll erblüht
-  // und wandert in den Lesegarten (kleine Blumen links und rechts), dann wächst die nächste.
-  const PETALS = 7, PETAL_UNIT = 10; // 10 Seiten bzw. 10 Minuten = 1 Blütenblatt, 7 Blätter = 1 Blume
-  function treeStage(n) {
-    if (n === 0) return t("Samen");
-    const p = n % PETALS;
-    return p === 0 ? t("In voller Blüte") : tn(p, "{n} von 7 Blütenblättern", "{n} von 7 Blütenblättern");
+  // Leseschal: jeder Lesetag ist eine gestrickte Reihe (4 cm). Grün = Tagesziel erreicht, orange = gelesen.
+  // Die heutige Reihe hängt noch auf der Nadel und füllt sich mit dem Tagesziel. Der Schal wird nie kürzer.
+  const ROW_CM = 4, STITCHES = 8, SCARF_ROWS = 18;
+  function knitRow(y, n, cls, delay) {
+    const x0 = 40, w = 60 / STITCHES, h = 4.4;
+    let d = "";
+    for (let i = 0; i < n; i++) d += `M${(x0 + i * w).toFixed(1)} ${y}l${(w / 2).toFixed(2)} ${h}l${(w / 2).toFixed(2)} ${-h}`;
+    return d ? `<path class="${cls}" d="${d}"${delay != null ? ` style="animation-delay:${delay}s"` : ""}/>` : "";
   }
-  function petalRing(cx, cy, len, w, filled, cls, delay0) {
-    let out = "";
-    for (let i = 0; i < PETALS; i++) {
-      const on = i < filled, rot = (360 / PETALS) * i;
-      out += `<g transform="translate(${cx} ${cy}) rotate(${rot})"><ellipse class="${on ? cls : "petal-empty"}" cx="0" cy="${-len * .62}" rx="${w}" ry="${len * .5}"${on ? ` style="animation-delay:${delay0 + i * .12}s"` : ""}/></g>`;
-    }
-    return out;
-  }
-  function miniFlower(x, h, i) {
-    const top = 100 - h;
-    return `<g class="mini" style="animation-delay:${.15 + i * .1}s"><path class="stem" d="M${x} 100 Q${x - 3} ${top + h / 2} ${x} ${top}"/>${petalRing(x, top, 9, 3, PETALS, "petal-mini", 0)}<circle class="core" cx="${x}" cy="${top}" r="2.6"/></g>`;
-  }
-  function renderTree(n) {
-    $("#treeStage").textContent = treeStage(n);
-    const full = Math.floor(n / PETALS), p = n === 0 ? 0 : n % PETALS || PETALS;
-    const gardenCount = n % PETALS === 0 && n > 0 ? full - 1 : full; // die aktuelle volle Blume steht noch in der Mitte
-    $("#gardenNote").textContent = gardenCount > 0 ? tn(gardenCount, "{n} Blume im Lesegarten", "{n} Blumen im Lesegarten") : "";
-    const ground = `<ellipse class="ground" cx="70" cy="101" rx="58" ry="5"/>`;
-    const spots = [[30, 34], [110, 30], [16, 22], [124, 24], [46, 20], [94, 22]];
-    const garden = spots.slice(0, Math.min(spots.length, gardenCount)).map(([x, h], i) => miniFlower(x, h, i)).join("");
-    if (n === 0) {
-      $("#tree").innerHTML = ground + garden + `<ellipse class="seed" cx="70" cy="97" rx="5" ry="3.5"/><path class="sprout" d="M70 95 C70 90 71 87 73 84"/>`;
-      return;
-    }
-    const bloom = p === PETALS;
-    const headY = 38, leafL = p >= 2 ? `<path class="fleaf" d="M70 80 C60 78 54 72 52 66 C60 66 67 71 70 78Z"/>` : "";
-    const leafR = p >= 4 ? `<path class="fleaf" style="animation-delay:.5s" d="M70 70 C80 68 86 62 88 56 C80 56 73 61 70 68Z"/>` : "";
-    $("#tree").innerHTML = ground + garden + `
-      <g class="sway">
-        <path class="stem main" d="M70 100 C68 82 72 62 70 ${headY + 6}"/>${leafL}${leafR}
-        ${bloom ? `<circle class="halo" cx="70" cy="${headY}" r="27"/>` : ""}
-        ${petalRing(70, headY, 30, 7.5, p, "petal", .6)}
-        <circle class="core${bloom ? " on" : ""}" cx="70" cy="${headY}" r="7"/>
-      </g>`;
+  function renderScarf() {
+    const mins = minutesByDay(), pgs = pagesByDay(), today = dateKey(new Date());
+    const days = [...readSet()].filter((k) => k !== today).sort().reverse(); // neueste zuerst
+    const tMin = mins[today] || 0, tPg = pgs[today] || 0, readToday = tMin > 0 || tPg > 0;
+    const r = Math.min(1, goalVal(tMin, tPg) / goalTarget()), doneToday = r >= 1;
+    const rows = days.length + (readToday ? 1 : 0), green = days.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length + (doneToday ? 1 : 0);
+    const cm = rows * ROW_CM;
+    $("#streakDays").textContent = cm >= 100 ? (cm / 100).toLocaleString(NUMLOC(), { maximumFractionDigits: 2 }) + " m" : cm + " cm";
+    $("#treeStage").textContent = tn(rows, "{n} Reihe", "{n} Reihen");
+    $("#gardenNote").textContent = rows ? t("{g} von {n} Reihen grün: Ziel erreicht.", { g: green, n: rows }) : "";
+    $("#petalNext").textContent = doneToday ? t("Die heutige Reihe ist fertig.") : readToday ? t("Noch {len}, dann ist die heutige Reihe grün.", { len: goalLen(goalTarget() - goalVal(tMin, tPg)) }) : t("Lies heute, dann strickst du eine neue Reihe.");
+    // Nadeln + heutige Reihe
+    const yN = 14, knitted = Math.round(r * STITCHES);
+    let svg = `<path class="needle" d="M24 ${yN + 6}L112 ${yN - 4}"/><path class="needle" d="M28 ${yN - 4}L116 ${yN + 6}"/><circle class="needle-tip" cx="22" cy="${yN + 6.3}" r="2.6"/><circle class="needle-tip" cx="118" cy="${yN + 6.3}" r="2.6"/>`;
+    svg += knitRow(yN, STITCHES, "row-open");
+    svg += knitRow(yN, readToday ? Math.max(1, knitted) : 0, doneToday ? "row-goal" : "row-read", .9);
+    // alte Reihen darunter (neueste oben)
+    const show = days.slice(0, SCARF_ROWS);
+    show.forEach((k, i) => {
+      svg += knitRow(yN + (i + 1) * 4.4, STITCHES, goalDone(mins[k] || 0, pgs[k] || 0) ? "row-goal" : "row-read", .1 + i * .03);
+    });
+    const yEnd = yN + (show.length + 1) * 4.4 + 4.4;
+    if (days.length > SCARF_ROWS) svg += `<rect class="scarf-fade" x="36" y="${yEnd - 22}" width="68" height="24"/>`;
+    else if (rows) svg += [0, 1, 2, 3, 4, 5, 6].map((i) => `<path class="fringe" d="M${42 + i * 9.3} ${yEnd}v${7 + (i % 2) * 3}"/>`).join("");
+    if (!readToday) svg += `<path class="yarn" d="M100 ${yN + 2}C122 ${yN + 18} 126 74 118 92"/><circle class="yarn-ball" cx="116" cy="96" r="8"/>`;
+    $("#tree").innerHTML = `<defs><linearGradient id="scarfFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sheet)" stop-opacity="0"/><stop offset="1" stop-color="var(--sheet)"/></linearGradient></defs>` + svg;
   }
 
   // Lesefaden: die letzten 4 Wochen als Schlangenlinie. Jeder Lesetag ist ein Kreuzstich,
