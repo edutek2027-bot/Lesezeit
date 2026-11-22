@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=34">
+  <link rel="stylesheet" href="css/styles.css?v=35">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -136,29 +136,7 @@
           <p class="garden-note" id="gardenNote"></p>
         </article>
 
-        <article class="card stats-card">
-          <div class="card-head"><h2 data-t>In Zahlen</h2><span class="kicker" data-t>gesamt</span></div>
-          <dl class="stats">
-            <div class="stat"><dt data-t>Bücher beendet</dt><dd id="statBooks">0</dd></div>
-            <div class="stat"><dt data-t>Seiten</dt><dd id="statPages">0</dd></div>
-            <div class="stat"><dt data-t>Lesezeit</dt><dd id="statHours">0</dd></div>
-            <div class="stat"><dt data-t>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
-            <div class="stat"><dt data-t>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
-            <div class="stat"><dt data-t>Längste Serie</dt><dd id="statBest">0</dd></div>
-          </dl>
-        </article>
 
-        <article class="card chart-card">
-          <div class="card-head">
-            <h2 data-t>7 Tage</h2>
-            <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
-              <button class="active" data-mode="pg" role="tab" data-t>Seiten</button>
-              <button data-mode="min" role="tab" data-t>Minuten</button>
-            </div>
-          </div>
-          <div class="bars pg" id="weekChart"></div>
-          <div class="chart-info" id="chartInfo"></div>
-        </article>
 
         <article class="card wide">
           <div class="card-head">
@@ -194,6 +172,28 @@
             </form>
             <div class="lines" id="lines"></div>
           </div>
+        </article>
+        <article class="card wide chart-card">
+          <div class="card-head">
+            <h2 data-t>7 Tage</h2>
+            <div class="seg-mini" id="chartMode" role="tablist" aria-label="Diagramm zeigt">
+              <button class="active" data-mode="pg" role="tab" data-t>Seiten</button>
+              <button data-mode="min" role="tab" data-t>Minuten</button>
+            </div>
+          </div>
+          <div class="bars pg" id="weekChart"></div>
+          <div class="chart-info" id="chartInfo"></div>
+        </article>
+        <article class="card stats-card">
+          <div class="card-head"><h2 data-t>In Zahlen</h2><span class="kicker" data-t>gesamt</span></div>
+          <dl class="stats">
+            <div class="stat"><dt data-t>Bücher beendet</dt><dd id="statBooks">0</dd></div>
+            <div class="stat"><dt data-t>Seiten</dt><dd id="statPages">0</dd></div>
+            <div class="stat"><dt data-t>Lesezeit</dt><dd id="statHours">0</dd></div>
+            <div class="stat"><dt data-t>Wörter gesammelt</dt><dd id="statWords">0</dd></div>
+            <div class="stat"><dt data-t>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
+            <div class="stat"><dt data-t>Längste Serie</dt><dd id="statBest">0</dd></div>
+          </dl>
         </article>
 
         <article class="card tip-card full">
@@ -532,8 +532,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=34"></script>
-  <script src="js/i18n.js?v=34"></script>
-  <script src="js/app.js?v=34"></script>
+  <script src="js/data.js?v=35"></script>
+  <script src="js/i18n.js?v=35"></script>
+  <script src="js/app.js?v=35"></script>
 </body>
 </html>

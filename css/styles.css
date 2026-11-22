@@ -140,6 +140,7 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .grid-dash { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-dash .wide { grid-column: span 2; }
 .grid-dash .full { grid-column: 1 / -1; }
+@media (min-width: 981px) { .grid-dash > .faden-card { grid-row: span 2; } }
 .grid-dash > .card { animation: rise .6s cubic-bezier(.2,.8,.2,1) both; }
 .grid-dash > .card:nth-child(2) { animation-delay: .05s; }
 .grid-dash > .card:nth-child(3) { animation-delay: .1s; }
@@ -726,7 +727,6 @@ body.intro-on { overflow: hidden; }
   .intro { display: none; }
 }
 
-.grid-dash > .goal-card { align-self: start; }
 @media (max-width: 560px) {
   .patch-note { flex-wrap: wrap; }
   .patch-note p { flex: 1 1 calc(100% - 3.5rem); }
@@ -784,3 +784,5 @@ body.intro-on { overflow: hidden; }
 .fr-knot path { fill: none; stroke: color-mix(in srgb, #fff 55%, var(--green)); stroke-width: 1.3; }
 .fr-check { fill: none; stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: write .5s ease-out 1.5s forwards; }
 @media (prefers-reduced-motion: reduce) { .fr-thread { animation: none; stroke-dashoffset: var(--to); } .fr-check { animation: none; stroke-dashoffset: 0; } }
+
+@media (min-width: 981px) { .grid-dash > .tree-card { display: flex; flex-direction: column; } .grid-dash > .tree-card .tree { margin-top: auto; } .grid-dash > .tree-card .garden-note, .grid-dash > .tree-card .big { margin-bottom: 0; } .grid-dash > .tree-card > :last-child { margin-bottom: auto; } }
