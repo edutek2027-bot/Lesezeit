@@ -309,40 +309,48 @@
     showTip(false);
   }
 
-  // Der Baum wächst mit jedem Lesetag in Folge: Keimling → junger Baum → blühender Baum
-  const LEAVES = [[63,55,-35],[77,55,35],[70,40,0],[58,46,-30],[82,46,30],[50,56,-50],[90,56,50],[64,32,-15],[76,32,15],
-    [44,64,-60],[96,62,60],[58,60,-20],[82,61,20],[70,25,0],[52,40,-35],[88,40,35],[66,48,-10],[75,49,10]];
-  const LEAF_FILLS = ["var(--green)", "var(--green-2)", "var(--mint)"];
+  // Leseblume: jeder Lesetag in Folge schenkt ein Blütenblatt. Nach 7 Tagen ist die Blume voll erblüht
+  // und wandert in den Lesegarten (kleine Blumen links und rechts), dann wächst die nächste.
+  const PETALS = 7;
   function treeStage(n) {
-    if (n === 0) return "Samen";
-    if (n < 3) return "Keimling";
-    if (n < 7) return "Junger Baum";
-    if (n < 14) return "Kräftiger Baum";
-    if (n < 30) return "Stattlicher Baum";
-    return "Blühender Baum";
+    if (n === 0) return t("Samen");
+    const p = n % PETALS;
+    return p === 0 ? t("In voller Blüte") : tn(p, "{n} von 7 Blütenblättern", "{n} von 7 Blütenblättern");
+  }
+  function petalRing(cx, cy, len, w, filled, cls, delay0) {
+    let out = "";
+    for (let i = 0; i < PETALS; i++) {
+      const on = i < filled, rot = (360 / PETALS) * i;
+      out += `<g transform="translate(${cx} ${cy}) rotate(${rot})"><ellipse class="${on ? cls : "petal-empty"}" cx="0" cy="${-len * .62}" rx="${w}" ry="${len * .5}"${on ? ` style="animation-delay:${delay0 + i * .12}s"` : ""}/></g>`;
+    }
+    return out;
+  }
+  function miniFlower(x, h, i) {
+    const top = 100 - h;
+    return `<g class="mini" style="animation-delay:${.15 + i * .1}s"><path class="stem" d="M${x} 100 Q${x - 3} ${top + h / 2} ${x} ${top}"/>${petalRing(x, top, 9, 3, PETALS, "petal-mini", 0)}<circle class="core" cx="${x}" cy="${top}" r="2.6"/></g>`;
   }
   function renderTree(n) {
-    $("#treeStage").textContent = t(treeStage(n));
-    const ground = `<ellipse class="ground" cx="70" cy="101" rx="46" ry="5"/>`;
+    $("#treeStage").textContent = treeStage(n);
+    const full = Math.floor(n / PETALS), p = n === 0 ? 0 : n % PETALS || PETALS;
+    const gardenCount = n % PETALS === 0 && n > 0 ? full - 1 : full; // die aktuelle volle Blume steht noch in der Mitte
+    $("#gardenNote").textContent = gardenCount > 0 ? tn(gardenCount, "{n} Blume im Lesegarten", "{n} Blumen im Lesegarten") : "";
+    const ground = `<ellipse class="ground" cx="70" cy="101" rx="58" ry="5"/>`;
+    const spots = [[30, 34], [110, 30], [16, 22], [124, 24], [46, 20], [94, 22]];
+    const garden = spots.slice(0, Math.min(spots.length, gardenCount)).map(([x, h], i) => miniFlower(x, h, i)).join("");
     if (n === 0) {
-      $("#tree").innerHTML = ground + `<ellipse class="seed" cx="70" cy="97" rx="5" ry="3.5"/><path class="sprout" d="M70 95 C70 90 71 87 73 84"/>`;
+      $("#tree").innerHTML = ground + garden + `<ellipse class="seed" cx="70" cy="97" rx="5" ry="3.5"/><path class="sprout" d="M70 95 C70 90 71 87 73 84"/>`;
       return;
     }
-    const scale = (0.5 + 0.5 * Math.min(1, (n - 1) / 13)).toFixed(3);
-    const leaves = LEAVES.slice(0, Math.min(LEAVES.length, n + 1)).map(([x, y, r], i) =>
-      `<g transform="translate(${x} ${y}) rotate(${r})"><ellipse class="leaf" rx="8" ry="4.6" fill="${LEAF_FILLS[i % 3]}" style="animation-delay:${0.5 + i * 0.06}s"/></g>`).join("");
-    const blooms = n >= 21 ? [[60,38],[80,37],[70,30],[52,52],[88,50],[66,58]].slice(0, Math.min(6, Math.floor((n - 18) / 2)))
-      .map(([x, y], i) => `<circle class="bloom" cx="${x}" cy="${y}" r="2.6" style="animation-delay:${1.6 + i * 0.1}s"/>`).join("") : "";
-    const branches = n >= 3 ? `
-        <path class="bark" stroke-width="2.5" d="M70 78 C63 72 56 68 50 60" style="animation-delay:.25s"/>
-        <path class="bark" stroke-width="2.5" d="M70 72 C77 66 85 62 90 56" style="animation-delay:.35s"/>
-        <path class="bark" stroke-width="2" d="M70 62 C66 55 62 50 58 44" style="animation-delay:.45s"/>
-        <path class="bark" stroke-width="2" d="M70 60 C74 53 78 48 82 44" style="animation-delay:.5s"/>` : "";
-    $("#tree").innerHTML = ground + `
-      <g class="grow" style="transform:scale(${scale})"><g class="sway">
-        <path class="bark" stroke-width="5" d="M70 100 C70 86 69 72 70 52"/>${branches}
-        ${leaves}${blooms}
-      </g></g>`;
+    const bloom = p === PETALS;
+    const headY = 38, leafL = p >= 2 ? `<path class="fleaf" d="M70 80 C60 78 54 72 52 66 C60 66 67 71 70 78Z"/>` : "";
+    const leafR = p >= 4 ? `<path class="fleaf" style="animation-delay:.5s" d="M70 70 C80 68 86 62 88 56 C80 56 73 61 70 68Z"/>` : "";
+    $("#tree").innerHTML = ground + garden + `
+      <g class="sway">
+        <path class="stem main" d="M70 100 C68 82 72 62 70 ${headY + 6}"/>${leafL}${leafR}
+        ${bloom ? `<circle class="halo" cx="70" cy="${headY}" r="27"/>` : ""}
+        ${petalRing(70, headY, 30, 7.5, p, "petal", .6)}
+        <circle class="core${bloom ? " on" : ""}" cx="70" cy="${headY}" r="7"/>
+      </g>`;
   }
 
   // Lesefaden: die letzten 4 Wochen als Schlangenlinie. Jeder Lesetag ist ein Kreuzstich,

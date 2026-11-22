@@ -1,7 +1,7 @@
 # 📚 Lesezeit
 
 **Lesezeit** ist eine Plattform zur Leseförderung für Kinder, Jugendliche und Erwachsene.
-Sie hilft, eine tägliche Lesegewohnheit aufzubauen – mit Tagesziel, Lesebaum, Lese-Timer,
+Sie hilft, eine tägliche Lesegewohnheit aufzubauen – mit Tagesziel, Leseblume, Lese-Timer,
 Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Ganze lebendig.
 
 ## Funktionen
@@ -9,7 +9,7 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 - **Intro** – der Lesepass mit Leinen-Einband und Goldprägung schlägt sich auf; innen stehen Datum und Zitat des Tages
 - **Heute** – Tagesziel für Minuten und Seiten als zwei Lineale, Stempel „Ziel erreicht“, Zitat des Tages
 - **Lesefaden** – Monatsansicht mit Blättern; jeder Lesetag ist ein Knoten im Faden (orange = gelesen, grün = Tagesziel erreicht), Folgetage werden verbunden; eine Lücke lässt den Faden reißen. Verpasste Tage der letzten 7 Tage lassen sich flicken: einmal das Tagesziel in Minuten nachlesen
-- **Lesebaum** – wächst mit jedem Lesetag in Folge
+- **Leseblume** – wächst mit jedem Lesetag in Folge
 - **Sammelheft** – Wörter sowie wichtige Sätze und Zitate (mit Buch und Seite) sammeln
 - **Tages- und Wochenblick** – Tag im Lesefaden antippen: Minuten, Seiten, Notizen; Woche mit Durchschnitt, Lesetagen und Vergleich zur Vorwoche
 - **Lesetagebuch** – nach jeder Lesezeit ein Satz zum Gelesenen

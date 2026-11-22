@@ -1,5 +1,5 @@
 /* Lesezeit – Service Worker: Netzwerk zuerst (immer die neueste Version), Cache nur als Offline-Rückfall */
-const CACHE = "lesezeit-v1";
+const CACHE = "lesezeit-v2";
 const SHELL = ["./", "index.html", "css/styles.css", "js/data.js", "js/i18n.js", "js/app.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -16,7 +16,7 @@ self.addEventListener("fetch", (e) => {
   const fonts = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
   if (!sameOrigin && !fonts) return;
   e.respondWith(
-    fetch(req).then((res) => {
+    fetch(req, sameOrigin ? { cache: "no-cache" } : undefined).then((res) => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || (req.mode === "navigate" ? caches.match("index.html") : undefined)))

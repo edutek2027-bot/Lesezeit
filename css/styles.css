@@ -756,3 +756,18 @@ body.intro-on { overflow: hidden; }
 .spool-num.ok { color: var(--green); }
 .spool-info .goal-other { margin: .2rem 0 0; }
 @media (prefers-reduced-motion: reduce) { .sp-wrap, .sp-end, .sp-knot { animation: none; stroke-dashoffset: 0; } }
+
+/* Leseblume */
+.flower .stem { fill: none; stroke: var(--green); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 90; stroke-dashoffset: 90; animation: write .9s ease-out forwards; }
+.flower .stem.main { stroke-width: 3; }
+.flower .fleaf { fill: var(--green-2); transform-box: fill-box; transform-origin: 100% 100%; animation: leafIn .6s cubic-bezier(.3,1.5,.5,1) .35s both; }
+.flower .petal { fill: var(--orange); stroke: color-mix(in srgb, var(--orange) 70%, var(--ink) 15%); stroke-width: .6; transform-box: fill-box; transform-origin: 50% 100%; animation: leafIn .55s cubic-bezier(.3,1.5,.5,1) both; }
+.flower .petal-empty { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2.5 2.5; }
+.flower .petal-mini { fill: color-mix(in srgb, var(--orange) 55%, var(--sheet)); }
+.flower .core { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 70%, var(--ink) 20%); stroke-width: .8; }
+.flower .core.on { animation: corePulse 2.4s ease-in-out infinite 1.6s; transform-box: fill-box; transform-origin: center; }
+@keyframes corePulse { 50% { transform: scale(1.15); } }
+.flower .halo { fill: color-mix(in srgb, var(--gold) 18%, transparent); animation: leafIn .8s ease-out 1.4s both; transform-box: fill-box; transform-origin: center; }
+.flower .mini { transform-box: fill-box; transform-origin: 50% 100%; animation: leafIn .6s ease-out both; }
+.garden-note { margin: .1rem 0 0; font-size: .82rem; color: var(--ink-soft); }
+.garden-note:empty { display: none; }
