@@ -299,41 +299,64 @@
     showTip(false);
   }
 
-  // Leseschal: jeder Lesetag ist eine gestrickte Reihe. Grün = Tagesziel erreicht, orange = gelesen.
-  // Die heutige Reihe hängt noch auf der Nadel und füllt sich mit dem Tagesziel. Der Schal wird nie kürzer.
-  const STITCHES = 8, SCARF_ROWS = 18;
-  function knitRow(y, n, cls, delay) {
-    const x0 = 40, w = 60 / STITCHES, h = 4.4;
-    let d = "";
-    for (let i = 0; i < n; i++) d += `M${(x0 + i * w).toFixed(1)} ${y}l${(w / 2).toFixed(2)} ${h}l${(w / 2).toFixed(2)} ${-h}`;
-    return d ? `<path class="${cls}" d="${d}"${delay != null ? ` style="animation-delay:${delay}s"` : ""}/>` : "";
+  // Lesegarderobe: jeden Monat ein neues Strickstück. Jeder Tag des Monats ist eine Reihe (von unten nach oben):
+  // grün = Tagesziel erreicht, orange = gelesen, blass = nicht gelesen. Die heutige Reihe wächst mit dem Tagesziel.
+  // Vergangene Monate bleiben als kleine Sammlung des Jahres sichtbar.
+  const GARMENTS = [
+    { name: "Mütze", d: ["M38 82Q36 34 70 30Q104 34 102 82Z", "M33 78h74a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H33a3 3 0 0 1-3-3V81a3 3 0 0 1 3-3Z", "M70 12a9 9 0 1 1 0 18a9 9 0 1 1 0-18Z"] },
+    { name: "Fäustlinge", d: ["M58 96V46Q58 20 79 20Q100 20 100 46V96Z", "M58 58Q42 56 41 44Q41 34 49 33Q57 33 58 44Z"] },
+    { name: "Schal", d: ["M56 8h30v80h-30Z", "M56 8h30l4 14H52Z"] },
+    { name: "Socken", d: ["M54 8H82V58L100 72Q110 82 103 92Q97 99 86 97L60 92Q50 89 52 78Z"] },
+    { name: "Pullover", d: ["M52 14L61 9H79L88 14L108 28L102 52L92 46V96H48V46L38 52L32 28Z"] },
+    { name: "Teppich", d: ["M32 26h76v62H32Z"] },
+  ];
+  const garmentFor = (m) => GARMENTS[m % GARMENTS.length];
+  function garmentSvg(g, key, cells, todayR, mini) {
+    // cells: Liste pro Monatstag: "goal" | "read" | "miss" | "future" | "today"
+    const n = cells.length, top = 8, bot = 97, h = (bot - top) / n;
+    let rows = "";
+    cells.forEach((c, i) => {
+      if (c === "future") return;
+      const y = bot - (i + 1) * h, w = c === "today" ? Math.max(.08, todayR) * 140 : 140;
+      const cls = c === "today" ? (todayR >= 1 ? "k-goal" : "k-read") : "k-" + c;
+      rows += `<rect class="${cls}" x="0" y="${y.toFixed(2)}" width="${w.toFixed(1)}" height="${(h + .25).toFixed(2)}"${mini ? "" : ` style="animation-delay:${(.1 + i * .035).toFixed(2)}s"`}/>`;
+    });
+    const shapes = g.d.map((d) => `<path d="${d}"/>`).join("");
+    const outline = g.d.map((d) => `<path class="k-line" d="${d}"/>`).join("");
+    const fringe = g.name === "Teppich" ? [32, 108].map((x) => [0, 1, 2, 3, 4, 5, 6].map((j) => `<path class="k-fringe" d="M${x} ${30 + j * 9}h${x < 70 ? -6 : 6}"/>`).join("")).join("")
+      : g.name === "Schal" ? [0, 1, 2, 3, 4].map((j) => `<path class="k-fringe" d="M${59 + j * 6} 88v8"/>`).join("") : "";
+    return `<defs><clipPath id="clip-${key}">${shapes}</clipPath><pattern id="knit-${key}" width="6" height="5" patternUnits="userSpaceOnUse"><path d="M0 0l3 4l3-4" class="k-tex"/></pattern></defs>
+      <g clip-path="url(#clip-${key})"><rect class="k-base" x="0" y="0" width="140" height="104"/>${rows}<rect x="0" y="0" width="140" height="104" fill="url(#knit-${key})"/></g>${outline}${fringe}`;
+  }
+  function monthCells(y, m, mins, pgs) {
+    const today = dateKey(new Date()), n = new Date(y, m + 1, 0).getDate(), out = [];
+    for (let d = 1; d <= n; d++) {
+      const k = dateKey(new Date(y, m, d)), mn = mins[k] || 0, pg = pgs[k] || 0;
+      if (k === today) out.push("today");
+      else if (k > today) out.push("future");
+      else out.push(goalDone(mn, pg) ? "goal" : mn || pg ? "read" : "miss");
+    }
+    return out;
   }
   function renderScarf() {
-    const mins = minutesByDay(), pgs = pagesByDay(), today = dateKey(new Date());
-    const days = [...readSet()].filter((k) => k !== today).sort().reverse(); // neueste zuerst
-    const tMin = mins[today] || 0, tPg = pgs[today] || 0, readToday = tMin > 0 || tPg > 0;
-    const r = Math.min(1, goalVal(tMin, tPg) / goalTarget()), doneToday = r >= 1;
-    const rows = days.length + (readToday ? 1 : 0), green = days.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length + (doneToday ? 1 : 0);
-    $("#streakDays").textContent = rows.toLocaleString(NUMLOC());
-    $("#streakWord").textContent = tn(rows, "Reihe gestrickt", "Reihen gestrickt");
-    $("#treeStage").textContent = tn(green, "{n} × Ziel", "{n} × Ziel");
-    $("#gardenNote").textContent = t("1 Reihe = 1 Lesetag · grün = Ziel erreicht");
-    $("#petalNext").textContent = doneToday ? t("Die heutige Reihe ist fertig.") : readToday ? t("Noch {len}, dann ist die heutige Reihe grün.", { len: goalLen(goalTarget() - goalVal(tMin, tPg)) }) : t("Lies heute, dann strickst du eine neue Reihe.");
-    // Nadeln + heutige Reihe
-    const yN = 14, knitted = Math.round(r * STITCHES);
-    let svg = `<path class="needle" d="M24 ${yN + 6}L112 ${yN - 4}"/><path class="needle" d="M28 ${yN - 4}L116 ${yN + 6}"/><circle class="needle-tip" cx="22" cy="${yN + 6.3}" r="2.6"/><circle class="needle-tip" cx="118" cy="${yN + 6.3}" r="2.6"/>`;
-    svg += knitRow(yN, STITCHES, "row-open");
-    svg += knitRow(yN, readToday ? Math.max(1, knitted) : 0, doneToday ? "row-goal" : "row-read", .9);
-    // alte Reihen darunter (neueste oben)
-    const show = days.slice(0, SCARF_ROWS);
-    show.forEach((k, i) => {
-      svg += knitRow(yN + (i + 1) * 4.4, STITCHES, goalDone(mins[k] || 0, pgs[k] || 0) ? "row-goal" : "row-read", .1 + i * .03);
-    });
-    const yEnd = yN + (show.length + 1) * 4.4 + 4.4;
-    if (days.length > SCARF_ROWS) svg += `<rect class="scarf-fade" x="36" y="${yEnd - 22}" width="68" height="24"/>`;
-    else if (rows) svg += [0, 1, 2, 3, 4, 5, 6].map((i) => `<path class="fringe" d="M${42 + i * 9.3} ${yEnd}v${7 + (i % 2) * 3}"/>`).join("");
-    if (!readToday) svg += `<path class="yarn" d="M100 ${yN + 2}C122 ${yN + 18} 126 74 118 92"/><circle class="yarn-ball" cx="116" cy="96" r="8"/>`;
-    $("#tree").innerHTML = `<defs><linearGradient id="scarfFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sheet)" stop-opacity="0"/><stop offset="1" stop-color="var(--sheet)"/></linearGradient></defs>` + svg;
+    const mins = minutesByDay(), pgs = pagesByDay(), now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    const today = dateKey(now), tMin = mins[today] || 0, tPg = pgs[today] || 0, readToday = tMin > 0 || tPg > 0;
+    const r = Math.min(1, goalVal(tMin, tPg) / goalTarget());
+    const cells = monthCells(y, m, mins, pgs), g = garmentFor(m);
+    const knitted = cells.filter((c) => c === "goal" || c === "read").length + (readToday ? 1 : 0), green = cells.filter((c) => c === "goal").length + (r >= 1 ? 1 : 0);
+    $("#treeStage").textContent = `${fd(now, { month: "long" })} · ${t(g.name)}`;
+    $("#streakDays").textContent = Math.round((knitted / cells.length) * 100) + " %";
+    $("#streakWord").textContent = t("gestrickt");
+    $("#petalNext").textContent = r >= 1 ? t("Die heutige Reihe ist fertig.") : readToday ? t("Noch {len}, dann ist die heutige Reihe grün.", { len: goalLen(goalTarget() - goalVal(tMin, tPg)) }) : t("Lies heute, dann strickst du eine neue Reihe.");
+    $("#tree").innerHTML = garmentSvg(g, "now", cells, readToday ? r : 0, false);
+    // Sammlung: die fertigen Stücke dieses Jahres
+    let ward = "";
+    for (let mm = 0; mm < m; mm++) {
+      const c = monthCells(y, mm, mins, pgs), any = c.some((x) => x === "goal" || x === "read");
+      ward += `<figure class="w-item${any ? "" : " w-empty"}" title="${fd(new Date(y, mm, 1), { month: "long" })} · ${t(garmentFor(mm).name)}"><svg class="knit" viewBox="0 0 140 104">${garmentSvg(garmentFor(mm), "m" + mm, c, 0, true)}</svg><figcaption>${fd(new Date(y, mm, 1), { month: "short" })}</figcaption></figure>`;
+    }
+    $("#wardrobe").innerHTML = ward ? `<p class="w-title">${t("Fertig in {y}", { y })}</p><div class="w-row">${ward}</div>` : "";
+    $("#gardenNote").textContent = t("1 Reihe = 1 Tag · grün = Ziel erreicht") + (green ? ` · ${tn(green, "{n} × Ziel", "{n} × Ziel")}` : "");
   }
 
   // Lesefaden: die letzten 4 Wochen als Schlangenlinie. Jeder Lesetag ist ein Kreuzstich,
