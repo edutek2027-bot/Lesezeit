@@ -1,7 +1,7 @@
 {
-  "name": "Lesezeit – Lesepass",
+  "name": "Lesezeit",
   "short_name": "Lesezeit",
-  "description": "Dein Lesepass für jeden Tag: Seiten und Minuten, Lesefaden, Wortschatz und Lesetagebuch.",
+  "description": "Faden für Faden zur Lesegewohnheit: Seiten und Minuten, Lesefaden, Wortschatz und Lesetagebuch.",
   "lang": "de",
   "start_url": "./?source=app",
   "scope": "./",

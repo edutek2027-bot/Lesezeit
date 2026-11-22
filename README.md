@@ -6,7 +6,7 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 
 ## Funktionen
 
-- **Intro** – der Lesepass mit Leinen-Einband und Goldprägung schlägt sich auf; innen stehen Datum und Zitat des Tages
+- **Intro** – das Lesebuch „Faden für Faden“ mit Leinen-Einband und Goldprägung schlägt sich auf; innen stehen Datum und Zitat des Tages
 - **Heute** – Tagesziel für Minuten und Seiten als zwei Lineale, Stempel „Ziel erreicht“, Zitat des Tages
 - **Lesefaden** – Monatsansicht mit Blättern; jeder Lesetag ist ein Knoten im Faden (orange = gelesen, grün = Tagesziel erreicht), Folgetage werden verbunden; eine Lücke lässt den Faden reißen. Verpasste Tage der letzten 7 Tage lassen sich flicken: einmal das Tagesziel in Minuten nachlesen
 - **Lesegarderobe** – jeden Monat ein neues Strickstück (Mütze, Fäustlinge, Schal, Socken, Pullover, Teppich); jeder Tag ist eine Reihe (grün = Tagesziel erreicht, orange = gelesen), fertige Stücke sammeln sich im Jahr

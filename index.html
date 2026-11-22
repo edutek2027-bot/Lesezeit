@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Lesezeit – Leseförderung</title>
-  <meta name="description" content="Lesezeit: dein Lesepass für jeden Tag – Lesezeit, Seiten, Stempel, Wortschatz und Lesetagebuch. Für Kinder, Jugendliche und Erwachsene.">
+  <meta name="description" content="Lesezeit: Faden für Faden zur Lesegewohnheit – Lesezeit, Seiten, Stempel, Wortschatz und Lesetagebuch. Für Kinder, Jugendliche und Erwachsene.">
   <meta name="theme-color" content="#2c7a55">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -15,10 +15,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=40">
+  <link rel="stylesheet" href="css/styles.css?v=41">
 </head>
 <body class="intro-on">
-  <!-- Intro: Der Lesepass wird aufgeschlagen -->
+  <!-- Intro: das Lesebuch wird aufgeschlagen -->
   <div class="intro" id="intro" aria-hidden="true">
     <div class="cover-stage" id="coverStage">
       <div class="first-page">
@@ -31,7 +31,7 @@
       <div class="cover">
         <div class="cover-front">
           <div class="cover-frame">
-            <span class="cover-kicker" data-t>Lesepass</span>
+            <span class="cover-kicker" data-t>Faden für Faden</span>
             <span class="cover-title" data-t>Lesezeit</span>
             <span class="cover-rule"></span>
             <span class="cover-owner" id="coverOwner" data-t>Jeden Tag ein paar Seiten</span>
@@ -402,8 +402,8 @@
   <dialog id="profileDialog" class="modal">
     <form method="dialog" id="profileForm" class="form">
       <div class="stamp onboard-stamp" aria-hidden="true"><span data-t>Lese</span><b data-t>pass</b></div>
-      <h2 id="profileTitle" data-t>Dein Lesepass</h2>
-      <p class="muted" id="profileIntro" data-t>Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:</p>
+      <h2 id="profileTitle" data-t>Dein Profil</h2>
+      <p class="muted" id="profileIntro" data-t>Ein paar Minuten am Tag machen den Unterschied. Richte kurz dein Profil ein:</p>
       <label class="field"><span data-t>Sprache</span><select id="pLang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
       <label class="field"><span data-t>Wie heißt du?</span><input id="pName" maxlength="40" required autocomplete="given-name" placeholder="Vorname"></label>
       <div class="field">
@@ -456,7 +456,7 @@
       <label class="field"><span><span data-t>Neues Wort entdeckt?</span> <small data-t>(optional)</small></span><input id="finishWord" maxlength="40" autocomplete="off" placeholder="z. B. Sehnsucht"></label>
       <div class="modal-actions">
         <span class="spacer"></span>
-        <button type="submit" class="btn primary" data-t>In den Lesepass eintragen</button>
+        <button type="submit" class="btn primary" data-t>Los geht’s</button>
       </div>
     </form>
   </dialog>
@@ -536,8 +536,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=40"></script>
-  <script src="js/i18n.js?v=40"></script>
-  <script src="js/app.js?v=40"></script>
+  <script src="js/data.js?v=41"></script>
+  <script src="js/i18n.js?v=41"></script>
+  <script src="js/app.js?v=41"></script>
 </body>
 </html>

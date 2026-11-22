@@ -1324,8 +1324,8 @@
   const profileDialog = $("#profileDialog");
   function profileTexts() {
     const p = state.profile;
-    $("#profileTitle").textContent = t(p ? "Dein Lesepass" : "Willkommen bei Lesezeit");
-    $("#profileIntro").textContent = t(p ? "Name, Sprache, Altersgruppe und Tagesziele ändern." : "Ein paar Minuten am Tag machen den Unterschied. Richte kurz deinen Lesepass ein:");
+    $("#profileTitle").textContent = t(p ? "Dein Profil" : "Willkommen bei Lesezeit");
+    $("#profileIntro").textContent = t(p ? "Name, Sprache, Altersgruppe und Tagesziele ändern." : "Ein paar Minuten am Tag machen den Unterschied. Richte kurz dein Profil ein:");
   }
   function openProfile() {
     const p = state.profile;
@@ -1367,7 +1367,7 @@
     const first = !state.profile;
     state.profile = readProfile(); chartMode = wkMode = null; save();
     profileDialog.close(); render();
-    if (first) { confetti(); toast(t("Dein Lesepass ist bereit, {name}.", { name: state.profile.name })); }
+    if (first) { confetti(); toast(t("Alles bereit, {name}. Viel Freude beim Lesen!", { name: state.profile.name })); }
   });
   profileDialog.addEventListener("cancel", (e) => { if (!state.profile) e.preventDefault(); });
   $("#resetAll").addEventListener("click", async () => {
@@ -1471,7 +1471,7 @@
     "Jede Seite zählt, und heute waren es genug.",
     "Bravo! Lesen wird zu deiner Gewohnheit.",
     "Geschafft! Dein Buch freut sich schon auf morgen.",
-    "Ein guter Tag für deinen Lesepass.",
+    "Ein guter Tag für einen neuen Knoten.",
     "Du bleibst dran – das ist das Wichtigste.",
     "Heute hast du dir Zeit für dich genommen."
   ];
