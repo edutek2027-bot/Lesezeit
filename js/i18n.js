@@ -279,8 +279,6 @@ window.LZ_I18N = {
     "Stufe {a} von {b}": "Level {a} of {b}",
     "Sätze & Zitate": "Sentences & quotes",
     "Tag": "Day",
-    "Tag in Folge|Tage in Folge": { one: "day in a row", other: "days in a row" },
-    "Tage in Folge": "days in a row",
     "Tagebuch": "Journal",
     "Tief versunken": "Deeply absorbed",
     "Tipp": "Tip",
@@ -475,6 +473,9 @@ window.LZ_I18N = {
     "In voller Blüte": "In full bloom",
     "{n} von 7 Blütenblättern|{n} von 7 Blütenblättern": "{n} of 7 petals",
     "{n} Blume im Lesegarten|{n} Blumen im Lesegarten": { one: "{n} flower in your reading garden", other: "{n} flowers in your reading garden" },
+    "Seite gelesen|Seiten gelesen": { one: "page read", other: "pages read" },
+    "Minute gelesen|Minuten gelesen": { one: "minute read", other: "minutes read" },
+    "Noch {len} bis zum nächsten Blütenblatt.": "{len} to go until the next petal.",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -756,8 +757,6 @@ window.LZ_I18N = {
     "Stufe {a} von {b}": "Seviye {a} / {b}",
     "Sätze & Zitate": "Cümleler ve alıntılar",
     "Tag": "Gün",
-    "Tag in Folge|Tage in Folge": "gün üst üste",
-    "Tage in Folge": "gün üst üste",
     "Tagebuch": "Günlük",
     "Tief versunken": "Derinlere dalmış",
     "Tipp": "İpucu",
@@ -952,6 +951,9 @@ window.LZ_I18N = {
     "In voller Blüte": "Tam açtı",
     "{n} von 7 Blütenblättern|{n} von 7 Blütenblättern": "7 yapraktan {n}",
     "{n} Blume im Lesegarten|{n} Blumen im Lesegarten": "Okuma bahçende {n} çiçek",
+    "Seite gelesen|Seiten gelesen": "sayfa okundu",
+    "Minute gelesen|Minuten gelesen": "dakika okundu",
+    "Noch {len} bis zum nächsten Blütenblatt.": "Bir sonraki taç yaprağına {len} kaldı.",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1233,8 +1235,6 @@ window.LZ_I18N = {
     "Stufe {a} von {b}": "Nivo {a} od {b}",
     "Sätze & Zitate": "Rečenice i citati",
     "Tag": "Dan",
-    "Tag in Folge|Tage in Folge": { one: "dan zaredom", few: "dana zaredom", other: "dana zaredom" },
-    "Tage in Folge": "dana zaredom",
     "Tagebuch": "Dnevnik",
     "Tief versunken": "Duboko utonuo/la",
     "Tipp": "Savjet",
@@ -1429,6 +1429,9 @@ window.LZ_I18N = {
     "In voller Blüte": "U punom cvatu",
     "{n} von 7 Blütenblättern|{n} von 7 Blütenblättern": { one: "{n} od 7 latica", few: "{n} od 7 latica", other: "{n} od 7 latica" },
     "{n} Blume im Lesegarten|{n} Blumen im Lesegarten": { one: "{n} cvijet u vrtu čitanja", few: "{n} cvijeta u vrtu čitanja", other: "{n} cvjetova u vrtu čitanja" },
+    "Seite gelesen|Seiten gelesen": { one: "stranica pročitana", few: "stranice pročitane", other: "stranica pročitano" },
+    "Minute gelesen|Minuten gelesen": { one: "minuta čitanja", few: "minute čitanja", other: "minuta čitanja" },
+    "Noch {len} bis zum nächsten Blütenblatt.": "Još {len} do sljedeće latice.",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };

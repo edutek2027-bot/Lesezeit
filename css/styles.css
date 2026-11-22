@@ -786,3 +786,4 @@ body.intro-on { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .fr-thread { animation: none; stroke-dashoffset: var(--to); } .fr-check { animation: none; stroke-dashoffset: 0; } }
 
 @media (min-width: 981px) { .grid-dash > .tree-card { display: flex; flex-direction: column; } .grid-dash > .tree-card .tree { margin-top: auto; } .grid-dash > .tree-card .garden-note, .grid-dash > .tree-card .big { margin-bottom: 0; } .grid-dash > .tree-card > :last-child { margin-bottom: auto; } }
+.petal-next { margin: .1rem 0 0; font-size: .85rem; color: var(--ink-soft); }

@@ -262,11 +262,13 @@
 
     renderGoal();
 
-    // Lesebaum
-    const st = streak();
-    $("#streakDays").textContent = st;
-    $("#streakWord").textContent = tn(st, "Tag in Folge", "Tage in Folge");
-    renderTree(st);
+    // Leseblume: wächst langfristig mit allen gelesenen Seiten (bzw. Minuten) – sie welkt nie
+    const tt = totals(), units = goalIsPages() ? tt.pages : tt.minutes;
+    $("#streakDays").textContent = units.toLocaleString(NUMLOC());
+    $("#streakWord").textContent = goalIsPages() ? tn(units, "Seite gelesen", "Seiten gelesen") : tn(units, "Minute gelesen", "Minuten gelesen");
+    const rest = PETAL_UNIT - (units % PETAL_UNIT);
+    $("#petalNext").textContent = t("Noch {len} bis zum nächsten Blütenblatt.", { len: goalLen(rest) });
+    renderTree(Math.floor(units / PETAL_UNIT));
     const m = minutesByDay();
 
     // Zahlen
@@ -302,9 +304,9 @@
     showTip(false);
   }
 
-  // Leseblume: jeder Lesetag in Folge schenkt ein Blütenblatt. Nach 7 Tagen ist die Blume voll erblüht
+  // Leseblume: alle 10 Seiten (bzw. Minuten) ein Blütenblatt. Mit 7 Blättern ist die Blume voll erblüht
   // und wandert in den Lesegarten (kleine Blumen links und rechts), dann wächst die nächste.
-  const PETALS = 7;
+  const PETALS = 7, PETAL_UNIT = 10; // 10 Seiten bzw. 10 Minuten = 1 Blütenblatt, 7 Blätter = 1 Blume
   function treeStage(n) {
     if (n === 0) return t("Samen");
     const p = n % PETALS;

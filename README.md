@@ -9,7 +9,7 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 - **Intro** – der Lesepass mit Leinen-Einband und Goldprägung schlägt sich auf; innen stehen Datum und Zitat des Tages
 - **Heute** – Tagesziel für Minuten und Seiten als zwei Lineale, Stempel „Ziel erreicht“, Zitat des Tages
 - **Lesefaden** – Monatsansicht mit Blättern; jeder Lesetag ist ein Knoten im Faden (orange = gelesen, grün = Tagesziel erreicht), Folgetage werden verbunden; eine Lücke lässt den Faden reißen. Verpasste Tage der letzten 7 Tage lassen sich flicken: einmal das Tagesziel in Minuten nachlesen
-- **Leseblume** – wächst mit jedem Lesetag in Folge
+- **Leseblume** – alle 10 Seiten (oder Minuten) ein Blütenblatt, 7 Blätter = eine Blume im Lesegarten; sie welkt nie
 - **Sammelheft** – Wörter sowie wichtige Sätze und Zitate (mit Buch und Seite) sammeln
 - **Tages- und Wochenblick** – Tag im Lesefaden antippen: Minuten, Seiten, Notizen; Woche mit Durchschnitt, Lesetagen und Vergleich zur Vorwoche
 - **Lesetagebuch** – nach jeder Lesezeit ein Satz zum Gelesenen
