@@ -16,8 +16,8 @@ Bücherregal, Empfehlungen und Erfolgen. Viele kleine Animationen machen das Gan
 - **Regal** – Bücher mit Autor/in, Seiten, Gattung, Startdatum, Bewertung und Notizen; *„liest seit X Tagen“*
 - **Timer** – Countdown oder freies Lesen, danach Seite, Satz und neues Wort eintragen
 - **Entdecken** – Buchempfehlungen (bearbeiten, entfernen, eigene hinzufügen) und Lesetipps je Altersgruppe
-- **Belohnungen** – Tagesziel: Knoten-Feier mit Lob · 7 Lesetage in Folge: ein Lesezeichen für die Sammlung · ab 20 Lesetagen im Monat: ein Quadrat für die Lesedecke (lückenlos = goldener Rand) mit Monatsbilanz · Seiten-Meilensteine
-- **Erfolge** – Stempel, Lese-Stufen, Lesezeichen-Sammlung und Lesedecke
+- **Belohnungen** – Tagesziel: Knoten-Feier mit Lob · 7 Lesetage in Folge: ein Lesezeichen für die Sammlung · ab 20 Lesetagen im Monat: das Strickstück des Monats ist fertig (Lesegarderobe) · Seiten-Meilensteine
+- **Erfolge** – Stempel, Lese-Stufen, Lesezeichen-Sammlung und Lesegarderobe
 - **Sprachen:** Deutsch, English, Türkçe, Bosanski – Oberfläche, Tipps, Buchbeschreibungen und Datumsformate passen sich an; das Zitat des Tages bleibt im deutschen Original mit Übersetzung
 - Hell- und Dunkelmodus, Handy-Ansicht mit Navigationsleiste unten
 

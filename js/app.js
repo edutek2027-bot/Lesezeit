@@ -310,12 +310,12 @@
   // grün = Tagesziel erreicht, orange = gelesen, blass = nicht gelesen. Die heutige Reihe wächst mit dem Tagesziel.
   // Vergangene Monate bleiben als kleine Sammlung des Jahres sichtbar.
   const GARMENTS = [
-    { name: "Mütze", d: ["M38 82Q36 34 70 30Q104 34 102 82Z", "M33 78h74a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H33a3 3 0 0 1-3-3V81a3 3 0 0 1 3-3Z", "M70 12a9 9 0 1 1 0 18a9 9 0 1 1 0-18Z"] },
-    { name: "Fäustlinge", d: ["M58 96V46Q58 20 79 20Q100 20 100 46V96Z", "M58 58Q42 56 41 44Q41 34 49 33Q57 33 58 44Z"] },
-    { name: "Schal", d: ["M56 8h30v80h-30Z", "M56 8h30l4 14H52Z"] },
-    { name: "Socken", d: ["M54 8H82V58L100 72Q110 82 103 92Q97 99 86 97L60 92Q50 89 52 78Z"] },
-    { name: "Pullover", d: ["M52 14L61 9H79L88 14L108 28L102 52L92 46V96H48V46L38 52L32 28Z"] },
-    { name: "Teppich", d: ["M32 26h76v62H32Z"] },
+    { name: "Mütze", done: "Deine Mütze ist fertig!", d: ["M38 82Q36 34 70 30Q104 34 102 82Z", "M33 78h74a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H33a3 3 0 0 1-3-3V81a3 3 0 0 1 3-3Z", "M70 12a9 9 0 1 1 0 18a9 9 0 1 1 0-18Z"] },
+    { name: "Fäustlinge", done: "Deine Fäustlinge sind fertig!", d: ["M58 96V46Q58 20 79 20Q100 20 100 46V96Z", "M58 58Q42 56 41 44Q41 34 49 33Q57 33 58 44Z"] },
+    { name: "Schal", done: "Dein Schal ist fertig!", d: ["M56 8h30v80h-30Z", "M56 8h30l4 14H52Z"] },
+    { name: "Socken", done: "Deine Socken sind fertig!", d: ["M54 8H82V58L100 72Q110 82 103 92Q97 99 86 97L60 92Q50 89 52 78Z"] },
+    { name: "Pullover", done: "Dein Pullover ist fertig!", d: ["M52 14L61 9H79L88 14L108 28L102 52L92 46V96H48V46L38 52L32 28Z"] },
+    { name: "Teppich", done: "Dein Teppich ist fertig!", d: ["M32 26h76v62H32Z"] },
   ];
   const garmentFor = (m) => GARMENTS[m % GARMENTS.length];
   function garmentSvg(g, key, cells, todayR, mini) {
@@ -356,10 +356,12 @@
     $("#streakWord").textContent = t("gestrickt");
     $("#petalNext").textContent = r >= 1 ? t("Die heutige Reihe ist fertig.") : readToday ? t("Noch {len}, dann ist die heutige Reihe grün.", { len: goalLen(goalTarget() - goalVal(tMin, tPg)) }) : t("Lies heute, dann strickst du eine neue Reihe.");
     $("#tree").innerHTML = garmentSvg(g, "now", cells, readToday ? r : 0, false);
+    const leftDays = PATCH_MIN - knitted;
+    if (leftDays > 0 && !ensureRewards().patches[`${y}-${pad(m + 1)}`]) $("#petalNext").textContent += " " + tn(leftDays, "Noch {n} Lesetag, dann ist dein Stück fertig.", "Noch {n} Lesetage, dann ist dein Stück fertig.");
     // Sammlung: die fertigen Stücke dieses Jahres
     let ward = "";
     for (let mm = 0; mm < m; mm++) {
-      const c = monthCells(y, mm, mins, pgs), any = c.some((x) => x === "goal" || x === "read");
+      const c = monthCells(y, mm, mins, pgs), any = !!ensureRewards().patches[`${y}-${pad(mm + 1)}`];
       ward += `<figure class="w-item${any ? "" : " w-empty"}" title="${fd(new Date(y, mm, 1), { month: "long" })} · ${t(garmentFor(mm).name)}"><svg class="knit" viewBox="0 0 140 104">${garmentSvg(garmentFor(mm), "m" + mm, c, 0, true)}</svg><figcaption>${fd(new Date(y, mm, 1), { month: "short" })}</figcaption></figure>`;
     }
     $("#wardrobe").innerHTML = ward ? `<p class="w-title">${t("Fertig in {y}", { y })}</p><div class="w-row">${ward}</div>` : "";
@@ -1461,7 +1463,7 @@
   }
 
   // ---------- Belohnungen ----------
-  // Tagesziel → Knoten-Feier · 7 Lesetage in Folge → Lesezeichen · 20 Lesetage im Monat → Quadrat für die Lesedecke
+  // Tagesziel → Knoten-Feier · 7 Lesetage in Folge → Lesezeichen · 20 Lesetage im Monat → Strickstück des Monats fertig (Lesegarderobe)
   const MILESTONES = [100, 250, 500, 1000, 2500, 5000, 10000];
   const BM_COLORS = ["#2c7a55", "#e07b2c", "#3a6ea5", "#b5487a", "#7a5cc2", "#b48c25", "#2f8a8a", "#a8483b"];
   const PATCH_MIN = 20;
@@ -1535,19 +1537,11 @@
       <path class="bm-thread" d="M30 20 V116"/>
       ${Array.from({ length: 7 }, (_, i) => `<circle class="bm-knot" cx="30" cy="${20 + i * 16}" r="4.4" style="animation-delay:${0.25 + i * 0.08}s"/>`).join("")}</svg>`;
   }
+  let patchUid = 0;
   function patchSVG(m, perfect, anim = false) {
-    const [y, mo] = m.split("-").map(Number), n = daysInMonth(y, mo), rs = readSet(), mins = minutesByDay(), pgs = pagesByDay();
-    let cells = "";
-    for (let d = 1; d <= n; d++) {
-      const k = `${m}-${pad(d)}`, i = d - 1, cls = goalDone(mins[k] || 0, pgs[k] || 0) ? "g" : rs.has(k) ? "r" : "e";
-      cells += `<rect class="pt-${cls}" x="${13 + (i % 7) * 13.6}" y="${30 + Math.floor(i / 7) * 13.6}" width="10.6" height="10.6" rx="2.2"${anim ? ` style="animation-delay:${0.2 + i * 0.03}s"` : ""}/>`;
-    }
-    const label = fd(new Date(y, mo - 1, 1), { month: "short" }).replace(/\.$/, "");
-    return `<svg class="patch-svg ${anim ? "anim" : ""}" viewBox="0 0 120 120" aria-hidden="true">
-      ${perfect ? `<rect class="pt-gold" x="1.5" y="1.5" width="117" height="117" rx="8"/>` : ""}
-      <rect class="pt-bg" x="5" y="5" width="110" height="110" rx="6"/>
-      <rect class="pt-stitch" x="9" y="9" width="102" height="102" rx="4"/>
-      <text class="pt-lbl" x="60" y="23">${esc(label)} ${String(y).slice(2)}</text>${cells}</svg>`;
+    const [y, mo] = m.split("-").map(Number), mins = minutesByDay(), pgs = pagesByDay();
+    const cells = monthCells(y, mo - 1, mins, pgs), today = dateKey(), tv = goalVal(mins[today] || 0, pgs[today] || 0);
+    return `<svg class="knit patch-svg ${perfect ? "perfect" : ""} ${anim ? "anim" : "still"}" viewBox="0 0 140 104" aria-hidden="true">${garmentSvg(garmentFor(mo - 1), "p" + ++patchUid, cells, Math.min(1, tv / goalTarget()), !anim)}</svg>`;
   }
   function dayArt() {
     const sparks = Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return `<circle class="cd-spark" cx="${(Math.cos(a) * 30).toFixed(1)}" cy="${(Math.sin(a) * 30).toFixed(1)}" r="2.2" style="--dx:${(Math.cos(a) * 14).toFixed(1)}px;--dy:${(Math.sin(a) * 14).toFixed(1)}px"/>`; }).join("");
@@ -1595,8 +1589,10 @@
       const st = monthStats(it.m), perfect = it.type === "view" ? !!state.rewards?.patches?.[it.m]?.perfect : it.perfect;
       $("#celArt").innerHTML = patchSVG(it.m, perfect, true);
       $("#celKicker").textContent = monthLabel(it.m);
-      $("#celTitle").textContent = it.type === "view" ? t("Monatsbilanz") : perfect ? t("Perfekter Monat!") : t("Ein Quadrat für deine Lesedecke!");
-      $("#celText").textContent = it.type === "view" ? "" : perfect ? t("Jeden Tag gelesen – dein Quadrat bekommt einen goldenen Rand.") : t("{n} Lesetage in diesem Monat. Dein Quadrat wird in die Lesedecke genäht.", { n: st.read });
+      const gm = garmentFor(+it.m.split("-")[1] - 1);
+      $("#celKicker").textContent = `${monthLabel(it.m)} · ${t(gm.name)}`;
+      $("#celTitle").textContent = it.type === "view" ? t("Monatsbilanz") : perfect ? t("Perfekter Monat!") : t(gm.done);
+      $("#celText").textContent = it.type === "view" ? "" : perfect ? t("Jeden Tag gelesen – dein Stück bekommt einen goldenen Rand.") : t("{n} Lesetage in diesem Monat. Es hängt jetzt in deiner Lesegarderobe.", { n: st.read });
       list.innerHTML = [[t("Lesetage"), `${st.read}/${st.n}`], [t("Ziel erreicht"), `${st.goals}×`], [t("Seiten"), st.pages], [t("Minuten"), st.minutes],
         [t("Neue Wörter"), st.words], [t("Sätze & Zitate"), st.lines], [t("Bücher beendet"), st.books]]
         .map(([a, v]) => `<div><dt>${esc(a)}</dt><dd>${esc(String(typeof v === "number" ? v.toLocaleString(NUMLOC()) : v))}</dd></div>`).join("");
@@ -1624,14 +1620,14 @@
       : `<p class="collect-empty">${t("Noch kein Lesezeichen.")}</p>`)
       + `<p class="collect-next">${t("Noch {len} bis zum nächsten Lesezeichen.", { len: tn(left, "{n} Lesetag", "{n} Lesetage") })}</p>`;
     const y = new Date().getFullYear(), curM = ymKey(dateKey()), rs = readSet();
-    $("#quiltTitle").textContent = t("Lesedecke {y}", { y });
+    $("#quiltTitle").textContent = t("Lesegarderobe {y}", { y });
     const earned = Object.keys(r.patches).filter((m) => m.startsWith(y + "-")).length;
-    $("#quiltCount").textContent = t("{n} von 12 Quadraten", { n: earned });
+    $("#quiltCount").textContent = t("{n} von 12 Stücken", { n: earned });
     $("#quilt").innerHTML = Array.from({ length: 12 }, (_, i) => {
       const m = `${y}-${pad(i + 1)}`, p = r.patches[m], lbl = fd(new Date(y, i, 1), { month: "short" }).replace(/\.$/, "");
       if (p) return `<button type="button" class="q-cell earned" data-qm="${m}" aria-label="${esc(monthLabel(m))}">${patchSVG(m, p.perfect)}</button>`;
       const cnt = [...rs].filter((k) => k.startsWith(m)).length;
-      return `<button type="button" class="q-cell ${m > curM ? "future" : ""}" data-qm="${m}" ${m > curM ? "disabled" : ""} aria-label="${esc(monthLabel(m))}"><span>${esc(lbl)}</span>${m === curM || (m < curM && cnt) ? `<small>${cnt}/${PATCH_MIN}</small>` : ""}</button>`;
+      return `<button type="button" class="q-cell ${m > curM ? "future" : ""}" data-qm="${m}" ${m > curM ? "disabled" : ""} aria-label="${esc(monthLabel(m))}"><span>${esc(lbl)}</span><em>${esc(t(garmentFor(i).name))}</em>${m === curM || (m < curM && cnt) ? `<small>${cnt}/${PATCH_MIN}</small>` : ""}</button>`;
     }).join("");
   }
   $("#quilt").addEventListener("click", (e) => { const b = e.target.closest("[data-qm]"); if (b && !b.disabled) celebrateQ({ type: "view", m: b.dataset.qm }); });

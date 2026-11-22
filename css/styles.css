@@ -796,3 +796,6 @@ body.intro-on { overflow: hidden; }
 .petal-next { margin: .1rem 0 0; font-size: .85rem; color: var(--ink-soft); }
 .field-hint { display: block; margin-top: .25rem; font-size: .78rem; line-height: 1.35; color: var(--ink-soft); font-weight: 400; }
 .form-hint { margin-top: -.45rem; }
+.patch-svg.knit.perfect .k-line { stroke: var(--gold); stroke-width: 2.6; }
+.patch-svg.knit.still .k-goal, .patch-svg.knit.still .k-read, .patch-svg.knit.still .k-miss { animation: none; opacity: 1; }
+.q-cell em { display: block; font-style: normal; font-size: .62rem; color: var(--ink-soft); }
