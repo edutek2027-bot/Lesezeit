@@ -208,22 +208,15 @@
     ({ uebersicht: renderDashboard, regal: renderShelf, timer: renderTimerView, entdecken: renderDiscover, erfolge: renderBadges }[view] || renderDashboard)();
   }
 
-  // Garnrolle: jede gelesene Einheit wickelt den Faden weiter auf (12 Lagen = Tagesziel)
+  // Fadenkreis: der Faden läuft beim Lesen im Kreis; ist der Kreis geschlossen, wird oben ein Knoten geknüpft
   function spoolSvg(r) {
-    const N = 12, H = 104 / N, rows = Math.round(r * N);
-    let wraps = "";
-    for (let i = 0; i < rows; i++) {
-      const y = 126 - (i + 1) * H, bulge = Math.sin(((i + .5) / N) * Math.PI) * 6;
-      wraps += `<g class="sp-wrap" style="animation-delay:${.15 + i * .07}s"><rect x="${30 - bulge}" y="${y.toFixed(1)}" width="${60 + 2 * bulge}" height="${(H + .4).toFixed(1)}" rx="4"/><path d="M${33 - bulge} ${(y + H * .55).toFixed(1)}L${87 + bulge} ${(y + H * .3).toFixed(1)}"/></g>`;
-    }
-    const topY = 126 - rows * H, end = rows
-      ? `<path class="sp-end" style="animation-delay:${.2 + rows * .07}s" d="M${88 + (rows > 2 ? 4 : 0)} ${(topY + H * .5).toFixed(1)}C108 ${(topY + 4).toFixed(1)} 112 ${(topY + 24).toFixed(1)} 104 ${Math.min(140, topY + 34).toFixed(1)}"/>`
-      : "";
-    const ticks = [.25, .5, .75].map((q) => `<path class="sp-tick" d="M42 ${(126 - q * 104).toFixed(1)}h36"/>`).join("");
-    return `<rect class="sp-core" x="38" y="20" width="44" height="108"/>${ticks}${wraps}${end}
-      <rect class="sp-flange" x="12" y="8" width="96" height="14" rx="5"/><rect class="sp-flange" x="12" y="126" width="96" height="14" rx="5"/>
-      <circle class="sp-hole" cx="60" cy="15" r="3"/><circle class="sp-hole" cx="60" cy="133" r="3"/>
-      ${r >= 1 ? `<g class="sp-knot" style="animation-delay:${.3 + rows * .07}s"><circle cx="104" cy="${Math.min(140, topY + 34).toFixed(1)}" r="6"/><path d="M100 ${(Math.min(140, topY + 34) - 2).toFixed(1)}q4 -3 8 0M99.5 ${(Math.min(140, topY + 34) + 1.5).toFixed(1)}q4.5 -3 9 0"/></g>` : ""}`;
+    const R = 46, C = 2 * Math.PI * R, done = r >= 1;
+    const a = -Math.PI / 2 + r * 2 * Math.PI, x = (60 + R * Math.cos(a)).toFixed(1), y = (60 + R * Math.sin(a)).toFixed(1);
+    return `<circle class="fr-track" cx="60" cy="60" r="${R}"/>
+      <circle class="fr-thread" cx="60" cy="60" r="${R}" transform="rotate(-90 60 60)" style="--c:${C.toFixed(1)};--to:${(C * (1 - r)).toFixed(1)}" stroke-dasharray="${C.toFixed(1)}"/>
+      ${done
+        ? `<g class="fr-knot"><circle cx="60" cy="14" r="9"/><path d="M54 12q6-4 12 0M53.5 16q6.5-4 13 0"/></g><path class="fr-check" d="M48 61l8 8 16-17"/>`
+        : `${r > 0 ? `<circle class="fr-needle" cx="${x}" cy="${y}" r="5"/>` : ""}<text class="fr-pct" x="60" y="66" text-anchor="middle">${Math.round(r * 100)}%</text>`}`;
   }
   // „Heute“-Karte: mit ‹ › zu gestern und früheren Tagen blättern (0 = heute, -1 = gestern …)
   let goalOffset = 0;
@@ -243,7 +236,7 @@
     // der andere Wert nur zur Info
     const other = goalIsPages() ? mn : pg;
     $("#goalOther").textContent = other ? (goalIsPages() ? tn(mn, "{n} Minute", "{n} Minuten") : tn(pg, "{n} Seite", "{n} Seiten")) + " " + t("zusätzlich eingetragen") : "";
-    $("#goalPct").textContent = done ? t("geschafft") : `${Math.round(r * 100)} %`;
+    $("#goalPct").textContent = done ? t("geschafft") : "";
     $("#goalStamp").hidden = !done;
     const list = goalLen(target - v);
     $("#goalHint").textContent = isToday
