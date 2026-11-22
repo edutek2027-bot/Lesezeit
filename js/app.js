@@ -151,7 +151,14 @@
     if (n < 60) return tn(Math.round(n / 7), "seit {n} Woche", "seit {n} Wochen");
     return tn(Math.round(n / 30), "seit {n} Monat", "seit {n} Monaten");
   }
-  const pct = (b) => (b.pages ? Math.min(100, Math.round(((b.status === "gelesen" ? b.pages : b.currentPage || 0) / b.pages) * 100)) : b.status === "gelesen" ? 100 : 0);
+  // Erste Textseite (z. B. 11): die Seiten davor zählen weder für den Fortschritt noch als gelesene Seiten
+  const firstPage = (b) => Math.max(1, b?.firstPage || 1);
+  const pct = (b) => {
+    if (!b.pages) return b.status === "gelesen" ? 100 : 0;
+    if (b.status === "gelesen") return 100;
+    const base = firstPage(b) - 1, span = b.pages - base;
+    return span > 0 ? Math.max(0, Math.min(100, Math.round(((Math.max(base, b.currentPage || 0) - base) / span) * 100))) : 0;
+  };
   const bookMinutes = (id) => state.sessions.filter((s) => s.bookId === id).reduce((a, s) => a + s.minutes, 0);
 
   // ---------- Erfolge ----------
@@ -996,7 +1003,7 @@
   function addBook(data) {
     const b = {
       id: uid(), title: data.title.trim(), author: (data.author || "").trim(), pages: data.pages || null,
-      currentPage: data.currentPage || 0, status: data.status || "lesen", genre: data.genre || "Roman",
+      firstPage: Math.max(1, data.firstPage || 1), currentPage: Math.max(data.currentPage || 0, Math.max(1, data.firstPage || 1) - 1), status: data.status || "lesen", genre: data.genre || "Roman",
       startDate: data.startDate ?? (data.status === "wunsch" ? null : dateKey()), endDate: data.endDate || null,
       rating: data.rating || 0, notes: data.notes || "", emoji: data.emoji || null, color: coverColor(data.title), updated: Date.now()
     };
@@ -1018,6 +1025,7 @@
     $("#fAuthor").value = b?.author || "";
     $("#fPages").value = b?.pages || "";
     $("#fCurrent").value = b?.currentPage || 0;
+    $("#fFirst").value = firstPage(b);
     $("#fStatus").value = b?.status || "lesen";
     $("#fGenre").value = b?.genre || (group() === "kinder" ? "Kinderbuch" : group() === "jugend" ? "Jugendbuch" : "Roman");
     $("#fStart").value = b?.startDate || dateKey();
@@ -1031,6 +1039,10 @@
     if (e.target.closest("#shelfAdd, #addBookBtn, #quickAddBtn")) openBook();
   });
   $("#cancelBook").addEventListener("click", () => bookDialog.close());
+  $("#fFirst").addEventListener("change", () => {
+    const f = Math.max(1, parseInt($("#fFirst").value) || 1), c = parseInt($("#fCurrent").value) || 0;
+    if (c < f - 1) $("#fCurrent").value = f - 1;
+  });
   function askConfirm(msg) {
     const d = $("#confirmDialog");
     $("#confirmText").textContent = msg;
@@ -1051,11 +1063,13 @@
   $("#bookForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const pages = parseInt($("#fPages").value) || null;
-    let current = Math.max(0, parseInt($("#fCurrent").value) || 0);
+    let first = Math.max(1, parseInt($("#fFirst").value) || 1);
+    if (pages) first = Math.min(first, pages);
+    let current = Math.max(first - 1, parseInt($("#fCurrent").value) || 0);
     if (pages) current = Math.min(current, pages);
     const status = $("#fStatus").value;
     const data = {
-      title: $("#fTitle").value.trim(), author: $("#fAuthor").value.trim(), pages, currentPage: current, status,
+      title: $("#fTitle").value.trim(), author: $("#fAuthor").value.trim(), pages, firstPage: first, currentPage: current, status,
       genre: $("#fGenre").value, startDate: $("#fStart").value || (status === "wunsch" ? null : dateKey()),
       rating, notes: $("#fNotes").value.trim()
     };

@@ -794,3 +794,5 @@ body.intro-on { overflow: hidden; }
 
 @media (min-width: 981px) { .grid-dash > .tree-card { display: flex; flex-direction: column; } .grid-dash > .tree-card .tree { margin-top: auto; } .grid-dash > .tree-card .garden-note, .grid-dash > .tree-card .big { margin-bottom: 0; } .grid-dash > .tree-card > :last-child { margin-bottom: auto; } }
 .petal-next { margin: .1rem 0 0; font-size: .85rem; color: var(--ink-soft); }
+.field-hint { display: block; margin-top: .25rem; font-size: .78rem; line-height: 1.35; color: var(--ink-soft); font-weight: 400; }
+.form-hint { margin-top: -.45rem; }

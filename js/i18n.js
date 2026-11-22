@@ -483,6 +483,8 @@ window.LZ_I18N = {
     "Teppich": "Rug",
     "Fertig in {y}": "Finished in {y}",
     "1 Reihe = 1 Tag · grün = Ziel erreicht": "1 row = 1 day · green = goal reached",
+    "Text beginnt auf Seite": "Text starts on page",
+    "Zum Beispiel 11, wenn davor Titel, Inhaltsverzeichnis oder Vorwort kommen. Die Seiten davor zählen nicht.": "For example 11, if the title page, contents or a foreword come first. Pages before it don't count.",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -968,6 +970,8 @@ window.LZ_I18N = {
     "Teppich": "Halı",
     "Fertig in {y}": "{y} yılında bitenler",
     "1 Reihe = 1 Tag · grün = Ziel erreicht": "1 sıra = 1 gün · yeşil = hedefe ulaşıldı",
+    "Text beginnt auf Seite": "Metin şu sayfada başlıyor",
+    "Zum Beispiel 11, wenn davor Titel, Inhaltsverzeichnis oder Vorwort kommen. Die Seiten davor zählen nicht.": "Örneğin 11: önce kapak, içindekiler ya da önsöz varsa. Önceki sayfalar sayılmaz.",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1453,6 +1457,8 @@ window.LZ_I18N = {
     "Teppich": "Ćilim",
     "Fertig in {y}": "Završeno u {y}.",
     "1 Reihe = 1 Tag · grün = Ziel erreicht": "1 red = 1 dan · zeleno = cilj ostvaren",
+    "Text beginnt auf Seite": "Tekst počinje na stranici",
+    "Zum Beispiel 11, wenn davor Titel, Inhaltsverzeichnis oder Vorwort kommen. Die Seiten davor zählen nicht.": "Na primjer 11, ako prije dolaze naslovna strana, sadržaj ili predgovor. Stranice prije se ne računaju.",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };

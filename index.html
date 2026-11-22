@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=39">
+  <link rel="stylesheet" href="css/styles.css?v=40">
 </head>
 <body class="intro-on">
   <!-- Intro: Der Lesepass wird aufgeschlagen -->
@@ -340,8 +340,10 @@
       <label class="field"><span data-t>Autor/in</span><input id="fAuthor" maxlength="80" autocomplete="off"></label>
       <div class="row">
         <label class="field"><span data-t>Seiten gesamt</span><input type="number" min="1" max="5000" id="fPages" placeholder="z. B. 240"></label>
-        <label class="field"><span data-t>Aktuelle Seite</span><input type="number" min="0" id="fCurrent" value="0"></label>
+        <label class="field"><span data-t>Text beginnt auf Seite</span><input type="number" min="1" max="500" id="fFirst" value="1"></label>
       </div>
+      <small class="field-hint form-hint" data-t>Zum Beispiel 11, wenn davor Titel, Inhaltsverzeichnis oder Vorwort kommen. Die Seiten davor zählen nicht.</small>
+      <label class="field"><span data-t>Aktuelle Seite</span><input type="number" min="0" id="fCurrent" value="0"></label>
       <div class="row">
         <label class="field"><span data-t>Status</span>
           <select id="fStatus">
@@ -534,8 +536,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=39"></script>
-  <script src="js/i18n.js?v=39"></script>
-  <script src="js/app.js?v=39"></script>
+  <script src="js/data.js?v=40"></script>
+  <script src="js/i18n.js?v=40"></script>
+  <script src="js/app.js?v=40"></script>
 </body>
 </html>
