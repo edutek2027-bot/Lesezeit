@@ -299,9 +299,9 @@
     showTip(false);
   }
 
-  // Leseschal: jeder Lesetag ist eine gestrickte Reihe (4 cm). Grün = Tagesziel erreicht, orange = gelesen.
+  // Leseschal: jeder Lesetag ist eine gestrickte Reihe. Grün = Tagesziel erreicht, orange = gelesen.
   // Die heutige Reihe hängt noch auf der Nadel und füllt sich mit dem Tagesziel. Der Schal wird nie kürzer.
-  const ROW_CM = 4, STITCHES = 8, SCARF_ROWS = 18;
+  const STITCHES = 8, SCARF_ROWS = 18;
   function knitRow(y, n, cls, delay) {
     const x0 = 40, w = 60 / STITCHES, h = 4.4;
     let d = "";
@@ -314,10 +314,10 @@
     const tMin = mins[today] || 0, tPg = pgs[today] || 0, readToday = tMin > 0 || tPg > 0;
     const r = Math.min(1, goalVal(tMin, tPg) / goalTarget()), doneToday = r >= 1;
     const rows = days.length + (readToday ? 1 : 0), green = days.filter((k) => goalDone(mins[k] || 0, pgs[k] || 0)).length + (doneToday ? 1 : 0);
-    const cm = rows * ROW_CM;
-    $("#streakDays").textContent = cm >= 100 ? (cm / 100).toLocaleString(NUMLOC(), { maximumFractionDigits: 2 }) + " m" : cm + " cm";
-    $("#treeStage").textContent = tn(rows, "{n} Reihe", "{n} Reihen");
-    $("#gardenNote").textContent = rows ? t("{g} von {n} Reihen grün: Ziel erreicht.", { g: green, n: rows }) : "";
+    $("#streakDays").textContent = rows.toLocaleString(NUMLOC());
+    $("#streakWord").textContent = tn(rows, "Reihe gestrickt", "Reihen gestrickt");
+    $("#treeStage").textContent = tn(green, "{n} × Ziel", "{n} × Ziel");
+    $("#gardenNote").textContent = t("1 Reihe = 1 Lesetag · grün = Ziel erreicht");
     $("#petalNext").textContent = doneToday ? t("Die heutige Reihe ist fertig.") : readToday ? t("Noch {len}, dann ist die heutige Reihe grün.", { len: goalLen(goalTarget() - goalVal(tMin, tPg)) }) : t("Lies heute, dann strickst du eine neue Reihe.");
     // Nadeln + heutige Reihe
     const yN = 14, knitted = Math.round(r * STITCHES);

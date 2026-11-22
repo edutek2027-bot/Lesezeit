@@ -470,12 +470,12 @@ window.LZ_I18N = {
     "Zum Flicken fehlten {len}, das zählt für heute.": "You were {len} short of a mend, so it counts for today.",
     "Mit mindestens {len} flickst du {day}.": "With at least {len} you mend {day}.",
     "Leseschal": "Reading scarf",
-    "gestrickt": "knitted",
-    "{n} Reihe|{n} Reihen": { one: "{n} row", other: "{n} rows" },
-    "{g} von {n} Reihen grün: Ziel erreicht.": "{g} of {n} rows green: goal reached.",
     "Die heutige Reihe ist fertig.": "Today's row is finished.",
     "Noch {len}, dann ist die heutige Reihe grün.": "{len} to go and today's row turns green.",
     "Lies heute, dann strickst du eine neue Reihe.": "Read today to knit a new row.",
+    "Reihe gestrickt|Reihen gestrickt": { one: "row knitted", other: "rows knitted" },
+    "{n} × Ziel|{n} × Ziel": "{n} × goal",
+    "1 Reihe = 1 Lesetag · grün = Ziel erreicht": "1 row = 1 reading day · green = goal reached",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -948,12 +948,12 @@ window.LZ_I18N = {
     "Zum Flicken fehlten {len}, das zählt für heute.": "Onarım için {len} eksik kaldı, bugüne sayılıyor.",
     "Mit mindestens {len} flickst du {day}.": "En az {len} ile {day} gününü onarırsın.",
     "Leseschal": "Okuma atkısı",
-    "gestrickt": "örüldü",
-    "{n} Reihe|{n} Reihen": "{n} sıra",
-    "{g} von {n} Reihen grün: Ziel erreicht.": "{n} sıradan {g} tanesi yeşil: hedefe ulaşıldı.",
     "Die heutige Reihe ist fertig.": "Bugünkü sıra bitti.",
     "Noch {len}, dann ist die heutige Reihe grün.": "{len} daha, sonra bugünkü sıra yeşil olur.",
     "Lies heute, dann strickst du eine neue Reihe.": "Bugün oku, atkına yeni bir sıra ör.",
+    "Reihe gestrickt|Reihen gestrickt": "sıra örüldü",
+    "{n} × Ziel|{n} × Ziel": "{n} × hedef",
+    "1 Reihe = 1 Lesetag · grün = Ziel erreicht": "1 sıra = 1 okuma günü · yeşil = hedefe ulaşıldı",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1426,12 +1426,12 @@ window.LZ_I18N = {
     "Zum Flicken fehlten {len}, das zählt für heute.": "Za krpljenje je nedostajalo {len}, pa se računa za danas.",
     "Mit mindestens {len} flickst du {day}.": "Sa najmanje {len} krpiš dan: {day}.",
     "Leseschal": "Šal čitanja",
-    "gestrickt": "ispleteno",
-    "{n} Reihe|{n} Reihen": { one: "{n} red", few: "{n} reda", other: "{n} redova" },
-    "{g} von {n} Reihen grün: Ziel erreicht.": "{g} od {n} redova zeleno: cilj ostvaren.",
     "Die heutige Reihe ist fertig.": "Današnji red je gotov.",
     "Noch {len}, dann ist die heutige Reihe grün.": "Još {len}, pa je današnji red zelen.",
     "Lies heute, dann strickst du eine neue Reihe.": "Čitaj danas i isplest ćeš novi red.",
+    "Reihe gestrickt|Reihen gestrickt": { one: "red ispleten", few: "reda ispletena", other: "redova ispleteno" },
+    "{n} × Ziel|{n} × Ziel": "{n} × cilj",
+    "1 Reihe = 1 Lesetag · grün = Ziel erreicht": "1 red = 1 dan čitanja · zeleno = cilj ostvaren",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };
