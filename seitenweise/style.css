@@ -323,3 +323,11 @@ dialog.pop.cel { padding: 26px 22px 22px; display: flex; flex-direction: column;
 .lg.g::before, .lg.g::after, .lg.o::before, .lg.o::after, .lg.e::before { content: none !important; }
 .lg.g { background: var(--green) !important; } .lg.o { background: var(--orange) !important; } .lg.e { background: none !important; box-shadow: inset 0 0 0 1.5px var(--rule); }
 dialog:not([open]) { display: none !important; }
+/* Ziel erreicht: gesticktes X über dem Tag */
+.ygrid i.g { position: relative; overflow: hidden; isolation: isolate; }
+.ygrid i.g::before, .ygrid i.g::after { content: "" !important; position: absolute; left: calc(50% - 1.25px); top: -12%; width: 2.5px; height: 124%; margin: 0; border-radius: 2px; background: #ffffffa8 !important; transform: rotate(45deg); z-index: -1; opacity: 1 !important; }
+.ygrid i.g::after { transform: rotate(-45deg); }
+.ygrid i.g { text-shadow: 0 0 2px var(--green), 0 0 3px var(--green); }
+.lg.g { position: relative; overflow: hidden; }
+.lg.g::before, .lg.g::after { content: "" !important; position: absolute; left: 4px; top: -2px; width: 2px; height: 14px; background: #ffffffc0 !important; transform: rotate(45deg); }
+.lg.g::after { transform: rotate(-45deg); }
