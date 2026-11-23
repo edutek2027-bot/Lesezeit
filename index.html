@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=44">
+  <link rel="stylesheet" href="css/styles.css?v=45">
 </head>
 <body class="intro-on">
   <!-- Intro: das Lesebuch wird aufgeschlagen -->
@@ -196,6 +196,7 @@
             <div class="stat"><dt data-t>Lese-Einheiten</dt><dd id="statSessions">0</dd></div>
             <div class="stat"><dt data-t>Längste Serie</dt><dd id="statBest">0</dd></div>
           </dl>
+          <p class="stat-pace" id="statPace"></p>
         </article>
 
         <article class="card tip-card full">
@@ -430,6 +431,11 @@
       <label class="field"><span><strong id="pGoalOut">20</strong> <span id="pGoalUnit">Seiten</span> <span data-t>pro Tag</span></span>
         <input type="range" id="pGoal" min="5" max="100" step="5" value="20">
       </label>
+      <div class="field pace-field">
+        <span data-t>Lesetempo</span>
+        <p class="pace-text" id="pPace"></p>
+        <label class="check"><input type="checkbox" id="pAutoMin" checked> <span data-t>Minuten aus den Seiten schätzen, wenn ich keine eintrage</span></label>
+      </div>
       <div class="phone-box">
         <img src="icons/qr-lesezeit.png" width="112" height="112" alt="QR-Code: Lesezeit auf dem Handy öffnen">
         <div>
@@ -570,8 +576,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=44"></script>
-  <script src="js/i18n.js?v=44"></script>
-  <script src="js/app.js?v=44"></script>
+  <script src="js/data.js?v=45"></script>
+  <script src="js/i18n.js?v=45"></script>
+  <script src="js/app.js?v=45"></script>
 </body>
 </html>

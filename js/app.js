@@ -108,6 +108,18 @@
   const goalVal = (min, pg) => (goalIsPages() ? pg : min);
   const goalLen = (n) => (goalIsPages() ? tn(n, "{n} Seite", "{n} Seiten") : tn(n, "{n} Minute", "{n} Minuten"));
   const goalDone = (min, pg) => goalVal(min, pg) >= goalTarget();
+  // Lesetempo (Minuten pro Seite): aus eigenen Einträgen mit Minuten UND Seiten, sonst Startwert nach Altersgruppe.
+  // Startwerte nach Studien zur Lesegeschwindigkeit (Erwachsene ca. 240–260 Wörter/Min., Kinder deutlich langsamer).
+  const PACE_DEFAULT = { kinder: 3, jugend: 2, erwachsene: 1.5 };
+  function paceInfo() {
+    let m = 0, p = 0, n = 0;
+    for (const s of state.sessions) if (!s.estMin && s.minutes > 0 && s.pages > 0) { m += s.minutes; p += s.pages; n++; }
+    if (n >= 3 && p >= 30) return { mpp: Math.min(8, Math.max(0.4, m / p)), own: true, n };
+    return { mpp: PACE_DEFAULT[group()] || 1.5, own: false, n };
+  }
+  const minPerPage = () => paceInfo().mpp;
+  const autoMinOn = () => state.profile?.autoMin !== false;
+  const fmtPace = (v) => v.toLocaleString(NUMLOC(), { maximumFractionDigits: 1, minimumFractionDigits: v % 1 ? 1 : 0 });
   // Ein Tag zählt als Lesetag, wenn Minuten ODER Seiten eingetragen sind
   function readSet() {
     const r = new Set();
@@ -277,6 +289,8 @@
     const tot = totals();
     countUp($("#statBooks"), tot.finished);
     countUp($("#statPages"), tot.pages);
+    const pi = paceInfo(), anyEst = state.sessions.some((x) => x.estMin);
+    $("#statPace").textContent = t("Ø Lesetempo: ca. {n} Min. pro Seite", { n: fmtPace(pi.mpp) }) + " · " + t(pi.own ? "aus deinen Lesezeiten" : "Startwert") + (anyEst ? " · " + t("Lesezeit teils geschätzt") : "");
     $("#statHours").textContent = tot.minutes < 60 ? t("{n} Min.", { n: tot.minutes }) : t("{h} Std.", { h: (tot.minutes / 60).toLocaleString(NUMLOC(), { maximumFractionDigits: 1 }) });
     countUp($("#statWords"), state.words.length);
     countUp($("#statSessions"), tot.sessions);
@@ -539,7 +553,7 @@
     if (dvMode === "day") renderDayBody(); else renderWeekBody();
   }
   // „· 25 Min. · 18 S. · nachgelesen am 20. Nov.“
-  const sessionMeta = (x) => "· " + [x.pages ? t("{n} S.", { n: x.pages }) : "", x.minutes ? t("{n} Min.", { n: x.minutes }) : ""].filter(Boolean).join(" · ") + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
+  const sessionMeta = (x) => "· " + [x.pages ? t("{n} S.", { n: x.pages }) : "", x.minutes ? (x.estMin ? t("ca. {n} Min.", { n: x.minutes }) : t("{n} Min.", { n: x.minutes })) : ""].filter(Boolean).join(" · ") + (x.patched ? " · " + t("nachgelesen am {d}", { d: fmtDate(x.readOn) }) : "");
   // Bearbeiten eines Eintrags (editSid = id) oder neuer Eintrag (editSid = "new")
   let editSid = null;
   function sessionForm(x) {
@@ -583,6 +597,8 @@
       if (date > dateKey()) { toast(t("Das Datum liegt in der Zukunft.")); return; }
       shiftBook(x.bookId, pages - (x.pages || 0));
       if (date !== x.date) { x.date = date; x.hour = null; }
+      if (x.estMin && minutes === x.minutes && pages !== x.pages && autoMinOn()) minutes = pages ? Math.max(1, Math.round(pages * minPerPage())) : 0;
+      else if (minutes !== x.minutes) delete x.estMin;
       x.pages = pages; x.minutes = minutes; x.note = note;
       editSid = null; save(); checkBadges(); render(); toast(t("Gespeichert ✓"));
     }
@@ -1283,7 +1299,10 @@
     }
     note = note.trim().slice(0, 200); word = word.trim().slice(0, 40);
     if (word && !addWord(word, bookId, date)) word = "";
+    let estMin = false;
+    if (!minutes && pages > 0 && autoMinOn()) { minutes = Math.max(1, Math.round(pages * minPerPage())); estMin = true; }
     const entry = { id: uid(), bookId: bookId || null, date, minutes, pages, note, word, hour: date === dateKey() ? new Date().getHours() : null, ts: Date.now() };
+    if (estMin) entry.estMin = true;
     if (patched) { entry.patched = true; entry.readOn = dateKey(); entry.hour = null; }
     state.sessions.push(entry);
     let finished = false;
@@ -1361,6 +1380,10 @@
     $("#pName").value = p?.name || "";
     $$("#pGroup input").forEach((r) => (r.checked = r.value === (p?.group || "erwachsene")));
     $$("#pGoalType input").forEach((r) => (r.checked = r.value === (p?.goalType === "minutes" ? "minutes" : "pages")));
+    $("#pAutoMin").checked = p?.autoMin !== false;
+    const pi = paceInfo();
+    $("#pPace").textContent = pi.own ? t("Ca. {n} Min. pro Seite – berechnet aus deinen eigenen Lesezeiten.", { n: fmtPace(pi.mpp) })
+      : t("Ca. {n} Min. pro Seite – Startwert für deine Altersgruppe. Mit dem Timer lernt die App dein eigenes Tempo.", { n: fmtPace(pi.mpp) });
     setGoalSlider(p?.goalType === "minutes" ? p?.goal || 20 : p?.goalPages || PAGE_DEFAULT[p?.group || "erwachsene"]);
     $("#resetAll").hidden = !p;
     $("#demoData").hidden = state.books.length > 0;
@@ -1386,7 +1409,7 @@
     }
   });
   function readProfile() {
-    return { name: $("#pName").value.trim(), group: $("#pGroup input:checked")?.value || "erwachsene", goalType: pGoalType(),
+    return { name: $("#pName").value.trim(), group: $("#pGroup input:checked")?.value || "erwachsene", goalType: pGoalType(), autoMin: $("#pAutoMin").checked,
       goal: pGoalType() === "minutes" ? +$("#pGoal").value : state.profile?.goal || 20,
       goalPages: pGoalType() === "pages" ? +$("#pGoal").value : state.profile?.goalPages || PAGE_DEFAULT[$("#pGroup input:checked")?.value || "erwachsene"] };
   }

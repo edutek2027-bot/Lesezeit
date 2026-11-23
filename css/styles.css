@@ -812,3 +812,7 @@ body.intro-on { overflow: hidden; }
 .pp-calc.warn { color: color-mix(in srgb, var(--gold) 70%, var(--ink)); font-weight: 700; }
 .finish-pages .page-pair input { font-size: 1.15rem; font-weight: 700; }
 .field[hidden] { display: none !important; }
+.stat-pace { margin: .6rem 0 0; font-size: .8rem; color: var(--ink-soft); }
+.pace-text { margin: .1rem 0 .3rem; font-size: .88rem; color: var(--ink-soft); font-weight: 400; }
+.check { display: flex; gap: .5rem; align-items: flex-start; font-weight: 400; font-size: .9rem; cursor: pointer; }
+.check input { width: 18px; height: 18px; margin-top: .1rem; accent-color: var(--green); flex: none; }

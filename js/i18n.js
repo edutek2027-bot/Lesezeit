@@ -488,6 +488,15 @@ window.LZ_I18N = {
     "Seiten eintragen": "Log pages",
     "z. B. 20": "e.g. 20",
     "Weiter als vorher? Die neuen Seiten werden heute als gelesen eingetragen.": "Further than before? The new pages are logged as read today.",
+    "Lesetempo": "Reading pace",
+    "Minuten aus den Seiten schätzen, wenn ich keine eintrage": "Estimate minutes from pages when I don't enter any",
+    "ca. {n} Min.": "approx. {n} min",
+    "Ø Lesetempo: ca. {n} Min. pro Seite": "Avg. pace: approx. {n} min per page",
+    "aus deinen Lesezeiten": "from your reading times",
+    "Startwert": "starting value",
+    "Lesezeit teils geschätzt": "reading time partly estimated",
+    "Ca. {n} Min. pro Seite – berechnet aus deinen eigenen Lesezeiten.": "Approx. {n} min per page – calculated from your own reading times.",
+    "Ca. {n} Min. pro Seite – Startwert für deine Altersgruppe. Mit dem Timer lernt die App dein eigenes Tempo.": "Approx. {n} min per page – starting value for your age group. With the timer, the app learns your own pace.",
     "Fantasy": "Fantasy", "Comic": "Comic", "Start": "Start", "Status": "Status", "Timer": "Timer"
   },
 
@@ -978,6 +987,15 @@ window.LZ_I18N = {
     "Seiten eintragen": "Sayfa ekle",
     "z. B. 20": "ör. 20",
     "Weiter als vorher? Die neuen Seiten werden heute als gelesen eingetragen.": "Öncekinden ileride mi? Yeni sayfalar bugün okunmuş olarak eklenir.",
+    "Lesetempo": "Okuma hızı",
+    "Minuten aus den Seiten schätzen, wenn ich keine eintrage": "Dakika girmezsem sayfalardan tahmin et",
+    "ca. {n} Min.": "yakl. {n} dk.",
+    "Ø Lesetempo: ca. {n} Min. pro Seite": "Ort. okuma hızı: sayfa başına yakl. {n} dk.",
+    "aus deinen Lesezeiten": "okuma sürelerinden",
+    "Startwert": "başlangıç değeri",
+    "Lesezeit teils geschätzt": "okuma süresi kısmen tahmini",
+    "Ca. {n} Min. pro Seite – berechnet aus deinen eigenen Lesezeiten.": "Sayfa başına yakl. {n} dk. – kendi okuma sürelerinden hesaplandı.",
+    "Ca. {n} Min. pro Seite – Startwert für deine Altersgruppe. Mit dem Timer lernt die App dein eigenes Tempo.": "Sayfa başına yakl. {n} dk. – yaş grubun için başlangıç değeri. Zamanlayıcıyla uygulama kendi hızını öğrenir.",
     "Fantasy": "Fantastik", "Comic": "Çizgi roman", "Start": "Başlat", "Status": "Durum", "Timer": "Zamanlayıcı"
   },
 
@@ -1468,6 +1486,15 @@ window.LZ_I18N = {
     "Seiten eintragen": "Upiši stranice",
     "z. B. 20": "npr. 20",
     "Weiter als vorher? Die neuen Seiten werden heute als gelesen eingetragen.": "Dalje nego prije? Nove stranice se upisuju kao danas pročitane.",
+    "Lesetempo": "Tempo čitanja",
+    "Minuten aus den Seiten schätzen, wenn ich keine eintrage": "Procijeni minute iz stranica ako ih ne upišem",
+    "ca. {n} Min.": "oko {n} min.",
+    "Ø Lesetempo: ca. {n} Min. pro Seite": "Prosj. tempo: oko {n} min. po stranici",
+    "aus deinen Lesezeiten": "iz tvojih vremena čitanja",
+    "Startwert": "početna vrijednost",
+    "Lesezeit teils geschätzt": "vrijeme čitanja djelimično procijenjeno",
+    "Ca. {n} Min. pro Seite – berechnet aus deinen eigenen Lesezeiten.": "Oko {n} min. po stranici – izračunato iz tvojih vremena čitanja.",
+    "Ca. {n} Min. pro Seite – Startwert für deine Altersgruppe. Mit dem Timer lernt die App dein eigenes Tempo.": "Oko {n} min. po stranici – početna vrijednost za tvoju dobnu grupu. Uz tajmer aplikacija uči tvoj tempo.",
     "Fantasy": "Fantastika", "Comic": "Strip", "Start": "Start", "Status": "Status", "Timer": "Tajmer"
   }
 };
