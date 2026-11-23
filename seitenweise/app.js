@@ -42,11 +42,18 @@
       document.body.appendChild(c); setTimeout(() => c.remove(), 2800);
     }
   }
+  // Feier-Grafik: ein Faden läuft durch, in der Mitte wird ein Knoten geknüpft
+  function knotArt() {
+    const sparks = Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return `<circle class="ka-spark" cx="${(60 + Math.cos(a) * 30).toFixed(1)}" cy="${(40 + Math.sin(a) * 30).toFixed(1)}" r="2.4" style="--dx:${(Math.cos(a) * 12).toFixed(1)}px;--dy:${(Math.sin(a) * 12).toFixed(1)}px"/>`; }).join("");
+    return `<svg class="knot-art" viewBox="0 0 120 80" aria-hidden="true"><path class="ka-thread" d="M2 40C30 24 44 56 60 40S92 24 118 40"/>
+      <g class="ka-knot"><circle cx="60" cy="40" r="15"/><path d="M50 36q10-6 20 0M48.5 42q11.5-6.5 23 0"/></g>${sparks}</svg>`;
+  }
   const celQueue = [];
   function celebrate(ico, title, text) { celQueue.push({ ico, title, text }); if (!$("#celDlg").open) nextCel(); }
   function nextCel() {
     const c = celQueue.shift(); if (!c) return;
-    $("#celIco").textContent = c.ico; $("#celTitle").textContent = c.title; $("#celText").textContent = c.text;
+    if (c.ico === "knot") $("#celIco").innerHTML = knotArt(); else $("#celIco").textContent = c.ico;
+    $("#celTitle").textContent = c.title; $("#celText").textContent = c.text;
     $("#celDlg").showModal(); confetti();
   }
   $("#celOk").addEventListener("click", () => { $("#celDlg").close(); setTimeout(nextCel, 250); });
@@ -70,13 +77,25 @@
     $("#ringVal").textContent = v;
     $("#ringOf").textContent = `von ${g} ${unit(g)}`;
     $(".ring-card").classList.toggle("done", done);
-    $("#ringFg").classList.toggle("zero", v === 0);
-    requestAnimationFrame(() => ($("#ringFg").style.strokeDasharray = `${(r * 301.6).toFixed(1)} 302`));
-    $("#week").innerHTML = Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(now, i - 6), dk = dateKey(d), isT = i === 6;
-      const cls = dayValue(dk) >= g ? "g" : dayRead(dk) ? "o" : "";
-      return `<div><i class="${cls} ${isT ? "t" : ""}">${cls === "g" ? "✓" : cls === "o" ? "•" : isT ? "?" : "–"}</i>${isT ? "Heute" : DAYS[d.getDay()]}</div>`;
+    $("#ringFg").classList.toggle("zero", v === 0); $("#ringHl").classList.toggle("zero", v === 0);
+    $("#ringNeedle").classList.toggle("zero", v === 0 || done);
+    $("#ringKnot").classList.toggle("on", done);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const len = `${(r * 301.6).toFixed(1)} 302`;
+      $("#ringFg").style.strokeDasharray = len; $("#ringHl").style.strokeDasharray = len;
+      $("#ringNeedle").style.transform = `rotate(${(r * 360).toFixed(1)}deg)`;
+    }));
+    $("#readBtn").classList.toggle("nudge", !dayRead(k));
+    const wk = Array.from({ length: 7 }, (_, i) => { const d = addDays(now, i - 6), dk = dateKey(d); return { d, isT: i === 6, cls: dayValue(dk) >= g ? "g" : dayRead(dk) ? "o" : "" }; });
+    const X = (i) => 25 + i * 50;
+    let thread = `<path class="w-guide" d="M${X(0)} 22H${X(6)}"/>`;
+    wk.forEach((w, i) => { if (i && w.cls && wk[i - 1].cls) thread += `<path class="w-thread" style="animation-delay:${(.15 + i * .08).toFixed(2)}s" d="M${X(i - 1)} 22H${X(i)}"/>`; });
+    const knots = wk.map((w, i) => {
+      const x = X(i), lbl = `<text x="${x}" y="56">${w.isT ? "Heute" : DAYS[w.d.getDay()]}</text>`;
+      if (!w.cls) return `<g class="w-day${w.isT ? " today" : ""}"><circle class="w-hole" cx="${x}" cy="22" r="${w.isT ? 12 : 4}"/>${w.isT ? `<text class="w-q" x="${x}" y="26.5">?</text>` : ""}${lbl}</g>`;
+      return `<g class="w-day${w.isT ? " today" : ""}"><g class="w-knot ${w.cls}" style="animation-delay:${(.1 + i * .08).toFixed(2)}s"><circle cx="${x}" cy="22" r="12"/><path d="M${x - 7.5} 19.5q7.5-4.6 15 0M${x - 8.5} 24q8.5-5 17 0"/></g>${lbl}</g>`;
     }).join("");
+    $("#week").innerHTML = thread + knots;
     const left = g - v;
     $("#todayHint").innerHTML = done ? "Heute ist grün. Stark! 💪" : v ? `Noch <b>${left} ${unit(left)}</b> – dann ist heute grün.` : `Heute: <b>${g} ${unit(g)}</b>. Du schaffst das!`;
     $("#undoBtn").hidden = !state.sessions.some((s) => s.date === k);
@@ -104,7 +123,8 @@
   }
   function renderLog() {
     const b = state.book, main = isPages() ? PAGE_CHIPS : MIN_CHIPS, opt = isPages() ? MIN_CHIPS : PAGE_CHIPS;
-    $("#stepVal").textContent = stepV; $("#stepUnit").textContent = unit(stepV);
+    const sv = $("#stepVal"); if (sv.textContent !== String(stepV)) { sv.textContent = stepV; sv.classList.remove("bump"); void sv.offsetWidth; sv.classList.add("bump"); }
+    $("#stepUnit").textContent = unit(stepV);
     $("#mainChips").innerHTML = main.map((n) => `<button type="button" class="chip ${n === stepV ? "on" : ""}" data-main="${n}">${n}${isPages() ? "" : " Min"}</button>`).join("");
     $("#optChips").hidden = !isPages() && !b;
     $("#optChips").innerHTML = opt.map((n) => `<button type="button" class="chip ${n === optV ? "on" : ""}" data-opt="${n}">${n}${isPages() ? " Min" : ""}</button>`).join("");
@@ -147,7 +167,7 @@
     state.sessions.push({ id: uid(), date: k, pages, minutes, bookId: b?.id || null, hour: new Date().getHours(), ts: Date.now() });
     save(); $("#logDlg").close();
     const after = dayValue(k);
-    if (before < goal() && after >= goal()) celebrate("🎯", "Ziel geschafft!", `${after} ${unit(after)} heute. Der Punkt für heute ist grün.`);
+    if (before < goal() && after >= goal()) celebrate("knot", "Knoten geknüpft!", `${after} ${unit(after)} heute – dein Tagesziel ist geschafft. Der Knoten für heute ist grün.`);
     else if (!wasRead) toast(`✓ Eingetragen. ${streak() > 1 ? `${streak()} Tage in Folge! 🔥` : "Guter Start!"}`);
     else toast("✓ Eingetragen.");
     if (finished) finishBook(true);
@@ -247,7 +267,8 @@
     if (!fresh.length) return;
     fresh.forEach(([id]) => state.seen.push(id)); save();
     const [, ico, name] = fresh[fresh.length - 1];
-    setTimeout(() => celebrate(ico, "Neuer Sticker!", `„${name}“ klebt jetzt in deiner Sammlung.`), 300);
+    state.fresh = fresh.map(([id]) => id);
+    setTimeout(() => celebrate(ico, "Neuer Aufnäher!", `„${name}“ ist jetzt in deine Sammlung genäht.`), 300);
   }
   function renderSammlung() {
     const p = totalPages(); let li = 0; LEVELS.forEach((l, i) => { if (p >= l[0]) li = i; });
@@ -255,7 +276,8 @@
     $("#lvlNo").textContent = `Level ${li + 1} · ${p} Seiten`; $("#lvlName").textContent = name; $("#lvlIco").textContent = ico;
     $("#lvlBar").style.width = next ? `${((p - from) / (next[0] - from)) * 100}%` : "100%";
     $("#lvlNext").textContent = next ? `Noch ${next[0] - p} Seiten bis „${next[1]}“ ${next[2]}` : "Höchstes Level erreicht!";
-    $("#stickers").innerHTML = STICKERS.map(([id, si, sn, test]) => `<div class="st ${test() ? "" : "lock"}"><div><span>${si}</span>${sn}</div></div>`).join("");
+    const fresh = state.fresh || []; state.fresh = [];
+    $("#stickers").innerHTML = STICKERS.map(([id, si, sn, test], i) => `<div class="st ${test() ? "" : "lock"} ${fresh.includes(id) ? "new" : ""}" style="animation-delay:${(i * .04).toFixed(2)}s"><div><span>${si}</span>${sn}</div></div>`).join("");
     const cols = ["#2c7a55", "#e07b2c", "#b48c25", "#4f9e77", "#c9653a", "#6f8fbf"];
     $("#shelfTitle").textContent = `Mein Regal · ${state.finished.length} ${state.finished.length === 1 ? "Buch" : "Bücher"} fertig`;
     $("#shelf").innerHTML = state.finished.map((f, i) => `<i title="${esc(f.title)}" style="height:${46 + ((f.pages || 120) % 5) * 7}px;background:${cols[i % cols.length]}"></i>`).join("") + `<i class="slot"></i>`;

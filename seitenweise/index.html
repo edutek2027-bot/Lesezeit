@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <div class="app">
@@ -26,16 +26,20 @@
         <button class="icon" id="settingsBtn" aria-label="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </div>
       <h1 class="hi" id="hello">Hi 👋</h1>
+      <svg class="hi-thread" viewBox="0 0 240 14" aria-hidden="true"><path d="M2 8C30 1 52 14 82 7S134 1 160 8 214 13 238 6"/><circle cx="238" cy="6" r="3.2"/></svg>
       <section class="card ring-card">
         <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
           <circle class="ring-bg" cx="60" cy="60" r="48"/>
           <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="48" transform="rotate(-90 60 60)"/>
+          <circle class="ring-hl" id="ringHl" cx="60" cy="60" r="48" transform="rotate(-90 60 60)"/>
+          <g class="needle" id="ringNeedle"><path class="nd" d="M58 12.6L76 11.2Q80 12 76 12.8L58 13.4Z"/><ellipse class="nd-eye" cx="60.6" cy="12.6" rx="1.8" ry=".55"/></g>
+          <g class="knot" id="ringKnot"><circle cx="60" cy="12" r="8.5"/><path d="M54.5 10.2q5.5-3.4 11 0M53.8 13.6q6.2-3.6 12.4 0"/></g>
         </svg>
         <div class="ring-num"><b id="ringVal">0</b><span id="ringOf">von 10 Seiten</span></div>
       </section>
       <button class="big" id="readBtn">📖 Ich habe gelesen</button>
       <section class="card week-card">
-        <div class="week" id="week"></div>
+        <svg class="week" id="week" viewBox="0 0 350 62" role="img" aria-label="Die letzten 7 Tage"></svg>
       </section>
       <p class="hint" id="todayHint"></p>
       <button class="link undo" id="undoBtn" hidden>Letzten Eintrag löschen</button>
@@ -120,6 +124,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
