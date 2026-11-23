@@ -91,15 +91,25 @@
     let thread = `<path class="w-guide" d="M${X(0)} 22H${X(6)}"/>`;
     wk.forEach((w, i) => { if (i && w.cls && wk[i - 1].cls) thread += `<path class="w-thread" style="animation-delay:${(.15 + i * .08).toFixed(2)}s" d="M${X(i - 1)} 22H${X(i)}"/>`; });
     const knots = wk.map((w, i) => {
-      const x = X(i), lbl = `<text x="${x}" y="56">${w.isT ? "Heute" : DAYS[w.d.getDay()]}</text>`;
+      const x = X(i), dv = dayValue(dateKey(w.d));
+      const lbl = `<text x="${x}" y="54">${w.isT ? "Heute" : DAYS[w.d.getDay()]}</text>${dv ? `<text class="w-num ${w.cls}" x="${x}" y="72">${dv}</text>` : ""}<circle class="w-hit" cx="${x}" cy="38" r="24" data-day="${dateKey(w.d)}"/>`;
       if (!w.cls) return `<g class="w-day${w.isT ? " today" : ""}"><circle class="w-hole" cx="${x}" cy="22" r="${w.isT ? 12 : 4}"/>${w.isT ? `<text class="w-q" x="${x}" y="26.5">?</text>` : ""}${lbl}</g>`;
       return `<g class="w-day${w.isT ? " today" : ""}"><g class="w-knot ${w.cls}" style="animation-delay:${(.1 + i * .08).toFixed(2)}s"><circle cx="${x}" cy="22" r="12"/><path d="M${x - 7.5} 19.5q7.5-4.6 15 0M${x - 8.5} 24q8.5-5 17 0"/></g>${lbl}</g>`;
     }).join("");
     $("#week").innerHTML = thread + knots;
+    $("#week").setAttribute("aria-label", `Die letzten 7 Tage, Zahlen = ${isPages() ? "Seiten" : "Minuten"}`);
     const left = g - v;
     $("#todayHint").innerHTML = done ? "Heute ist grün. Stark! 💪" : v ? `Noch <b>${left} ${unit(left)}</b> – dann ist heute grün.` : `Heute: <b>${g} ${unit(g)}</b>. Du schaffst das!`;
     $("#undoBtn").hidden = !state.sessions.some((s) => s.date === k);
   }
+  // Tag antippen (Woche oder Jahreskalender) → Seiten und Minuten dieses Tages
+  function dayInfo(k) {
+    const t = dayTotals(k), d = new Date(k + "T12:00");
+    const name = k === dateKey() ? "Heute" : d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" });
+    toast(t.pages || t.minutes ? `${name}: ${[t.pages ? `${t.pages} ${t.pages === 1 ? "Seite" : "Seiten"}` : "", t.minutes ? `${t.minutes} Min.` : ""].filter(Boolean).join(" · ")}${dayValue(k) >= goal() ? " · Ziel ✓" : ""}` : `${name}: nicht gelesen`);
+  }
+  document.addEventListener("click", (e) => { const h = e.target.closest("[data-day]"); if (h) dayInfo(h.dataset.day); });
+
   $("#undoBtn").addEventListener("click", () => {
     const k = dateKey(), last = [...state.sessions].reverse().find((s) => s.date === k);
     if (!last || !confirm("Den letzten Eintrag von heute löschen?")) return;
@@ -270,7 +280,39 @@
     state.fresh = fresh.map(([id]) => id);
     setTimeout(() => celebrate(ico, "Neuer Aufnäher!", `„${name}“ ist jetzt in deine Sammlung genäht.`), 300);
   }
+  // Mein Lesejahr: Seiten pro Monat als Diagramm, darunter jeder Tag als kleines Kästchen
+  let yearShown = new Date().getFullYear();
+  const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+  function renderYear() {
+    const y = yearShown, today = dateKey(), nowY = new Date().getFullYear(), firstY = Math.min(nowY, ...state.sessions.map((x) => +x.date.slice(0, 4)));
+    $("#yTitle").textContent = `Mein Lesejahr ${y}`;
+    $("#yPrev").disabled = y <= firstY; $("#yNext").disabled = y >= nowY;
+    const inYear = state.sessions.filter((x) => x.date.startsWith(y + "-"));
+    const days = [...new Set(inYear.map((x) => x.date))], pages = inYear.reduce((a, x) => a + (x.pages || 0), 0), mins = inYear.reduce((a, x) => a + (x.minutes || 0), 0);
+    $("#ySum").textContent = `${days.length} Lesetage · ${days.filter((k) => dayValue(k) >= goal()).length}× Ziel · ${pages} Seiten${mins ? ` · ${mins} Min.` : ""}`;
+    // Diagramm: Seiten (bzw. Minuten) pro Monat
+    const per = MONTHS.map((_, m) => inYear.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + (isPages() ? x.pages || 0 : x.minutes || 0), 0));
+    const max = Math.max(1, ...per), curM = y === nowY ? new Date().getMonth() : 11;
+    $("#yChart").innerHTML = per.map((v, m) => {
+      const h = v ? Math.max(4, (v / max) * 78) : 0, x = 8 + m * 27.5;
+      return `${h ? `<rect class="yb${m === curM && y === nowY ? " cur" : ""}" x="${x}" y="${96 - h}" width="17" height="${h}" rx="4" style="animation-delay:${(m * .04).toFixed(2)}s"/><text class="yv" x="${x + 8.5}" y="${90 - h}">${v}</text>` : ""}<text class="ym${m > curM ? " fut" : ""}" x="${x + 8.5}" y="112">${MONTHS[m].slice(0, 1)}</text>`;
+    }).join("") + `<path class="ybase" d="M4 96.5H336"/>`;
+    // Kalender: 12 kleine Monate
+    $("#yCal").innerHTML = MONTHS.map((mn, m) => {
+      const n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7;
+      let cells = "<i class=\"pad\"></i>".repeat(lead);
+      for (let d = 1; d <= n; d++) {
+        const k = `${y}-${pad(m + 1)}-${pad(d)}`, cls = k > today ? "f" : dayValue(k) >= goal() ? "g" : dayRead(k) ? "o" : "e";
+        cells += `<i class="${cls}${k === today ? " t" : ""}"${cls !== "f" ? ` data-day="${k}"` : ""}></i>`;
+      }
+      return `<div class="ymon${m > curM ? " fut" : ""}"><b>${mn}</b><div class="ygrid">${cells}</div></div>`;
+    }).join("");
+  }
+  $("#yPrev").addEventListener("click", () => { yearShown--; renderYear(); });
+  $("#yNext").addEventListener("click", () => { yearShown++; renderYear(); });
+
   function renderSammlung() {
+    renderYear();
     const p = totalPages(); let li = 0; LEVELS.forEach((l, i) => { if (p >= l[0]) li = i; });
     const [from, name, ico] = LEVELS[li], next = LEVELS[li + 1];
     $("#lvlNo").textContent = `Level ${li + 1} · ${p} Seiten`; $("#lvlName").textContent = name; $("#lvlIco").textContent = ico;

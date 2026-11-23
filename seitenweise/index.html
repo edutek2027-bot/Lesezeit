@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <div class="app">
@@ -39,7 +39,7 @@
       </section>
       <button class="big" id="readBtn">📖 Ich habe gelesen</button>
       <section class="card week-card">
-        <svg class="week" id="week" viewBox="0 0 350 62" role="img" aria-label="Die letzten 7 Tage"></svg>
+        <svg class="week" id="week" viewBox="0 0 350 78" role="img" aria-label="Die letzten 7 Tage"></svg>
       </section>
       <p class="hint" id="todayHint"></p>
       <button class="link undo" id="undoBtn" hidden>Letzten Eintrag löschen</button>
@@ -59,6 +59,14 @@
           <div class="bar"><i id="lvlBar"></i></div><p class="small" id="lvlNext"></p></div>
         <span class="lvl-ico" id="lvlIco">🌱</span>
       </section>
+      <section class="card year">
+        <div class="year-head"><button class="icon sm" id="yPrev" aria-label="Voriges Jahr">‹</button><h2 id="yTitle">Mein Lesejahr</h2><button class="icon sm" id="yNext" aria-label="Nächstes Jahr">›</button></div>
+        <p class="small" id="ySum"></p>
+        <svg class="ychart" id="yChart" viewBox="0 0 340 120" role="img" aria-label="Seiten pro Monat"></svg>
+        <div class="ycal" id="yCal"></div>
+        <p class="small ylegend"><i class="lg g"></i> Ziel <i class="lg o"></i> gelesen <i class="lg e"></i> nicht gelesen · Tippe auf einen Tag</p>
+      </section>
+      <p class="small shelf-title">Aufnäher</p>
       <div class="stickers" id="stickers"></div>
       <p class="small shelf-title" id="shelfTitle">Mein Regal</p>
       <div class="shelf" id="shelf"></div>
@@ -124,6 +132,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
