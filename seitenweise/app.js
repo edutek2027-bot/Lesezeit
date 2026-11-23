@@ -354,10 +354,9 @@
     const lastK = ek < today ? ek : today, elapsed = lastK < sk ? 0 : Math.round((fromKey(lastK) - fromKey(sk)) / 864e5) + 1;
     const perRead = days.length ? total / days.length : 0, perDay = elapsed ? total / elapsed : 0;
     const months = statMode === "year" ? (yearShown === new Date().getFullYear() ? new Date().getMonth() + 1 : 12) : 0;
-    const tiles = [["Gesamt", `${total}`, uShort()], ["Ø pro Lesetag", fmt1(perRead), uShort()],
-      statMode === "year" ? ["Ø pro Monat", fmt1(months ? total / months : 0), uShort()] : ["Ø pro Tag", fmt1(perDay), uShort()]];
+    const tiles = [["Gesamt", `${total}`, uShort()], ["Ø pro Lesetag", fmt1(perRead), uShort()], ["Lesetage", `${days.length}`, `/ ${elapsed}`]];
     $("#yAvg").innerHTML = tiles.map(([l, v, u]) => `<div><b>${v}<small> ${u}</small></b><span>${l}</span></div>`).join("");
-    $("#ySum").textContent = `${days.length} ${days.length === 1 ? "Lesetag" : "Lesetage"} · ${goals}× Ziel${isPages() && inP.some((x) => x.minutes) ? ` · ${inP.reduce((a, x) => a + (x.minutes || 0), 0)} Min.` : ""}`;
+    $("#ySum").textContent = `${goals}× Ziel erreicht${statMode === "year" && months ? ` · Ø ${fmt1(total / months)} ${uShort()} pro Monat` : ""}${isPages() && inP.some((x) => x.minutes) ? ` · ${inP.reduce((a, x) => a + (x.minutes || 0), 0)} Min.` : ""}`;
     // Diagramm
     let buckets = [];
     if (statMode === "year") buckets = MONTHS.map((mn, m) => { const v = inP.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + uVal(x), 0); return { v, lbl: mn.slice(0, 1), fut: `${yearShown}-${pad(m + 1)}-01` > today, cls: "", tip: `${mn}: ${v} ${uShort()}` }; });
@@ -486,14 +485,30 @@
     const byDay = {}; state.sessions.forEach((x) => (byDay[x.date] = (byDay[x.date] || 0) + (x.pages || 0)));
     const top = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
     const byWeek = {}; Object.entries(byDay).forEach(([k, v]) => { const d = fromKey(k), mon = dateKey(addDays(d, -((d.getDay() + 6) % 7))); byWeek[mon] = (byWeek[mon] || 0) + v; });
-    const topW = Math.max(0, ...Object.values(byWeek));
+    const topWk = Object.entries(byWeek).sort((a, b) => b[1] - a[1])[0];
+    const best = bestStreak(), now = streak(), g = goal();
+    // 1 · Serie: Knoten an einem Faden (bis 7), die aktuelle Serie grün, der Rest des Rekords blass
+    const nK = Math.min(7, Math.max(best, 1)), on = Math.min(now, nK);
+    const knots = Array.from({ length: nK }, (_, i) => { const x = 10 + i * (100 / Math.max(1, nK - 1 || 1)) * (nK > 1 ? 1 : 0); return `<g class="bk ${i < on ? "on" : ""}" style="animation-delay:${(i * .07).toFixed(2)}s"><circle cx="${nK > 1 ? x : 60}" cy="16" r="7"/><path d="M${(nK > 1 ? x : 60) - 4.5} 14.5q4.5-2.8 9 0M${(nK > 1 ? x : 60) - 5} 17.6q5-3 10 0"/></g>`; }).join("");
+    const g1 = `<svg viewBox="0 0 120 32"><path class="bt" d="M4 16H116"/><path class="bt on" d="M4 16H${on ? (nK > 1 ? 10 + (on - 1) * (100 / (nK - 1)) : 60) : 4}"/>${knots}${best > 7 ? `<text x="118" y="30" class="bx">+${best - 7}</text>` : ""}</svg>`;
+    // 2 · bester Tag: Balken im Vergleich zum Tagesziel
+    const tv = top ? top[1] : 0, mx = Math.max(tv, g, 1);
+    const g2 = `<svg viewBox="0 0 120 32"><rect class="bb" x="4" y="9" width="112" height="14" rx="7"/><rect class="bf" x="4" y="9" width="${(112 * tv / mx).toFixed(1)}" height="14" rx="7"/><path class="bg" d="M${(4 + 112 * g / mx).toFixed(1)} 4V28"/><text class="bgt" x="${Math.min(112, 4 + 112 * g / mx).toFixed(1)}" y="3.5">Ziel</text></svg>`;
+    // 3 · beste Woche: 7 kleine Säulen Mo–So
+    let g3 = "";
+    if (topWk) { const s0 = fromKey(topWk[0]), vals = Array.from({ length: 7 }, (_, i) => byDay[dateKey(addDays(s0, i))] || 0), m3 = Math.max(1, ...vals);
+      g3 = `<svg viewBox="0 0 120 32">${vals.map((v, i) => `<rect class="bw ${v >= g ? "g" : v ? "o" : ""}" x="${6 + i * 16}" y="${(30 - Math.max(2, 26 * v / m3)).toFixed(1)}" width="11" height="${Math.max(2, 26 * v / m3).toFixed(1)}" rx="2.5" style="animation-delay:${(i * .05).toFixed(2)}s"/>`).join("")}</svg>`; }
+    // 4 · Bücher: Buchrücken im Regal
+    const cols = ["#2c7a55", "#e07b2c", "#b48c25", "#4f9e77", "#c9653a", "#6f8fbf"], nb = state.finished.length;
+    const g4 = `<svg viewBox="0 0 120 32"><path class="bs" d="M2 30.5H118"/>${state.finished.slice(-9).map((f, i) => `<rect x="${6 + i * 12}" y="${30 - (18 + ((f.pages || 120) % 4) * 3)}" width="9" height="${18 + ((f.pages || 120) % 4) * 3}" rx="1.5" fill="${cols[i % cols.length]}" class="bspine" style="animation-delay:${(i * .06).toFixed(2)}s"/>`).join("")}${nb < 9 ? `<rect class="bslot" x="${6 + Math.min(nb, 8) * 12}" y="12" width="9" height="18" rx="1.5"/>` : ""}</svg>`;
+    const fmtD = (k) => new Date(k + "T12:00").toLocaleDateString("de-AT", { day: "numeric", month: "short" });
     const tiles = [
-      ["🔥", `${bestStreak()}`, "Tage in Folge", `jetzt: ${streak()}`],
-      ["📄", top ? `${top[1]}` : "0", "Seiten an einem Tag", top ? new Date(top[0] + "T12:00").toLocaleDateString("de-AT", { day: "numeric", month: "short", year: "numeric" }) : "–"],
-      ["📅", `${topW}`, "Seiten in einer Woche", "beste Woche"],
-      ["📚", `${state.finished.length}`, state.finished.length === 1 ? "Buch fertig" : "Bücher fertig", `${totalPages()} Seiten gesamt`],
+      [g1, best, best === 1 ? "Tag in Folge" : "Tage in Folge", `Rekord · jetzt ${now}`],
+      [g2, tv, "Seiten an einem Tag", top ? fmtD(top[0]) : "noch keiner"],
+      [g3, topWk ? topWk[1] : 0, "Seiten in einer Woche", topWk ? `ab ${fmtD(topWk[0])}` : "noch keine"],
+      [g4, nb, nb === 1 ? "Buch fertig" : "Bücher fertig", `${totalPages()} Seiten gesamt`],
     ];
-    $("#bestGrid").innerHTML = tiles.map(([i, v, l, sub2], n) => `<div style="animation-delay:${n * .06}s"><span class="b-ico">${i}</span><b>${v}</b><span class="b-lbl">${l}</span><small>${sub2}</small></div>`).join("");
+    $("#bestGrid").innerHTML = tiles.map(([gr, v, l, sub2], n) => `<div style="animation-delay:${n * .06}s"><div class="b-gr">${gr}</div><b>${v}</b><span class="b-lbl">${l}</span><small>${sub2}</small></div>`).join("");
     $("#bestSum").textContent = "";
   }
 
