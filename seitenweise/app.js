@@ -300,35 +300,84 @@
   // Mein Lesejahr: Seiten pro Monat als Diagramm, darunter jeder Tag als kleines Kästchen
   let yearShown = new Date().getFullYear();
   const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+  // Statistik: Woche · Monat · Jahr, mit ‹ › blättern; Durchschnittswerte
+  let statMode = "week", statOff = 0;
+  const DAY2 = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const fromKey = (k) => new Date(k + "T12:00");
+  function period(mode = statMode, off = statOff) {
+    const now = new Date();
+    if (mode === "week") { const s0 = addDays(now, -((now.getDay() + 6) % 7) + off * 7); return { start: s0, end: addDays(s0, 6) }; }
+    if (mode === "month") { const s0 = new Date(now.getFullYear(), now.getMonth() + off, 1); return { start: s0, end: new Date(s0.getFullYear(), s0.getMonth() + 1, 0) }; }
+    const y = now.getFullYear() + off; return { start: new Date(y, 0, 1), end: new Date(y, 11, 31) };
+  }
+  const uVal = (x) => (isPages() ? x.pages || 0 : x.minutes || 0);
+  const uShort = () => (isPages() ? "S." : "Min.");
+  const fmt1 = (v) => v.toLocaleString("de-AT", { maximumFractionDigits: 1 });
   function renderYear() {
-    const y = yearShown, today = dateKey(), nowY = new Date().getFullYear(), firstY = Math.min(nowY, ...state.sessions.map((x) => +x.date.slice(0, 4)));
-    $("#yTitle").textContent = `Mein Lesejahr ${y}`;
-    $("#yPrev").disabled = y <= firstY; $("#yNext").disabled = y >= nowY;
-    const inYear = state.sessions.filter((x) => x.date.startsWith(y + "-"));
-    const days = [...new Set(inYear.map((x) => x.date))], pages = inYear.reduce((a, x) => a + (x.pages || 0), 0), mins = inYear.reduce((a, x) => a + (x.minutes || 0), 0);
-    $("#ySum").textContent = `${days.length} Lesetage · ${days.filter((k) => dayValue(k) >= goal()).length}× Ziel · ${pages} Seiten${mins ? ` · ${mins} Min.` : ""}`;
-    $("#yChartLbl").textContent = isPages() ? "Gelesene Seiten pro Monat" : "Gelesene Minuten pro Monat";
-    // Diagramm: Seiten (bzw. Minuten) pro Monat
-    const per = MONTHS.map((_, m) => inYear.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + (isPages() ? x.pages || 0 : x.minutes || 0), 0));
-    const max = Math.max(1, ...per), curM = y === nowY ? new Date().getMonth() : 11;
-    $("#yChart").innerHTML = per.map((v, m) => {
-      const h = v ? Math.max(4, (v / max) * 78) : 0, x = 8 + m * 27.5;
-      return `${h ? `<rect class="yb${m === curM && y === nowY ? " cur" : ""}" x="${x}" y="${96 - h}" width="17" height="${h}" rx="4" style="animation-delay:${(m * .04).toFixed(2)}s"/><text class="yv" x="${x + 8.5}" y="${90 - h}">${v}</text>` : ""}<text class="ym${m > curM ? " fut" : ""}" x="${x + 8.5}" y="112">${MONTHS[m].slice(0, 1)}</text>`;
-    }).join("") + `<path class="ybase" d="M4 96.5H336"/>`;
-    // Kalender: 12 kleine Monate
-    $("#yCal").innerHTML = MONTHS.map((mn, m) => {
-      const n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7;
-      let cells = "<i class=\"pad\"></i>".repeat(lead);
-      for (let d = 1; d <= n; d++) {
+    const { start, end } = period(), today = dateKey(), sk = dateKey(start), ek = dateKey(end);
+    yearShown = end.getFullYear();
+    $$("#statTabs button").forEach((b) => b.classList.toggle("on", b.dataset.mode === statMode));
+    const first = state.sessions.reduce((a, x) => (x.date < a ? x.date : a), today);
+    $("#yPrev").disabled = sk <= first; $("#yNext").disabled = statOff >= 0;
+    // Titel
+    const df = (d, o) => d.toLocaleDateString("de-AT", o);
+    $("#yTitle").textContent = statMode === "week" ? (statOff === 0 ? "Diese Woche" : statOff === -1 ? "Letzte Woche" : `${df(start, { day: "numeric", month: "short" })} – ${df(end, { day: "numeric", month: "short" })}`)
+      : statMode === "month" ? df(start, { month: "long", year: "numeric" }) : `Mein Lesejahr ${yearShown}`;
+    // Zahlen im Zeitraum
+    const inP = state.sessions.filter((x) => x.date >= sk && x.date <= ek);
+    const days = [...new Set(inP.map((x) => x.date))], total = inP.reduce((a, x) => a + uVal(x), 0);
+    const goals = days.filter((k) => dayValue(k) >= goal()).length;
+    const lastK = ek < today ? ek : today, elapsed = lastK < sk ? 0 : Math.round((fromKey(lastK) - fromKey(sk)) / 864e5) + 1;
+    const perRead = days.length ? total / days.length : 0, perDay = elapsed ? total / elapsed : 0;
+    const months = statMode === "year" ? (yearShown === new Date().getFullYear() ? new Date().getMonth() + 1 : 12) : 0;
+    const tiles = [["Gesamt", `${total}`, uShort()], ["Ø pro Lesetag", fmt1(perRead), uShort()],
+      statMode === "year" ? ["Ø pro Monat", fmt1(months ? total / months : 0), uShort()] : ["Ø pro Tag", fmt1(perDay), uShort()]];
+    $("#yAvg").innerHTML = tiles.map(([l, v, u]) => `<div><b>${v}<small> ${u}</small></b><span>${l}</span></div>`).join("");
+    $("#ySum").textContent = `${days.length} ${days.length === 1 ? "Lesetag" : "Lesetage"} · ${goals}× Ziel${isPages() && inP.some((x) => x.minutes) ? ` · ${inP.reduce((a, x) => a + (x.minutes || 0), 0)} Min.` : ""}`;
+    // Diagramm
+    let buckets = [];
+    if (statMode === "year") buckets = MONTHS.map((mn, m) => { const v = inP.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + uVal(x), 0); return { v, lbl: mn.slice(0, 1), fut: `${yearShown}-${pad(m + 1)}-01` > today, cls: "", tip: `${mn}: ${v} ${uShort()}` }; });
+    else for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
+      const k = dateKey(d), v = dayValue(k), i = buckets.length;
+      buckets.push({ v, k, fut: k > today, cls: v >= goal() ? "g" : v ? "o" : "", lbl: statMode === "week" ? DAY2[i] : (d.getDate() === 1 || d.getDate() % 5 === 0 ? String(d.getDate()) : ""), today: k === today });
+    }
+    const n = buckets.length, W = 330 / n, bw = Math.min(26, W * .68), max = Math.max(1, goal() * (statMode === "year" ? 0 : 1), ...buckets.map((b) => b.v));
+    const H = 82, base = 100;
+    let svg = buckets.map((b, i) => {
+      const x = 6 + i * W + (W - bw) / 2, h = b.v ? Math.max(3, (b.v / max) * H) : 0;
+      const showV = b.v && (n <= 12 || bw >= 9);
+      return `${h ? `<rect class="yb ${b.cls}${b.today ? " cur" : ""}" x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(4, bw / 3).toFixed(1)}" style="animation-delay:${(i * (n > 12 ? .015 : .04)).toFixed(3)}s"/>` : ""}`
+        + (showV && n <= 12 ? `<text class="yv" x="${(x + bw / 2).toFixed(1)}" y="${(base - h - 5).toFixed(1)}">${b.v}</text>` : "")
+        + `<text class="ym${b.fut ? " fut" : ""}${b.today ? " now" : ""}" x="${(x + bw / 2).toFixed(1)}" y="${base + 16}">${b.lbl}</text>`
+        + (b.k && !b.fut ? `<rect class="yhit" x="${(6 + i * W).toFixed(1)}" y="10" width="${W.toFixed(1)}" height="${base + 10}" data-day="${b.k}"/>` : b.tip ? `<rect class="yhit" x="${(6 + i * W).toFixed(1)}" y="10" width="${W.toFixed(1)}" height="${base + 10}" data-tip="${esc(b.tip)}"/>` : "");
+    }).join("");
+    if (statMode !== "year") { const gy = base - (goal() / max) * H; svg += `<path class="ygoal" d="M4 ${gy.toFixed(1)}H336"/>`; }
+    if (perRead && statMode !== "year") { const ay = base - (perRead / max) * H; svg += `<path class="yavg" d="M4 ${ay.toFixed(1)}H336"/>`; }
+    $("#yChart").innerHTML = svg + `<path class="ybase" d="M4 ${base + .5}H336"/>`;
+    $("#yChartLeg").innerHTML = statMode === "year" ? "" : `<span><i class="lg-goal"></i>Ziel ${goal()} ${uShort()}</span>${perRead ? `<span><i class="lg-avg"></i>Ø ${fmt1(perRead)} ${uShort()} pro Lesetag</span>` : ""}`;
+    $("#yChartLbl").textContent = `${isPages() ? "Seiten" : "Minuten"} pro ${statMode === "year" ? "Monat" : "Tag"}`;
+    // Kalender: Jahr = 12 Monate, Monat = dieser Monat groß, Woche = keiner
+    const calMonths = statMode === "year" ? MONTHS.map((_, m) => m) : statMode === "month" ? [start.getMonth()] : [];
+    $("#yCal").hidden = $("#yCalLbl").hidden = !calMonths.length;
+    $("#yCal").classList.toggle("single", statMode === "month");
+    $(".ylegend").hidden = !calMonths.length;
+    const curM = yearShown === new Date().getFullYear() ? new Date().getMonth() : 11, y = yearShown;
+    $("#yCal").innerHTML = calMonths.map((m) => {
+      const nd = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7;
+      let cells = statMode === "month" ? DAY2.map((d) => `<i class="hd">${d}</i>`).join("") : "";
+      cells += "<i class=\"pad\"></i>".repeat(lead);
+      for (let d = 1; d <= nd; d++) {
         const k = `${y}-${pad(m + 1)}-${pad(d)}`, cls = k > today ? "f" : dayValue(k) >= goal() ? "g" : dayRead(k) ? "o" : "e";
         cells += `<i class="${cls}${k === today ? " t" : ""}"${cls !== "f" ? ` data-day="${k}"` : ""}>${d}</i>`;
       }
-      const pg = inYear.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + (x.pages || 0), 0);
-      return `<div class="ymon${m > curM ? " fut" : ""}"><b>${mn}${pg ? `<em>${pg} S.</em>` : ""}</b><div class="ygrid">${cells}</div></div>`;
+      const pg = state.sessions.filter((x) => x.date.startsWith(`${y}-${pad(m + 1)}-`)).reduce((a, x) => a + (x.pages || 0), 0);
+      return `<div class="ymon${m > curM && y >= new Date().getFullYear() ? " fut" : ""}"><b>${MONTHS[m]}${pg ? `<em>${pg} S.</em>` : ""}</b><div class="ygrid">${cells}</div></div>`;
     }).join("");
   }
-  $("#yPrev").addEventListener("click", () => { yearShown--; renderYear(); renderPieces(); });
-  $("#yNext").addEventListener("click", () => { yearShown++; renderYear(); renderPieces(); });
+  $("#statTabs").addEventListener("click", (e) => { const b = e.target.closest("[data-mode]"); if (!b) return; statMode = b.dataset.mode; statOff = 0; renderYear(); renderPieces(); });
+  $("#yPrev").addEventListener("click", () => { statOff--; renderYear(); renderPieces(); });
+  $("#yNext").addEventListener("click", () => { statOff = Math.min(0, statOff + 1); renderYear(); renderPieces(); });
+  document.addEventListener("click", (e) => { const t = e.target.closest("[data-tip]"); if (t) toast(t.dataset.tip); });
 
   // ---------- Strickstücke: jeden Monat eins ----------
   const PIECE_MIN = 15;
