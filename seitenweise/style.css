@@ -438,3 +438,11 @@ dialog:not([open]) { display: none !important; }
 .timer-card.running .tm-ring { animation: dialGlow 3s ease-in-out infinite; }
 @keyframes dialGlow { 50% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--green) 35%, transparent)); } }
 .pc[data-empty] { opacity: .45; }
+.tm-own { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: stretch; }
+.tm-in { display: flex; align-items: center; gap: 6px; border: 2px solid var(--rule); border-radius: 16px; background: var(--sheet); padding: 0 12px; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); min-width: 0; }
+.tm-in.on { border-color: var(--green); background: var(--wash); color: var(--green); }
+.tm-in input { flex: 1; min-width: 0; width: 100%; border: 0; background: none; font: 700 20px var(--sans); color: var(--ink); text-align: center; padding: 10px 0; -moz-appearance: textfield; }
+.tm-in input::-webkit-outer-spin-button, .tm-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.tm-in input:focus { outline: none; }
+.tm-in span { white-space: nowrap; }
+.tm-own .tm-start { padding: 12px 14px; font-size: 15px; white-space: nowrap; }

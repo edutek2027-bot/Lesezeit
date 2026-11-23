@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
   <div class="app">
@@ -42,7 +42,10 @@
         <div class="tm-head"><span class="tm-title">⏱ Lese-Timer</span><button class="tm-book" id="tmBook" type="button"></button></div>
         <div class="tm-idle" id="tmIdle">
           <div class="chips tm-chips" id="tmChips"></div>
-          <button class="btn tm-start" id="tmStart" type="button">▶ Los</button>
+          <div class="tm-own">
+            <label class="tm-in"><span>Eigene Zeit</span><input id="tmMin" type="number" inputmode="numeric" min="1" max="240" placeholder="z. B. 25"><b>Min.</b></label>
+            <button class="btn tm-start" id="tmStart" type="button">▶ Los</button>
+          </div>
         </div>
         <div class="tm-run" id="tmRun" hidden>
           <div class="tm-dial">
@@ -169,6 +172,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

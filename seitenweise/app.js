@@ -561,6 +561,9 @@
     if (!t) {
       tmPick ??= isPages() ? 20 : goal();
       $("#tmChips").innerHTML = TM_CHIPS.map((n) => `<button type="button" class="chip ${n === tmPick ? "on" : ""}" data-tm="${n}">${n ? n + " Min" : "frei"}</button>`).join("");
+      const mi = $("#tmMin"); if (document.activeElement !== mi) mi.value = tmPick && !TM_CHIPS.includes(tmPick) ? tmPick : "";
+      mi.closest(".tm-in").classList.toggle("on", !!tmPick && !TM_CHIPS.includes(tmPick));
+      $("#tmStart").textContent = tmPick ? `▶ Los · ${tmPick} Min.` : "▶ Los · frei";
       return;
     }
     const el = tmElapsed(), tgt = t.target * 60000, frac = tgt ? Math.min(1, el / tgt) : (el % 600000) / 600000;
@@ -579,7 +582,10 @@
     if (tgt && el >= tgt && t.running) tmFinish(true);
   }
   function tmLoop() { clearInterval(tmTick); if (state.timer?.running) tmTick = setInterval(() => { if (tab === "lesen") renderTimer(); else if (tmElapsed() >= (state.timer?.target || 1e9) * 60000) renderTimer(); }, 500); }
-  $("#tmChips").addEventListener("click", (e) => { const c = e.target.closest("[data-tm]"); if (c) { tmPick = +c.dataset.tm; renderTimer(); } });
+  $("#tmChips").addEventListener("click", (e) => { const c = e.target.closest("[data-tm]"); if (c) { tmPick = +c.dataset.tm; $("#tmMin").value = ""; renderTimer(); } });
+  // eigene Minutenzahl eintippen (1–240)
+  $("#tmMin").addEventListener("input", (e) => { const v = parseInt(e.target.value); if (v > 0) { tmPick = Math.min(240, v); renderTimer(); } });
+  $("#tmMin").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
   $("#tmBook").addEventListener("click", () => {
     if (state.timer || state.books.length < 2) return;
     const i = state.books.findIndex((b) => b.id === cur()?.id); state.curId = state.books[(i + 1) % state.books.length].id; save(); renderTimer();
