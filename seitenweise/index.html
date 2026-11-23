@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div class="app">
@@ -55,19 +55,28 @@
     <main class="view" id="v-sammlung" hidden>
       <h1 class="title">Sammlung</h1>
       <section class="card level">
-        <div><p class="small" id="lvlNo">Level 1</p><b id="lvlName">Leseanfänger</b>
+        <svg class="yarn" id="yarn" viewBox="0 0 110 90" aria-hidden="true"></svg>
+        <div class="lvl-text"><p class="small" id="lvlNo">Level 1</p><b id="lvlName">Erster Faden</b>
           <div class="bar"><i id="lvlBar"></i></div><p class="small" id="lvlNext"></p></div>
-        <span class="lvl-ico" id="lvlIco">🌱</span>
       </section>
       <section class="card year">
         <div class="year-head"><button class="icon sm" id="yPrev" aria-label="Voriges Jahr">‹</button><h2 id="yTitle">Mein Lesejahr</h2><button class="icon sm" id="yNext" aria-label="Nächstes Jahr">›</button></div>
         <p class="small" id="ySum"></p>
+        <p class="sec-lbl" id="yChartLbl">Seiten pro Monat</p>
         <svg class="ychart" id="yChart" viewBox="0 0 340 120" role="img" aria-label="Seiten pro Monat"></svg>
+        <p class="sec-lbl">Jeder Tag ein Stich</p>
         <div class="ycal" id="yCal"></div>
         <p class="small ylegend"><i class="lg g"></i> Ziel <i class="lg o"></i> gelesen <i class="lg e"></i> nicht gelesen · Tippe auf einen Tag</p>
       </section>
-      <p class="small shelf-title">Aufnäher</p>
-      <div class="stickers" id="stickers"></div>
+      <section class="card pieces">
+        <div class="sec-head"><h2 id="pcTitle">Meine Strickstücke</h2><span class="small" id="pcCount"></span></div>
+        <p class="small">Jeden Monat ein neues Stück. Jeder Lesetag strickt eine Reihe – ab 15 Lesetagen ist es fertig.</p>
+        <div class="pc-grid" id="pcGrid"></div>
+      </section>
+      <section class="card">
+        <div class="sec-head"><h2>Aufnäher</h2><span class="small" id="stCount"></span></div>
+        <div class="stickers" id="stickers"></div>
+      </section>
       <p class="small shelf-title" id="shelfTitle">Mein Regal</p>
       <div class="shelf" id="shelf"></div>
       <ul class="done-list" id="doneList"></ul>
@@ -132,6 +141,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

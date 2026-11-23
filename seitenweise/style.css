@@ -229,3 +229,62 @@ dialog form, dialog.cel { padding: 22px 18px calc(18px + env(safe-area-inset-bot
 .ylegend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 12px; }
 .lg { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
 .lg.g { background: var(--green); } .lg.o { background: var(--orange); } .lg.e { background: var(--paper-2); margin-left: 4px; }
+
+/* ---------- Sammlung neu geordnet ---------- */
+.sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.sec-head h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 25px; }
+.sec-lbl { margin: 6px 0 -2px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+/* Level als Wollknäuel */
+.level { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 12px; }
+.yarn { width: 110px; height: auto; overflow: visible; }
+.yarn circle { animation: pop .6s cubic-bezier(.3,1.5,.5,1) both; transform-box: fill-box; transform-origin: center; }
+.y-wrap { fill: none; stroke: #ffffff66; stroke-width: 1.4; opacity: 0; animation: fadeIn .4s ease forwards; }
+.y-end { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 120; stroke-dashoffset: 120; animation: draw .9s ease-out .4s forwards; }
+.y-shadow { fill: color-mix(in srgb, var(--ink) 10%, transparent); }
+.lvl-text b { font-family: var(--serif); font-weight: 400; font-size: 27px; display: block; line-height: 1.1; }
+.lvl-ico { display: none; }
+/* Kalender als Kreuzstich-Stoff */
+.ymon { background: color-mix(in srgb, var(--sheet) 70%, var(--paper)); border: 1.5px dashed color-mix(in srgb, var(--green) 35%, var(--rule)); border-radius: 10px; padding: 6px 6px 7px; }
+.ymon b { display: flex; justify-content: space-between; align-items: baseline; }
+.ymon b em { font-style: normal; font-weight: 700; font-family: var(--sans); font-size: 10.5px; color: var(--green); }
+.ygrid { gap: 1px; }
+.ygrid i { position: relative; background: none !important; box-shadow: none !important; border-radius: 0; }
+.ygrid i:not(.pad)::before { content: ""; position: absolute; left: 50%; top: 50%; width: 2px; height: 2px; margin: -1px; border-radius: 50%; background: var(--rule); }
+.ygrid i.f::before { opacity: .45; }
+.ygrid i.g::before, .ygrid i.g::after, .ygrid i.o::before, .ygrid i.o::after { width: 2px; height: 86%; margin: 0; left: calc(50% - 1px); top: 7%; border-radius: 1px; transform: rotate(45deg); background: var(--green); }
+.ygrid i.g::after, .ygrid i.o::after { content: ""; position: absolute; transform: rotate(-45deg); }
+.ygrid i.o::before, .ygrid i.o::after { background: var(--orange); }
+.ygrid i.t { outline: 1.5px solid var(--ink); outline-offset: 0; border-radius: 2px; }
+.lg.g, .lg.o { background: none; position: relative; }
+.lg.g::before, .lg.g::after, .lg.o::before, .lg.o::after { content: ""; position: absolute; left: 4px; top: 0; width: 2px; height: 10px; background: var(--green); transform: rotate(45deg); border-radius: 1px; }
+.lg.g::after, .lg.o::after { transform: rotate(-45deg); }
+.lg.o::before, .lg.o::after { background: var(--orange); }
+.lg.e { background: none; position: relative; } .lg.e::before { content: ""; position: absolute; left: 4px; top: 4px; width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-soft); }
+/* Wochen-Zukunft */
+.w-day.fut text { opacity: .45; }
+.w-day.fut .w-hole { opacity: .5; }
+/* Strickstücke */
+.pc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 8px; margin-top: 8px; }
+.pc { margin: 0; text-align: center; cursor: pointer; }
+.pc.fut { opacity: .35; cursor: default; }
+.pc .knit { width: 100%; height: auto; display: block; }
+.pc figcaption { font-size: 11px; color: var(--ink-soft); line-height: 1.25; }
+.pc figcaption b { display: block; font-family: var(--mono); font-size: 11px; color: var(--ink); }
+.pc.fin figcaption { color: var(--green); font-weight: 700; }
+.pc.cur { background: var(--wash); border-radius: 12px; padding: 4px 2px; }
+.knit .k-base { fill: color-mix(in srgb, var(--rule) 40%, var(--sheet)); }
+.knit .k-g { fill: var(--green); } .knit .k-o { fill: var(--orange); } .knit .k-e { fill: color-mix(in srgb, var(--rule) 85%, var(--sheet)); }
+.knit.anim rect[class^="k-"] { animation: fadeIn .35s ease both; opacity: 0; }
+.knit .k-tex { fill: none; stroke: #ffffff45; stroke-width: .8; }
+.knit .k-line { fill: none; stroke: color-mix(in srgb, var(--ink) 45%, var(--sheet)); stroke-width: 2.2; stroke-linejoin: round; }
+.knit .k-fringe { stroke: color-mix(in srgb, var(--ink) 45%, var(--sheet)); stroke-width: 2; stroke-linecap: round; }
+.pc.fin .k-line { stroke: var(--green); }
+/* Aufnäher kompakter */
+.stickers { grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.st { font-size: 10.5px; border-radius: 16px; }
+.st span { font-size: 28px; }
+.st::after { inset: 4px; border-radius: 12px; }
+.stickers { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.st { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+.pc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cel-piece { width: 150px; height: auto; }

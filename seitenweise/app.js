@@ -52,7 +52,7 @@
   function celebrate(ico, title, text) { celQueue.push({ ico, title, text }); if (!$("#celDlg").open) nextCel(); }
   function nextCel() {
     const c = celQueue.shift(); if (!c) return;
-    if (c.ico === "knot") $("#celIco").innerHTML = knotArt(); else $("#celIco").textContent = c.ico;
+    if (c.ico === "knot") $("#celIco").innerHTML = knotArt(); else if (c.ico.startsWith("<svg")) $("#celIco").innerHTML = c.ico; else $("#celIco").textContent = c.ico;
     $("#celTitle").textContent = c.title; $("#celText").textContent = c.text;
     $("#celDlg").showModal(); confetti();
   }
@@ -86,14 +86,15 @@
       $("#ringNeedle").style.transform = `rotate(${(r * 360).toFixed(1)}deg)`;
     }));
     $("#readBtn").classList.toggle("nudge", !dayRead(k));
-    const wk = Array.from({ length: 7 }, (_, i) => { const d = addDays(now, i - 6), dk = dateKey(d); return { d, isT: i === 6, cls: dayValue(dk) >= g ? "g" : dayRead(dk) ? "o" : "" }; });
+    const mon = addDays(now, -((now.getDay() + 6) % 7)); // Montag dieser Woche
+    const wk = Array.from({ length: 7 }, (_, i) => { const d = addDays(mon, i), dk = dateKey(d); return { d, isT: dk === k, fut: dk > k, cls: dk > k ? "" : dayValue(dk) >= g ? "g" : dayRead(dk) ? "o" : "" }; });
     const X = (i) => 25 + i * 50;
     let thread = `<path class="w-guide" d="M${X(0)} 22H${X(6)}"/>`;
     wk.forEach((w, i) => { if (i && w.cls && wk[i - 1].cls) thread += `<path class="w-thread" style="animation-delay:${(.15 + i * .08).toFixed(2)}s" d="M${X(i - 1)} 22H${X(i)}"/>`; });
     const knots = wk.map((w, i) => {
       const x = X(i), dv = dayValue(dateKey(w.d));
-      const lbl = `<text x="${x}" y="54">${w.isT ? "Heute" : DAYS[w.d.getDay()]}</text>${dv ? `<text class="w-num ${w.cls}" x="${x}" y="72">${dv}</text>` : ""}<circle class="w-hit" cx="${x}" cy="38" r="24" data-day="${dateKey(w.d)}"/>`;
-      if (!w.cls) return `<g class="w-day${w.isT ? " today" : ""}"><circle class="w-hole" cx="${x}" cy="22" r="${w.isT ? 12 : 4}"/>${w.isT ? `<text class="w-q" x="${x}" y="26.5">?</text>` : ""}${lbl}</g>`;
+      const lbl = `<text x="${x}" y="54">${DAYS[w.d.getDay()]}</text>${dv ? `<text class="w-num ${w.cls}" x="${x}" y="72">${dv}</text>` : ""}${w.fut ? "" : `<circle class="w-hit" cx="${x}" cy="38" r="24" data-day="${dateKey(w.d)}"/>`}`;
+      if (!w.cls) return `<g class="w-day${w.isT ? " today" : ""}${w.fut ? " fut" : ""}"><circle class="w-hole" cx="${x}" cy="22" r="${w.isT ? 12 : 4}"/>${w.isT ? `<text class="w-q" x="${x}" y="26.5">?</text>` : ""}${lbl}</g>`;
       return `<g class="w-day${w.isT ? " today" : ""}"><g class="w-knot ${w.cls}" style="animation-delay:${(.1 + i * .08).toFixed(2)}s"><circle cx="${x}" cy="22" r="12"/><path d="M${x - 7.5} 19.5q7.5-4.6 15 0M${x - 8.5} 24q8.5-5 17 0"/></g>${lbl}</g>`;
     }).join("");
     $("#week").innerHTML = thread + knots;
@@ -255,7 +256,7 @@
   }
 
   // ---------- 3 · Sammlung ----------
-  const LEVELS = [[0, "Leseanfänger", "🌱"], [50, "Seitenentdecker", "🔍"], [150, "Seitenflitzer", "🚀"], [400, "Bücherwurm", "🐛"], [800, "Lesechampion", "🏆"], [1500, "Leselegende", "👑"]];
+  const LEVELS = [[0, "Erster Faden", "#9fcfb1"], [50, "Knotenknüpfer", "#4f9e77"], [150, "Maschenzähler", "#e07b2c"], [400, "Strickprofi", "#2c7a55"], [800, "Fadenmeister", "#b48c25"], [1500, "Leselegende", "#1f5d40"]];
   const STICKERS = [
     ["first", "📖", "Erster Eintrag", () => state.sessions.length >= 1],
     ["goal", "🎯", "Ziel geschafft", () => goalDays() >= 1],
@@ -272,6 +273,7 @@
   ];
   const allWords = () => (state.book?.words || []).length + state.finished.reduce((a, f) => a + (f.words || 0), 0);
   function checkStickers() {
+    checkPieces();
     state.seen ||= [];
     const fresh = STICKERS.filter(([id, , , test]) => test() && !state.seen.includes(id));
     if (!fresh.length) return;
@@ -290,6 +292,7 @@
     const inYear = state.sessions.filter((x) => x.date.startsWith(y + "-"));
     const days = [...new Set(inYear.map((x) => x.date))], pages = inYear.reduce((a, x) => a + (x.pages || 0), 0), mins = inYear.reduce((a, x) => a + (x.minutes || 0), 0);
     $("#ySum").textContent = `${days.length} Lesetage · ${days.filter((k) => dayValue(k) >= goal()).length}× Ziel · ${pages} Seiten${mins ? ` · ${mins} Min.` : ""}`;
+    $("#yChartLbl").textContent = isPages() ? "Gelesene Seiten pro Monat" : "Gelesene Minuten pro Monat";
     // Diagramm: Seiten (bzw. Minuten) pro Monat
     const per = MONTHS.map((_, m) => inYear.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + (isPages() ? x.pages || 0 : x.minutes || 0), 0));
     const max = Math.max(1, ...per), curM = y === nowY ? new Date().getMonth() : 11;
@@ -305,20 +308,93 @@
         const k = `${y}-${pad(m + 1)}-${pad(d)}`, cls = k > today ? "f" : dayValue(k) >= goal() ? "g" : dayRead(k) ? "o" : "e";
         cells += `<i class="${cls}${k === today ? " t" : ""}"${cls !== "f" ? ` data-day="${k}"` : ""}></i>`;
       }
-      return `<div class="ymon${m > curM ? " fut" : ""}"><b>${mn}</b><div class="ygrid">${cells}</div></div>`;
+      const pg = inYear.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + (x.pages || 0), 0);
+      return `<div class="ymon${m > curM ? " fut" : ""}"><b>${mn}${pg ? `<em>${pg} S.</em>` : ""}</b><div class="ygrid">${cells}</div></div>`;
     }).join("");
   }
-  $("#yPrev").addEventListener("click", () => { yearShown--; renderYear(); });
-  $("#yNext").addEventListener("click", () => { yearShown++; renderYear(); });
+  $("#yPrev").addEventListener("click", () => { yearShown--; renderYear(); renderPieces(); });
+  $("#yNext").addEventListener("click", () => { yearShown++; renderYear(); renderPieces(); });
+
+  // ---------- Strickstücke: jeden Monat eins ----------
+  const PIECE_MIN = 15;
+  const GARMENTS = [
+    { name: "Mütze", done: "Deine Mütze ist fertig!", d: ["M38 82Q36 34 70 30Q104 34 102 82Z", "M33 78h74a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H33a3 3 0 0 1-3-3V81a3 3 0 0 1 3-3Z", "M70 12a9 9 0 1 1 0 18a9 9 0 1 1 0-18Z"] },
+    { name: "Fäustlinge", done: "Deine Fäustlinge sind fertig!", d: ["M58 96V46Q58 20 79 20Q100 20 100 46V96Z", "M58 58Q42 56 41 44Q41 34 49 33Q57 33 58 44Z"] },
+    { name: "Schal", done: "Dein Schal ist fertig!", d: ["M56 8h30v80h-30Z", "M56 8h30l4 14H52Z"] },
+    { name: "Socken", done: "Deine Socken sind fertig!", d: ["M54 8H82V58L100 72Q110 82 103 92Q97 99 86 97L60 92Q50 89 52 78Z"] },
+    { name: "Pullover", done: "Dein Pullover ist fertig!", d: ["M52 14L61 9H79L88 14L108 28L102 52L92 46V96H48V46L38 52L32 28Z"] },
+    { name: "Teppich", done: "Dein Teppich ist fertig!", d: ["M32 26h76v62H32Z"] },
+  ];
+  const garmentFor = (m) => GARMENTS[m % GARMENTS.length];
+  let svgUid = 0;
+  function garmentSvg(g, cells, todayR, anim) {
+    const key = "g" + ++svgUid, n = cells.length, top = 8, bot = 97, h = (bot - top) / n;
+    let rows = "";
+    cells.forEach((c, i) => {
+      if (c === "f") return;
+      const y = bot - (i + 1) * h, w = c === "t" ? Math.max(.08, todayR) * 140 : 140;
+      const cls = c === "t" ? (todayR >= 1 ? "g" : todayR > 0 ? "o" : "e") : c;
+      if (c === "t" && !todayR) return;
+      rows += `<rect class="k-${cls}" x="0" y="${y.toFixed(2)}" width="${w.toFixed(1)}" height="${(h + .25).toFixed(2)}"${anim ? ` style="animation-delay:${(.05 + i * .025).toFixed(2)}s"` : ""}/>`;
+    });
+    const shapes = g.d.map((d) => `<path d="${d}"/>`).join(""), outline = g.d.map((d) => `<path class="k-line" d="${d}"/>`).join("");
+    const fringe = g.name === "Teppich" ? [32, 108].map((x) => [0, 1, 2, 3, 4, 5, 6].map((j) => `<path class="k-fringe" d="M${x} ${30 + j * 9}h${x < 70 ? -6 : 6}"/>`).join("")).join("")
+      : g.name === "Schal" ? [0, 1, 2, 3, 4].map((j) => `<path class="k-fringe" d="M${59 + j * 6} 88v8"/>`).join("") : "";
+    return `<svg class="knit${anim ? " anim" : ""}" viewBox="0 0 140 104" aria-hidden="true"><defs><clipPath id="c-${key}">${shapes}</clipPath><pattern id="p-${key}" width="6" height="5" patternUnits="userSpaceOnUse"><path d="M0 0l3 4l3-4" class="k-tex"/></pattern></defs>
+      <g clip-path="url(#c-${key})"><rect class="k-base" x="0" y="0" width="140" height="104"/>${rows}<rect x="0" y="0" width="140" height="104" fill="url(#p-${key})"/></g>${outline}${fringe}</svg>`;
+  }
+  function monthCells(y, m) {
+    const today = dateKey(), n = new Date(y, m + 1, 0).getDate(), out = [];
+    for (let d = 1; d <= n; d++) { const k = `${y}-${pad(m + 1)}-${pad(d)}`; out.push(k === today ? "t" : k > today ? "f" : dayValue(k) >= goal() ? "g" : dayRead(k) ? "o" : "e"); }
+    return out;
+  }
+  const monthReadDays = (y, m) => [...new Set(state.sessions.filter((x) => x.date.startsWith(`${y}-${pad(m + 1)}-`)).map((x) => x.date))].length;
+  function renderPieces() {
+    const y = yearShown, now = new Date(), curM = y === now.getFullYear() ? now.getMonth() : 11, k = dateKey();
+    const r = Math.min(1, dayValue(k) / goal());
+    let done = 0;
+    $("#pcGrid").innerHTML = Array.from({ length: 12 }, (_, m) => {
+      const g = garmentFor(m), nd = monthReadDays(y, m), fin = nd >= PIECE_MIN, fut = m > curM;
+      if (fin) done++;
+      return `<figure class="pc${fin ? " fin" : ""}${m === curM && !fut ? " cur" : ""}${fut ? " fut" : ""}" ${fut ? "" : `data-piece="${m}"`}>${garmentSvg(g, monthCells(y, m), m === curM ? r : 0, m === curM)}
+        <figcaption><b>${MONTHS[m]}</b>${fin ? "fertig ✓" : fut ? g.name : `${nd}/${PIECE_MIN}`}</figcaption></figure>`;
+    }).join("");
+    $("#pcTitle").textContent = `Meine Strickstücke ${y}`;
+    $("#pcCount").textContent = `${done} fertig`;
+  }
+  document.addEventListener("click", (e) => {
+    const f = e.target.closest("[data-piece]"); if (!f) return;
+    const m = +f.dataset.piece, g = garmentFor(m), nd = monthReadDays(yearShown, m);
+    toast(nd >= PIECE_MIN ? `${MONTHS[m]}: ${g.name} fertig – ${nd} Lesetage 🧶` : `${MONTHS[m]}: ${g.name} · noch ${PIECE_MIN - nd} Lesetage bis fertig`);
+  });
+  // fertiges Monatsstück feiern
+  function checkPieces() {
+    state.pieces ||= [];
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth(), id = `${y}-${pad(m + 1)}`;
+    if (monthReadDays(y, m) >= PIECE_MIN && !state.pieces.includes(id)) {
+      state.pieces.push(id); save();
+      const g = garmentFor(m);
+      setTimeout(() => celebrate(garmentSvg(g, monthCells(y, m), 1, true).replace('class="knit anim"', 'class="knit anim cel-piece"'), g.done, `${PIECE_MIN} Lesetage im ${MONTHS_LONG[m]} – das Stück des Monats ist fertig gestrickt.`), 500);
+    }
+  }
+  const MONTHS_LONG = ["Jänner", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
   function renderSammlung() {
     renderYear();
     const p = totalPages(); let li = 0; LEVELS.forEach((l, i) => { if (p >= l[0]) li = i; });
-    const [from, name, ico] = LEVELS[li], next = LEVELS[li + 1];
-    $("#lvlNo").textContent = `Level ${li + 1} · ${p} Seiten`; $("#lvlName").textContent = name; $("#lvlIco").textContent = ico;
-    $("#lvlBar").style.width = next ? `${((p - from) / (next[0] - from)) * 100}%` : "100%";
-    $("#lvlNext").textContent = next ? `Noch ${next[0] - p} Seiten bis „${next[1]}“ ${next[2]}` : "Höchstes Level erreicht!";
+    const [from, name, col] = LEVELS[li], next = LEVELS[li + 1], frac = next ? (p - from) / (next[0] - from) : 1;
+    $("#lvlNo").textContent = `Level ${li + 1} von ${LEVELS.length} · ${p} Seiten`; $("#lvlName").textContent = name;
+    $("#lvlBar").style.width = `${frac * 100}%`;
+    $("#lvlNext").textContent = next ? `Noch ${next[0] - p} Seiten bis „${next[1]}“` : "Höchstes Level erreicht!";
+    // Wollknäuel: wird mit jedem Level größer, die Wicklungen wachsen mit den Seiten
+    const R = 14 + li * 4 + frac * 4, cx = 50, cy = 86 - R, wraps = 3 + li + Math.round(frac * 3);
+    let yarn = `<ellipse class="y-shadow" cx="${cx}" cy="87" rx="${R * .9}" ry="3"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="${col}"/>`;
+    for (let i = 0; i < wraps; i++) yarn += `<ellipse class="y-wrap" cx="${cx}" cy="${cy}" rx="${(R * .96).toFixed(1)}" ry="${(R * .36).toFixed(1)}" transform="rotate(${Math.round((i * 180) / wraps + 25)} ${cx} ${cy})" style="animation-delay:${(i * .07).toFixed(2)}s"/>`;
+    yarn += `<path class="y-end" d="M${cx + R * .75} ${cy + R * .6}C${cx + R + 14} ${cy + R} ${cx + R + 18} 88 108 86" stroke="${col}"/>`;
+    $("#yarn").innerHTML = yarn;
     const fresh = state.fresh || []; state.fresh = [];
+    $("#stCount").textContent = `${STICKERS.filter(([, , , t]) => t()).length} von ${STICKERS.length}`;
+    renderPieces();
     $("#stickers").innerHTML = STICKERS.map(([id, si, sn, test], i) => `<div class="st ${test() ? "" : "lock"} ${fresh.includes(id) ? "new" : ""}" style="animation-delay:${(i * .04).toFixed(2)}s"><div><span>${si}</span>${sn}</div></div>`).join("");
     const cols = ["#2c7a55", "#e07b2c", "#b48c25", "#4f9e77", "#c9653a", "#6f8fbf"];
     $("#shelfTitle").textContent = `Mein Regal · ${state.finished.length} ${state.finished.length === 1 ? "Buch" : "Bücher"} fertig`;
