@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Seitenweise</title>
+  <meta name="description" content="Seitenweise: die einfache Lese-App für die Mittelschule. Seiten eintragen, Tagesziel erreichen, Sticker sammeln.">
+  <meta name="theme-color" content="#2c7a55">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Seitenweise">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="../icons/icon-192.png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <div class="app">
+    <!-- 1 · Lesen -->
+    <main class="view" id="v-lesen">
+      <div class="top">
+        <p class="date" id="date"></p>
+        <button class="icon" id="settingsBtn" aria-label="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      </div>
+      <h1 class="hi" id="hello">Hi 👋</h1>
+      <section class="card ring-card">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="48"/>
+          <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="48" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="ring-num"><b id="ringVal">0</b><span id="ringOf">von 10 Seiten</span></div>
+      </section>
+      <button class="big" id="readBtn">📖 Ich habe gelesen</button>
+      <section class="card week-card">
+        <div class="week" id="week"></div>
+      </section>
+      <p class="hint" id="todayHint"></p>
+      <button class="link undo" id="undoBtn" hidden>Letzten Eintrag löschen</button>
+    </main>
+
+    <!-- 2 · Mein Buch -->
+    <main class="view" id="v-buch" hidden>
+      <h1 class="title">Mein Buch</h1>
+      <div id="bookArea"></div>
+    </main>
+
+    <!-- 3 · Sammlung -->
+    <main class="view" id="v-sammlung" hidden>
+      <h1 class="title">Sammlung</h1>
+      <section class="card level">
+        <div><p class="small" id="lvlNo">Level 1</p><b id="lvlName">Leseanfänger</b>
+          <div class="bar"><i id="lvlBar"></i></div><p class="small" id="lvlNext"></p></div>
+        <span class="lvl-ico" id="lvlIco">🌱</span>
+      </section>
+      <div class="stickers" id="stickers"></div>
+      <p class="small shelf-title" id="shelfTitle">Mein Regal</p>
+      <div class="shelf" id="shelf"></div>
+      <ul class="done-list" id="doneList"></ul>
+    </main>
+
+    <nav class="nav">
+      <button data-tab="lesen" class="on"><svg viewBox="0 0 24 24"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z"/></svg>Lesen</button>
+      <button data-tab="buch"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 3v18"/></svg>Mein Buch</button>
+      <button data-tab="sammlung"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg>Sammlung</button>
+    </nav>
+  </div>
+
+  <!-- Eintragen -->
+  <dialog id="logDlg" class="sheet">
+    <form method="dialog" id="logForm">
+      <p class="small" id="logBook"></p>
+      <h2 class="q" id="logQ">Wie viele Seiten hast du gelesen?</h2>
+      <div class="step"><button type="button" data-step="-1" aria-label="weniger">−</button><div class="v"><b id="stepVal">0</b><small id="stepUnit">Seiten</small></div><button type="button" data-step="1" aria-label="mehr">+</button></div>
+      <div class="chips" id="mainChips"></div>
+      <p class="note" id="logCalc"></p>
+      <p class="small opt" id="optLbl">Wie lange? <span>(nicht nötig)</span></p>
+      <div class="chips" id="optChips"></div>
+      <div class="actions"><button type="button" class="btn" id="logCancel">Abbrechen</button><button class="big" id="logSave">Speichern ✓</button></div>
+    </form>
+  </dialog>
+
+  <!-- Start / Einstellungen -->
+  <dialog id="setupDlg" class="sheet">
+    <form method="dialog" id="setupForm">
+      <h2 class="q" id="setupTitle">Willkommen bei Seitenweise</h2>
+      <p class="small" id="setupIntro">Seite für Seite zum Lesen. Drei kurze Fragen:</p>
+      <label class="field"><span>Wie heißt du?</span><input id="sName" maxlength="24" autocomplete="off" required placeholder="Vorname"></label>
+      <div class="field"><span>Was möchtest du zählen?</span>
+        <div class="seg"><label><input type="radio" name="gtype" value="pages" checked><span>📄 Seiten</span></label><label><input type="radio" name="gtype" value="minutes"><span>⏱ Minuten</span></label></div>
+      </div>
+      <div class="field"><span id="goalLbl">Wie viele Seiten am Tag?</span><div class="chips" id="goalChips"></div></div>
+      <p class="small">Du kannst dein Ziel jederzeit über ⚙ ändern.</p>
+      <div class="actions"><button type="button" class="btn" id="setupCancel" hidden>Abbrechen</button><button class="big">Los geht’s</button></div>
+    </form>
+  </dialog>
+
+  <!-- Buch anlegen / bearbeiten -->
+  <dialog id="bookDlg" class="sheet">
+    <form method="dialog" id="bookForm">
+      <h2 class="q" id="bookDlgTitle">Welches Buch liest du?</h2>
+      <label class="field"><span>Titel</span><input id="bTitle" maxlength="80" required autocomplete="off" placeholder="z. B. Gregs Tagebuch"></label>
+      <div class="row">
+        <label class="field"><span>Seiten im Buch</span><input id="bPages" type="number" min="1" max="3000" inputmode="numeric" placeholder="z. B. 220"></label>
+        <label class="field"><span>Ich bin auf Seite</span><input id="bPage" type="number" min="0" inputmode="numeric" placeholder="0"></label>
+      </div>
+      <p class="small">Gerade erst angefangen? Dann lass „Ich bin auf Seite“ leer.</p>
+      <div class="actions"><button type="button" class="btn" id="bookCancel">Abbrechen</button><button class="big">Speichern</button></div>
+    </form>
+  </dialog>
+
+  <!-- Feier -->
+  <dialog id="celDlg" class="sheet cel">
+    <div class="cel-ico" id="celIco">🎉</div>
+    <h2 class="q" id="celTitle"></h2>
+    <p id="celText"></p>
+    <button class="big" id="celOk">Weiter</button>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

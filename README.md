@@ -61,3 +61,14 @@ js/data.js      Empfehlungen, Tipps, Sprüche, Stufen
 js/app.js       App-Logik (Regal, Timer, Statistik, Erfolge)
 manifest.webmanifest, sw.js, icons/   installierbare App (PWA), Offline-Betrieb, QR-Code
 ```
+
+## Seitenweise – die einfache Version für die Mittelschule
+
+Unter `seitenweise/` liegt eine eigene, bewusst einfache Lese-App für 10–14-Jährige (Link: `…/Lesezeit/seitenweise/`):
+
+- **3 Bereiche:** Lesen · Mein Buch · Sammlung
+- **1 großer Knopf** „Ich habe gelesen“ und eine Frage pro Bildschirm (Seiten oder Minuten, selbst gewähltes Tagesziel)
+- **Woche als 7 Punkte** (grün = Ziel, orange = gelesen), nichts „reißt“
+- **Ein Buch** gleichzeitig mit Lieblingssatz und neuen Wörtern
+- **Level und Sticker** statt Statistik, fertige Bücher im Regal
+- Daten bleiben nur auf dem Gerät; die große Lesezeit-App ist davon unabhängig
