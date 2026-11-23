@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <div class="app">
@@ -45,13 +45,17 @@
           <button class="btn tm-start" id="tmStart" type="button">▶ Los</button>
         </div>
         <div class="tm-run" id="tmRun" hidden>
-          <svg class="tm-thread" id="tmSvg" viewBox="0 0 300 64" aria-hidden="true">
-            <path class="tm-guide" id="tmGuide" d="M8 40C40 14 70 58 100 34S160 12 196 38 256 56 292 26"/>
-            <path class="tm-done" id="tmLine" d="M8 40C40 14 70 58 100 34S160 12 196 38 256 56 292 26"/>
-            <g class="tm-knot" id="tmHalf"><circle r="6"/></g>
-            <g class="tm-needle" id="tmNeedle"><path d="M-2 -1.6L14 -.8Q18 0 14 .8L-2 1.6Z"/><ellipse cx="0" cy="0" rx="2" ry=".6"/></g>
-          </svg>
-          <div class="tm-time" id="tmTime">20:00</div>
+          <div class="tm-dial">
+            <svg class="tm-ring" id="tmSvg" viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="tm-guide" cx="100" cy="100" r="84"/>
+              <g class="tm-ticks" id="tmTicks"></g>
+              <circle class="tm-done" id="tmLine" cx="100" cy="100" r="84" transform="rotate(-90 100 100)"/>
+              <circle class="tm-done-hl" id="tmLineHl" cx="100" cy="100" r="84" transform="rotate(-90 100 100)"/>
+              <g class="tm-knot" id="tmHalf" transform="translate(100 184)"><circle r="7"/><path d="M-4.5 -1.5q4.5-2.6 9 0M-5 1.6q5-2.8 10 0"/></g>
+              <g class="tm-needle" id="tmNeedle"><path d="M-3 -2L18 -1Q23 0 18 1L-3 2Z"/><ellipse cx="0" cy="0" rx="2.6" ry=".8"/></g>
+            </svg>
+            <div class="tm-center"><div class="tm-time" id="tmTime">20:00</div><span class="small" id="tmSub">Minuten übrig</span></div>
+          </div>
           <p class="tm-msg" id="tmMsg">Los geht’s – viel Spaß beim Lesen!</p>
           <div class="tm-btns"><button class="btn" id="tmPause" type="button">⏸ Pause</button><button class="btn tm-stop" id="tmStop" type="button">■ Fertig</button></div>
         </div>
@@ -72,10 +76,9 @@
     <!-- 3 · Sammlung -->
     <main class="view" id="v-sammlung" hidden>
       <h1 class="title">Sammlung</h1>
-      <section class="card level">
-        <svg class="yarn" id="yarn" viewBox="0 0 110 90" aria-hidden="true"></svg>
-        <div class="lvl-text"><p class="small" id="lvlNo">Level 1</p><b id="lvlName">Erster Faden</b>
-          <div class="bar"><i id="lvlBar"></i></div><p class="small" id="lvlNext"></p></div>
+      <section class="card best">
+        <div class="sec-head"><h2>Meine Bestwerte</h2><span class="small" id="bestSum"></span></div>
+        <div class="best-grid" id="bestGrid"></div>
       </section>
       <section class="card year">
         <div class="seg-tabs" id="statTabs" role="tablist">
@@ -93,7 +96,7 @@
       </section>
       <section class="card pieces">
         <div class="sec-head"><h2 id="pcTitle">Meine Strickstücke</h2><span class="small" id="pcCount"></span></div>
-        <p class="small">Jeden Monat ein neues Stück. Jeder Lesetag strickt eine Reihe – ab 15 Lesetagen ist es fertig.</p>
+        <p class="small">Jeden Monat ein neues Stück. Jeder Tag des Monats ist eine Reihe: grün = Ziel, orange = gelesen. Am Monatsende ist es fertig – jeden Tag grün? Dann bekommt es einen goldenen Rand.</p>
         <div class="pc-grid" id="pcGrid"></div>
       </section>
       <section class="card">
@@ -166,6 +169,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

@@ -405,3 +405,36 @@ dialog:not([open]) { display: none !important; }
 .book-chips:empty { display: none; }
 .bchip { border: 2px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bchip.on { border-color: var(--green); background: var(--wash); color: var(--green); }
+
+/* Bestwerte */
+.best-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.best-grid div { position: relative; background: var(--paper); border-radius: 16px; padding: 12px 12px 10px; display: grid; gap: 1px; animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+.best-grid div::after { content: ""; position: absolute; inset: 5px; border: 1.5px dashed color-mix(in srgb, var(--green) 35%, var(--rule)); border-radius: 12px; pointer-events: none; }
+.b-ico { font-size: 20px; }
+.best-grid b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1; }
+.b-lbl { font-size: 13px; font-weight: 700; }
+.best-grid small { font-size: 11.5px; color: var(--ink-soft); }
+/* Strickstücke: goldener Rand bei perfektem Monat */
+.pc.gold .k-line, .cel-piece.gold .k-line { stroke: var(--gold); stroke-width: 3.2; }
+.pc.gold figcaption { color: var(--gold); }
+/* Timer als Kreis */
+.tm-dial { position: relative; width: min(240px, 72vw); aspect-ratio: 1; margin: 2px auto 0; }
+.tm-ring { width: 100%; height: 100%; overflow: visible; }
+.tm-ring .tm-guide { fill: none; stroke: var(--rule); stroke-width: 2.4; stroke-dasharray: 2.5 6.2; stroke-linecap: round; }
+.tm-ticks path { stroke: var(--rule); stroke-width: 1.2; stroke-linecap: round; }
+.tm-ticks path.maj { stroke: color-mix(in srgb, var(--ink-soft) 55%, transparent); stroke-width: 1.8; }
+.tm-ring .tm-done { fill: none; stroke: var(--green); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 0 999; transition: stroke-dasharray .5s linear; }
+.tm-done-hl { fill: none; stroke: #ffffff70; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0 999; transition: stroke-dasharray .5s linear; }
+.tm-ring .tm-needle path { fill: #9aa5a0; } .tm-ring .tm-needle ellipse { fill: var(--sheet); }
+.timer-card.running .tm-ring .tm-needle { animation: none; }
+.tm-ring .tm-knot circle { fill: var(--orange); }
+.tm-ring .tm-knot path { fill: none; stroke: #ffffffa0; stroke-width: 1.2; }
+.tm-ring .tm-knot { opacity: 0; transition: opacity .4s; }
+.tm-ring .tm-knot.on { opacity: 1; animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+.tm-ring .tm-knot circle { transform: none; }
+.tm-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.tm-center .tm-time { font-size: 58px; }
+.tm-center .small { margin-top: 2px; }
+.timer-card.running .tm-ring { animation: dialGlow 3s ease-in-out infinite; }
+@keyframes dialGlow { 50% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--green) 35%, transparent)); } }
+.pc[data-empty] { opacity: .45; }

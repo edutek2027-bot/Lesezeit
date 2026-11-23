@@ -296,7 +296,6 @@
   }
 
   // ---------- 3 · Sammlung ----------
-  const LEVELS = [[0, "Erster Faden", "#9fcfb1"], [50, "Knotenknüpfer", "#4f9e77"], [150, "Maschenzähler", "#e07b2c"], [400, "Strickprofi", "#2c7a55"], [800, "Fadenmeister", "#b48c25"], [1500, "Leselegende", "#1f5d40"]];
   const STICKERS = [
     ["first", "📖", "Erster Eintrag", () => state.sessions.length >= 1],
     ["goal", "🎯", "Ziel geschafft", () => goalDays() >= 1],
@@ -405,7 +404,6 @@
   document.addEventListener("click", (e) => { const t = e.target.closest("[data-tip]"); if (t) toast(t.dataset.tip); });
 
   // ---------- Strickstücke: jeden Monat eins ----------
-  const PIECE_MIN = 15;
   const GARMENTS = [
     { name: "Mütze", done: "Deine Mütze ist fertig!", d: ["M38 82Q36 34 70 30Q104 34 102 82Z", "M33 78h74a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H33a3 3 0 0 1-3-3V81a3 3 0 0 1 3-3Z", "M70 12a9 9 0 1 1 0 18a9 9 0 1 1 0-18Z"] },
     { name: "Fäustlinge", done: "Deine Fäustlinge sind fertig!", d: ["M58 96V46Q58 20 79 20Q100 20 100 46V96Z", "M58 58Q42 56 41 44Q41 34 49 33Q57 33 58 44Z"] },
@@ -443,44 +441,65 @@
     const r = Math.min(1, dayValue(k) / goal());
     let done = 0;
     $("#pcGrid").innerHTML = Array.from({ length: 12 }, (_, m) => {
-      const g = garmentFor(m), nd = monthReadDays(y, m), fin = nd >= PIECE_MIN, fut = m > curM;
+      const g = garmentFor(m), st = monthGoalStats(y, m), fut = m > curM, fin = !fut && st.over && st.read > 0, perfect = fin && st.goal === st.n;
       if (fin) done++;
-      return `<figure class="pc${fin ? " fin" : ""}${m === curM && !fut ? " cur" : ""}${fut ? " fut" : ""}" ${fut ? "" : `data-piece="${m}"`}>${garmentSvg(g, monthCells(y, m), m === curM ? r : 0, m === curM)}
-        <figcaption><b>${MONTHS[m]}</b>${fin ? "fertig ✓" : fut ? g.name : `${nd}/${PIECE_MIN}`}</figcaption></figure>`;
+      return `<figure class="pc${fin ? " fin" : ""}${perfect ? " gold" : ""}${m === curM && !fut ? " cur" : ""}${fut ? " fut" : ""}" ${fut ? "" : `data-piece="${m}"`}${!fut && st.over && !st.read ? ' data-empty="1"' : ""}>${garmentSvg(g, monthCells(y, m), m === curM ? r : 0, m === curM)}
+        <figcaption><b>${MONTHS[m]}</b>${fut ? g.name : `${st.goal}/${st.n} ${fin ? "✓" : ""}`}</figcaption></figure>`;
     }).join("");
     $("#pcTitle").textContent = `Meine Strickstücke ${y}`;
     $("#pcCount").textContent = `${done} fertig`;
   }
   document.addEventListener("click", (e) => {
     const f = e.target.closest("[data-piece]"); if (!f) return;
-    const m = +f.dataset.piece, g = garmentFor(m), nd = monthReadDays(yearShown, m);
-    toast(nd >= PIECE_MIN ? `${MONTHS[m]}: ${g.name} fertig – ${nd} Lesetage 🧶` : `${MONTHS[m]}: ${g.name} · noch ${PIECE_MIN - nd} Lesetage bis fertig`);
+    const m = +f.dataset.piece, g = garmentFor(m), st = monthGoalStats(yearShown, m);
+    toast(st.over ? `${MONTHS_LONG[m]}: ${g.name} fertig – ${st.goal} von ${st.n} Tagen Ziel, ${st.read} Lesetage 🧶`
+      : `${MONTHS_LONG[m]}: ${g.name} · ${st.goal} von ${st.n} Tagen Ziel · noch ${st.left} ${st.left === 1 ? "Tag" : "Tage"} im Monat`);
   });
-  // fertiges Monatsstück feiern
+  // Monat auswerten: jeder Tag zählt (Ziel erreicht / gelesen / Tage gesamt)
+  function monthGoalStats(y, m) {
+    const n = new Date(y, m + 1, 0).getDate(), today = dateKey(); let goal_ = 0, read = 0;
+    for (let d = 1; d <= n; d++) { const k = `${y}-${pad(m + 1)}-${pad(d)}`; if (k > today) break; if (dayValue(k) >= goal()) goal_++; if (dayRead(k)) read++; }
+    const last = `${y}-${pad(m + 1)}-${pad(n)}`, over = last < today, left = over ? 0 : n - new Date().getDate() + 1;
+    return { n, goal: goal_, read, over, left };
+  }
+  // fertiges Monatsstück feiern (am Anfang des nächsten Monats, wenn im alten Monat gelesen wurde)
   function checkPieces() {
     state.pieces ||= [];
-    const now = new Date(), y = now.getFullYear(), m = now.getMonth(), id = `${y}-${pad(m + 1)}`;
-    if (monthReadDays(y, m) >= PIECE_MIN && !state.pieces.includes(id)) {
+    const now = new Date(), pm = new Date(now.getFullYear(), now.getMonth() - 1, 1), y = pm.getFullYear(), m = pm.getMonth(), id = `${y}-${pad(m + 1)}`;
+    const st = monthGoalStats(y, m);
+    if (st.read && !state.pieces.includes(id)) {
       state.pieces.push(id); save();
-      const g = garmentFor(m);
-      setTimeout(() => celebrate(garmentSvg(g, monthCells(y, m), 1, true).replace('class="knit anim"', 'class="knit anim cel-piece"'), g.done, `${PIECE_MIN} Lesetage im ${MONTHS_LONG[m]} – das Stück des Monats ist fertig gestrickt.`), 500);
+      const g = garmentFor(m), perfect = st.goal === st.n;
+      setTimeout(() => celebrate(garmentSvg(g, monthCells(y, m), 0, true).replace('class="knit anim"', `class="knit anim cel-piece${perfect ? " gold" : ""}"`), perfect ? "Perfekter Monat!" : g.done,
+        `${MONTHS_LONG[m]}: an ${st.goal} von ${st.n} Tagen Ziel erreicht, ${st.read} Lesetage.${perfect ? " Jeden Tag grün – dein Stück bekommt einen goldenen Rand!" : " Jetzt beginnt ein neues Stück."}`), 500);
     }
   }
   const MONTHS_LONG = ["Jänner", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
+  // Meine Bestwerte: was man selbst schon geschafft hat
+  function bestStreak() {
+    const days = [...new Set(state.sessions.map((x) => x.date))].sort(); let best = 0, run = 0, prev = null;
+    for (const k of days) { run = prev && Math.round((fromKey(k) - fromKey(prev)) / 864e5) === 1 ? run + 1 : 1; best = Math.max(best, run); prev = k; }
+    return best;
+  }
+  function renderBest() {
+    const byDay = {}; state.sessions.forEach((x) => (byDay[x.date] = (byDay[x.date] || 0) + (x.pages || 0)));
+    const top = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+    const byWeek = {}; Object.entries(byDay).forEach(([k, v]) => { const d = fromKey(k), mon = dateKey(addDays(d, -((d.getDay() + 6) % 7))); byWeek[mon] = (byWeek[mon] || 0) + v; });
+    const topW = Math.max(0, ...Object.values(byWeek));
+    const tiles = [
+      ["🔥", `${bestStreak()}`, "Tage in Folge", `jetzt: ${streak()}`],
+      ["📄", top ? `${top[1]}` : "0", "Seiten an einem Tag", top ? new Date(top[0] + "T12:00").toLocaleDateString("de-AT", { day: "numeric", month: "short", year: "numeric" }) : "–"],
+      ["📅", `${topW}`, "Seiten in einer Woche", "beste Woche"],
+      ["📚", `${state.finished.length}`, state.finished.length === 1 ? "Buch fertig" : "Bücher fertig", `${totalPages()} Seiten gesamt`],
+    ];
+    $("#bestGrid").innerHTML = tiles.map(([i, v, l, sub2], n) => `<div style="animation-delay:${n * .06}s"><span class="b-ico">${i}</span><b>${v}</b><span class="b-lbl">${l}</span><small>${sub2}</small></div>`).join("");
+    $("#bestSum").textContent = "";
+  }
+
   function renderSammlung() {
     renderYear();
-    const p = totalPages(); let li = 0; LEVELS.forEach((l, i) => { if (p >= l[0]) li = i; });
-    const [from, name, col] = LEVELS[li], next = LEVELS[li + 1], frac = next ? (p - from) / (next[0] - from) : 1;
-    $("#lvlNo").textContent = `Level ${li + 1} von ${LEVELS.length} · ${p} Seiten`; $("#lvlName").textContent = name;
-    $("#lvlBar").style.width = `${frac * 100}%`;
-    $("#lvlNext").textContent = next ? `Noch ${next[0] - p} Seiten bis „${next[1]}“` : "Höchstes Level erreicht!";
-    // Wollknäuel: wird mit jedem Level größer, die Wicklungen wachsen mit den Seiten
-    const R = 14 + li * 4 + frac * 4, cx = 50, cy = 86 - R, wraps = 3 + li + Math.round(frac * 3);
-    let yarn = `<ellipse class="y-shadow" cx="${cx}" cy="87" rx="${R * .9}" ry="3"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="${col}"/>`;
-    for (let i = 0; i < wraps; i++) yarn += `<ellipse class="y-wrap" cx="${cx}" cy="${cy}" rx="${(R * .96).toFixed(1)}" ry="${(R * .36).toFixed(1)}" transform="rotate(${Math.round((i * 180) / wraps + 25)} ${cx} ${cy})" style="animation-delay:${(i * .07).toFixed(2)}s"/>`;
-    yarn += `<path class="y-end" d="M${cx + R * .75} ${cy + R * .6}C${cx + R + 14} ${cy + R} ${cx + R + 18} 88 108 86" stroke="${col}"/>`;
-    $("#yarn").innerHTML = yarn;
+    renderBest();
     const fresh = state.fresh || []; state.fresh = [];
     $("#stCount").textContent = `${STICKERS.filter(([, , , t]) => t()).length} von ${STICKERS.length}`;
     renderPieces();
@@ -548,14 +567,13 @@
     $("#tmTime").textContent = tgt ? mmss(tgt - el) : mmss(el);
     $("#tmTime").classList.toggle("up", !tgt);
     $("#tmPause").textContent = t.running ? "⏸ Pause" : "▶ Weiter";
-    const line = $("#tmLine"), L = line.getTotalLength();
-    line.style.strokeDasharray = `${(L * frac).toFixed(1)} ${L}`;
-    const pt = line.getPointAtLength(L * frac), pt2 = line.getPointAtLength(Math.min(L, L * frac + 1));
-    const ang = Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * 180 / Math.PI;
-    $("#tmNeedle").setAttribute("transform", `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)}) rotate(${ang.toFixed(0)})`);
-    const hp = line.getPointAtLength(L * .5);
-    $("#tmHalf").setAttribute("transform", `translate(${hp.x.toFixed(1)} ${hp.y.toFixed(1)})`);
-    $("#tmHalf").classList.toggle("on", tgt && frac >= .5);
+    const L = 2 * Math.PI * 84, dash = `${(L * frac).toFixed(1)} ${L.toFixed(1)}`;
+    $("#tmLine").style.strokeDasharray = dash; $("#tmLineHl").style.strokeDasharray = dash;
+    const a = (-90 + frac * 360) * Math.PI / 180, nx = 100 + 84 * Math.cos(a), ny = 100 + 84 * Math.sin(a);
+    $("#tmNeedle").setAttribute("transform", `translate(${nx.toFixed(1)} ${ny.toFixed(1)}) rotate(${(frac * 360).toFixed(1)})`);
+    $("#tmHalf").classList.toggle("on", !!tgt && frac >= .5);
+    $("#tmSub").textContent = tgt ? (t.running ? "übrig" : "Pause") : "gelesen";
+    if (!$("#tmTicks").childElementCount) $("#tmTicks").innerHTML = Array.from({ length: 60 }, (_, i) => { const r1 = i % 5 ? 95 : 92, aa = (i * 6 - 90) * Math.PI / 180; return `<path d="M${(100 + r1 * Math.cos(aa)).toFixed(1)} ${(100 + r1 * Math.sin(aa)).toFixed(1)}L${(100 + 98 * Math.cos(aa)).toFixed(1)} ${(100 + 98 * Math.sin(aa)).toFixed(1)}"${i % 5 ? "" : ' class="maj"'}/>`; }).join("");
     const msg = !t.running ? "Pause – tippe auf „Weiter“, wenn du weiterliest." : tgt ? TM_MSG.filter(([f]) => frac >= f).pop()[1] : `Freies Lesen – schon ${Math.floor(el / 60000)} Min. 📖`;
     if ($("#tmMsg").textContent !== msg) { $("#tmMsg").textContent = msg; $("#tmMsg").classList.remove("pop"); void $("#tmMsg").offsetWidth; $("#tmMsg").classList.add("pop"); }
     if (tgt && el >= tgt && t.running) tmFinish(true);
@@ -599,6 +617,6 @@
     if (tab === "sammlung") renderSammlung();
   }
   if (hadOld) save();
-  render(); tmLoop();
+  render(); tmLoop(); if (state.profile) checkPieces();
   if (!state.profile) openSetup();
 })();
