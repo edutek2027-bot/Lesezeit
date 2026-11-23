@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <div class="app">
@@ -38,6 +38,24 @@
         <div class="ring-num"><b id="ringVal">0</b><span id="ringOf">von 10 Seiten</span></div>
       </section>
       <button class="big" id="readBtn">📖 Ich habe gelesen</button>
+      <section class="card timer-card" id="timerCard">
+        <div class="tm-head"><span class="tm-title">⏱ Lese-Timer</span><button class="tm-book" id="tmBook" type="button"></button></div>
+        <div class="tm-idle" id="tmIdle">
+          <div class="chips tm-chips" id="tmChips"></div>
+          <button class="btn tm-start" id="tmStart" type="button">▶ Los</button>
+        </div>
+        <div class="tm-run" id="tmRun" hidden>
+          <svg class="tm-thread" id="tmSvg" viewBox="0 0 300 64" aria-hidden="true">
+            <path class="tm-guide" id="tmGuide" d="M8 40C40 14 70 58 100 34S160 12 196 38 256 56 292 26"/>
+            <path class="tm-done" id="tmLine" d="M8 40C40 14 70 58 100 34S160 12 196 38 256 56 292 26"/>
+            <g class="tm-knot" id="tmHalf"><circle r="6"/></g>
+            <g class="tm-needle" id="tmNeedle"><path d="M-2 -1.6L14 -.8Q18 0 14 .8L-2 1.6Z"/><ellipse cx="0" cy="0" rx="2" ry=".6"/></g>
+          </svg>
+          <div class="tm-time" id="tmTime">20:00</div>
+          <p class="tm-msg" id="tmMsg">Los geht’s – viel Spaß beim Lesen!</p>
+          <div class="tm-btns"><button class="btn" id="tmPause" type="button">⏸ Pause</button><button class="btn tm-stop" id="tmStop" type="button">■ Fertig</button></div>
+        </div>
+      </section>
       <section class="card week-card">
         <svg class="week" id="week" viewBox="0 0 350 78" role="img" aria-label="Die letzten 7 Tage"></svg>
       </section>
@@ -97,6 +115,7 @@
   <!-- Eintragen -->
   <dialog id="logDlg" class="sheet">
     <form method="dialog" id="logForm">
+      <div class="book-chips" id="logBooks"></div>
       <p class="small" id="logBook"></p>
       <h2 class="q" id="logQ">Wie viele Seiten hast du gelesen?</h2>
       <div class="step"><button type="button" data-step="-1" aria-label="weniger">−</button><label class="v"><input id="stepIn" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Anzahl"><small id="stepUnit">Seiten</small></label><button type="button" data-step="1" aria-label="mehr">+</button></div>
@@ -147,6 +166,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

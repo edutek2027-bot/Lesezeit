@@ -12,7 +12,12 @@
 
   let state;
   try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch { state = null; }
-  state ||= { profile: null, book: null, finished: [], sessions: [], seen: [] };
+  state ||= { profile: null, books: [], finished: [], sessions: [], seen: [] };
+  // früher gab es nur ein Buch → in die Liste übernehmen
+  state.books ||= [];
+  const hadOld = "book" in state;
+  if (state.book) { state.books.push(state.book); state.curId = state.book.id; }
+  delete state.book;
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
 
   // ---------- Ziel & Zahlen ----------
@@ -29,6 +34,10 @@
     let n = 0; while (dayRead(dateKey(d))) { n++; d = addDays(d, -1); }
     return n;
   }
+
+  const bookById = (id) => state.books.find((b) => b.id === id) || null;
+  const cur = () => bookById(state.curId) || state.books[0] || null;
+  const pctOf = (b) => (b.pages ? Math.max(0, Math.min(100, Math.round(((b.page - (b.start || 0)) / Math.max(1, b.pages - (b.start || 0))) * 100))) : 0);
 
   // ---------- Kleine Helfer ----------
   let toastT;
@@ -124,31 +133,39 @@
     const k = dateKey(), last = [...state.sessions].reverse().find((s) => s.date === k);
     if (!last || !confirm("Den letzten Eintrag von heute löschen?")) return;
     state.sessions = state.sessions.filter((s) => s !== last);
-    if (state.book && last.bookId === state.book.id && last.pages) state.book.page = Math.max(state.book.start || 0, state.book.page - last.pages);
+    const lb = bookById(last.bookId); if (lb && last.pages) lb.page = Math.max(lb.start || 0, lb.page - last.pages);
     save(); render(); toast("Eintrag gelöscht.");
   });
 
   // ---------- Eintragen ----------
   const PAGE_CHIPS = [5, 10, 15, 20], MIN_CHIPS = [10, 15, 20, 30];
-  let stepV = 0, optV = 0;
-  function openLog() {
-    if (!state.book && isPages()) { toast("Leg zuerst dein Buch an. 📖"); openBook(); return; }
-    stepV = 0; optV = 0;
-    const b = state.book;
-    $("#logBook").textContent = b ? `${b.title} · zuletzt Seite ${b.page}` : "Ohne bestimmtes Buch";
+  let stepV = 0, optV = 0, logBookId = null, fromTimer = 0;
+  function openLog(pre = {}) {
+    if (!state.books.length && isPages()) { toast("Leg zuerst dein Buch an. 📖"); openBook(); return; }
+    stepV = 0; optV = 0; fromTimer = pre.minutes || 0;
+    if (fromTimer) { if (isPages()) optV = fromTimer; else stepV = fromTimer; }
+    logBookId = (pre.bookId && bookById(pre.bookId) ? pre.bookId : cur()?.id) || null;
+    logHead();
     $("#logQ").textContent = isPages() ? "Wie viele Seiten hast du gelesen?" : "Wie lange hast du gelesen?";
+    const b = bookById(logBookId);
     $("#optLbl").innerHTML = isPages() ? "Wie lange? <span>(nicht nötig)</span>" : b ? "Wie viele Seiten? <span>(nicht nötig)</span>" : "";
     $("#optLbl").hidden = !isPages() && !b;
     renderLog(); $("#logDlg").showModal();
   }
+  function logHead() {
+    const b = bookById(logBookId);
+    $("#logBooks").innerHTML = state.books.length > 1 ? state.books.map((x) => `<button type="button" class="bchip ${x.id === logBookId ? "on" : ""}" data-logbook="${x.id}">${esc(x.title)}</button>`).join("") : "";
+    $("#logBook").textContent = (b ? `${b.title} · zuletzt Seite ${b.page}` : "Ohne bestimmtes Buch") + (fromTimer ? ` · ⏱ ${fromTimer} Min. gelesen` : "");
+  }
   function renderLog() {
-    const b = state.book, main = isPages() ? PAGE_CHIPS : MIN_CHIPS, opt = isPages() ? MIN_CHIPS : PAGE_CHIPS;
+    const b = bookById(logBookId), main = isPages() ? PAGE_CHIPS : MIN_CHIPS, opt = isPages() ? MIN_CHIPS : PAGE_CHIPS;
     const sv = $("#stepIn");
     if (document.activeElement !== sv && sv.value !== String(stepV)) { sv.value = stepV; sv.classList.remove("bump"); void sv.offsetWidth; sv.classList.add("bump"); }
     $("#stepUnit").textContent = unit(stepV);
     $("#mainChips").innerHTML = main.map((n) => `<button type="button" class="chip ${n === stepV ? "on" : ""}" data-main="${n}">${n}${isPages() ? "" : " Min"}</button>`).join("");
     $("#optChips").hidden = !isPages() && !b;
-    $("#optChips").innerHTML = opt.map((n) => `<button type="button" class="chip ${n === optV ? "on" : ""}" data-opt="${n}">${n}${isPages() ? " Min" : ""}</button>`).join("");
+    const optList = optV && !opt.includes(optV) ? [...opt.slice(0, 3), optV] : opt;
+    $("#optChips").innerHTML = optList.map((n) => `<button type="button" class="chip ${n === optV ? "on" : ""}" data-opt="${n}">${n}${isPages() ? " Min" : ""}</button>`).join("");
     const pages = isPages() ? stepV : optV, k = dateKey(), after = dayValue(k) + stepV;
     let note = "";
     if (b && pages) {
@@ -163,7 +180,9 @@
     if (s) stepV = Math.max(0, Math.min(999, stepV + +s.dataset.step));
     if (m) stepV = +m.dataset.main;
     if (o) optV = optV === +o.dataset.opt ? 0 : +o.dataset.opt;
-    if (s || m || o) renderLog();
+    const lbk = e.target.closest("[data-logbook]");
+    if (lbk) { logBookId = lbk.dataset.logbook; logHead(); }
+    if (s || m || o || lbk) renderLog();
   });
   // langes Drücken auf +/− zählt schneller
   let holdT;
@@ -182,7 +201,8 @@
     e.preventDefault();
     if (!stepV) { toast(isPages() ? "Wie viele Seiten? Tippe auf eine Zahl." : "Wie lange? Tippe auf eine Zahl."); return; }
     const pagesIn = isPages() ? stepV : optV, minutes = isPages() ? optV : stepV, k = dateKey(), before = dayValue(k), wasRead = dayRead(k);
-    const b = state.book;
+    const b = bookById(logBookId);
+    if (b) state.curId = b.id; // zuletzt gelesenes Buch merken
     let pages = pagesIn, finished = false;
     if (b && pages) {
       const to = b.pages ? Math.min(b.pages, b.page + pages) : b.page + pages;
@@ -196,36 +216,41 @@
     if (before < goal() && after >= goal()) celebrate("knot", "Knoten geknüpft!", `${after} ${unit(after)} heute – dein Tagesziel ist geschafft. Der Knoten für heute ist grün.`);
     else if (!wasRead) toast(`✓ Eingetragen. ${streak() > 1 ? `${streak()} Tage in Folge! 🔥` : "Guter Start!"}`);
     else toast("✓ Eingetragen.");
-    if (finished) finishBook(true);
+    if (finished) finishBook(true, b.id);
     checkStickers(); render();
   });
 
   // ---------- 2 · Mein Buch ----------
   function renderBuch() {
-    const b = state.book, area = $("#bookArea");
+    const b = cur(), area = $("#bookArea");
     if (!b) {
       area.innerHTML = `<section class="card empty-book"><div class="ico">📚</div><p class="quote">Welches Buch liest du gerade?</p><button class="big" id="newBookBtn">Buch eintragen</button></section>`;
       return;
     }
-    const pct = b.pages ? Math.round(((b.page - (b.start || 0)) / Math.max(1, b.pages - (b.start || 0))) * 100) : 0;
-    area.innerHTML = `
+    const pct = pctOf(b);
+    const shelf = `<div class="my-books">${state.books.map((x) => `<button class="mb ${x.id === b.id ? "on" : ""}" data-pick="${x.id}"><span class="mb-cover">${esc(x.title.trim()[0]?.toUpperCase() || "📖")}</span><span class="mb-t">${esc(x.title)}</span><span class="mb-bar"><i style="width:${pctOf(x)}%"></i></span></button>`).join("")}<button class="mb add" id="newBookBtn"><span class="mb-cover">＋</span><span class="mb-t">Buch dazu</span></button></div>`;
+    area.innerHTML = `${shelf}
       <section class="card book"><div class="cover">${esc(b.title.trim()[0]?.toUpperCase() || "📖")}</div>
         <div><h2>${esc(b.title)}</h2><p class="small">${b.pages ? `Seite ${b.page} von ${b.pages}` : `Seite ${b.page}`}</p>
-        ${b.pages ? `<div class="bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div><p class="small">${pct} % gelesen</p>` : ""}</div></section>
+        ${b.pages ? `<div class="bar"><i style="width:${pct}%"></i></div><p class="small">${pct} % gelesen</p>` : ""}</div></section>
+      <div class="book-actions"><button class="btn" id="editBookBtn">✎ Bearbeiten</button><button class="btn" id="doneBtn">🏁 Fertig</button><button class="btn danger" id="delBookBtn">🗑 Entfernen</button></div>
       <section class="card"><p class="small" style="margin-bottom:6px">Mein Lieblingssatz</p>
         <p class="quote ${b.quote ? "" : "empty"}" id="quoteText">${b.quote ? `„${esc(b.quote)}“` : "Noch keiner. Welcher Satz ist dir hängen geblieben?"}</p>
         <div class="add-row"><input id="quoteIn" maxlength="200" placeholder="Satz aus dem Buch …"><button id="quoteSave" type="button">${b.quote ? "Ändern" : "＋"}</button></div></section>
       <section class="card"><p class="small" style="margin-bottom:8px">Neue Wörter (${(b.words || []).length})</p>
         <div class="words">${(b.words || []).map((w, i) => `<button class="word" data-delw="${i}" aria-label="${esc(w)} löschen">${esc(w)}<b>×</b></button>`).join("") || `<span class="small">Ein Wort, das du nicht kanntest? Schreib es auf.</span>`}</div>
-        <div class="add-row"><input id="wordIn" maxlength="30" placeholder="neues Wort" autocomplete="off"><button id="wordAdd" type="button">＋</button></div></section>
-      <button class="card card-row" id="doneBtn"><span>Buch fertig gelesen?</span><span style="font-size:24px">🏁</span></button>
-      <button class="link" id="editBookBtn">Buch ändern (Titel, Seiten)</button>`;
+        <div class="add-row"><input id="wordIn" maxlength="30" placeholder="neues Wort" autocomplete="off"><button id="wordAdd" type="button">＋</button></div></section>`;
   }
   $("#bookArea").addEventListener("click", (e) => {
-    const b = state.book;
+    const b = cur();
+    const pk = e.target.closest("[data-pick]");
+    if (pk) { state.curId = pk.dataset.pick; save(); render(); return; }
     if (e.target.closest("#newBookBtn")) openBook();
     if (e.target.closest("#editBookBtn")) openBook(true);
-    if (e.target.closest("#doneBtn") && confirm(`„${b.title}“ wirklich fertig gelesen?`)) finishBook(false);
+    if (e.target.closest("#doneBtn") && confirm(`„${b.title}“ wirklich fertig gelesen?`)) finishBook(false, b.id);
+    if (e.target.closest("#delBookBtn") && confirm(`„${b.title}“ aus deiner Liste entfernen? Deine gelesenen Seiten bleiben in der Statistik.`)) {
+      state.books = state.books.filter((x) => x.id !== b.id); state.curId = state.books[0]?.id || null; save(); render(); toast("Buch entfernt.");
+    }
     if (e.target.closest("#quoteSave")) { const v = $("#quoteIn").value.trim(); if (v) { b.quote = v.replace(/^[„"“]|[“"”]$/g, ""); save(); checkStickers(); render(); toast("Lieblingssatz gespeichert 💬"); } }
     if (e.target.closest("#wordAdd")) addWord();
     const dw = e.target.closest("[data-delw]");
@@ -238,14 +263,14 @@
   });
   function addWord() {
     const v = $("#wordIn").value.trim(); if (!v) return;
-    const b = state.book; b.words ||= [];
+    const b = cur(); b.words ||= [];
     if (b.words.some((w) => w.toLowerCase() === v.toLowerCase())) { toast("Das Wort hast du schon."); return; }
     b.words.push(v); save(); checkStickers(); render(); $("#wordIn")?.focus(); toast("Wort gespeichert 🔤");
   }
   let editingBook = false;
   function openBook(edit = false) {
-    editingBook = edit && !!state.book;
-    const b = editingBook ? state.book : null;
+    editingBook = edit && !!cur();
+    const b = editingBook ? cur() : null;
     $("#bookDlgTitle").textContent = b ? "Buch ändern" : "Welches Buch liest du?";
     $("#bTitle").value = b?.title || ""; $("#bPages").value = b?.pages || ""; $("#bPage").value = b ? b.page : "";
     $("#bookDlg").showModal();
@@ -256,16 +281,16 @@
     const title = $("#bTitle").value.trim(); if (!title) return;
     const pages = parseInt($("#bPages").value) || null;
     let page = Math.max(0, parseInt($("#bPage").value) || 0); if (pages) page = Math.min(page, pages);
-    if (editingBook) Object.assign(state.book, { title, pages, page }); // Korrektur, zählt nicht als gelesen
-    else state.book = { id: uid(), title, pages, page, start: page, began: dateKey(), words: [], quote: "" };
+    if (editingBook) Object.assign(cur(), { title, pages, page }); // Korrektur, zählt nicht als gelesen
+    else { const nb = { id: uid(), title, pages, page, start: page, began: dateKey(), words: [], quote: "" }; state.books.push(nb); state.curId = nb.id; }
     save(); $("#bookDlg").close(); render();
-    toast(editingBook ? "Gespeichert ✓" : `📖 „${title}“ ist dein Buch.`);
+    toast(editingBook ? "Gespeichert ✓" : state.books.length > 1 ? `📖 „${title}“ liest du jetzt auch.` : `📖 „${title}“ ist dein Buch.`);
   });
-  function finishBook(auto) {
-    const b = state.book; if (!b) return;
+  function finishBook(auto, id) {
+    const b = bookById(id) || cur(); if (!b) return;
     state.finished.push({ title: b.title, pages: b.pages, end: dateKey(), began: b.began, words: (b.words || []).length, quote: b.quote || "" });
-    state.book = null; save();
-    celebrate("🏁", "Buch fertig!", `„${b.title}“ steht jetzt in deinem Regal. Welches Buch kommt als Nächstes?`);
+    state.books = state.books.filter((x) => x.id !== b.id); state.curId = state.books[0]?.id || null; save();
+    celebrate("🏁", "Buch fertig!", `„${b.title}“ steht jetzt in deinem Regal.${state.books.length ? "" : " Welches Buch kommt als Nächstes?"}`);
     checkStickers(); render();
     if (!auto) show("sammlung");
   }
@@ -282,11 +307,11 @@
     ["book1", "📗", "Erstes Buch fertig", () => state.finished.length >= 1],
     ["book3", "🏆", "3 Bücher fertig", () => state.finished.length >= 3],
     ["words5", "🔤", "5 neue Wörter", () => allWords() >= 5],
-    ["quote", "💬", "Lieblingssatz", () => !!state.book?.quote || state.finished.some((f) => f.quote)],
+    ["quote", "💬", "Lieblingssatz", () => state.books.some((b) => b.quote) || state.finished.some((f) => f.quote)],
     ["night", "🌙", "Nachteule", () => state.sessions.some((s) => s.hour >= 20)],
     ["early", "🌅", "Frühaufsteher", () => state.sessions.some((s) => s.hour != null && s.hour < 8)],
   ];
-  const allWords = () => (state.book?.words || []).length + state.finished.reduce((a, f) => a + (f.words || 0), 0);
+  const allWords = () => state.books.reduce((a, b) => a + (b.words || []).length, 0) + state.finished.reduce((a, f) => a + (f.words || 0), 0);
   function checkStickers() {
     checkPieces();
     state.seen ||= [];
@@ -501,11 +526,79 @@
   });
 
   $("#readBtn").addEventListener("click", openLog);
+  // ---------- Lese-Timer (Startseite) ----------
+  // Läuft weiter, auch wenn die App kurz geschlossen wird. Faden und Nadel wandern mit, bei der Hälfte gibt es einen Knoten.
+  const TM_CHIPS = [10, 15, 20, 30, 0]; // 0 = frei (ohne Ende)
+  let tmTick = null, tmPick = null;
+  const tmElapsed = () => { const t = state.timer; return t ? t.acc + (t.running ? Date.now() - t.startedAt : 0) : 0; };
+  const mmss = (ms) => { const s0 = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s0 / 60)}:${pad(s0 % 60)}`; };
+  const TM_MSG = [[0, "Los geht’s – viel Spaß beim Lesen! 📖"], [.25, "Gut drin! Seite für Seite …"], [.5, "Halbzeit – ein Knoten ist schon geknüpft! 🧵"], [.75, "Endspurt! Gleich geschafft. 💪"], [.92, "Nur noch ein paar Zeilen …"]];
+  function renderTimer() {
+    const t = state.timer, b = bookById(t?.bookId) || cur();
+    $("#tmBook").textContent = b ? `📖 ${b.title}${state.books.length > 1 && !t ? " ⇄" : ""}` : "";
+    $("#tmBook").disabled = !!t || state.books.length < 2;
+    $("#tmIdle").hidden = !!t; $("#tmRun").hidden = !t;
+    $("#timerCard").classList.toggle("running", !!t?.running);
+    if (!t) {
+      tmPick ??= isPages() ? 20 : goal();
+      $("#tmChips").innerHTML = TM_CHIPS.map((n) => `<button type="button" class="chip ${n === tmPick ? "on" : ""}" data-tm="${n}">${n ? n + " Min" : "frei"}</button>`).join("");
+      return;
+    }
+    const el = tmElapsed(), tgt = t.target * 60000, frac = tgt ? Math.min(1, el / tgt) : (el % 600000) / 600000;
+    $("#tmTime").textContent = tgt ? mmss(tgt - el) : mmss(el);
+    $("#tmTime").classList.toggle("up", !tgt);
+    $("#tmPause").textContent = t.running ? "⏸ Pause" : "▶ Weiter";
+    const line = $("#tmLine"), L = line.getTotalLength();
+    line.style.strokeDasharray = `${(L * frac).toFixed(1)} ${L}`;
+    const pt = line.getPointAtLength(L * frac), pt2 = line.getPointAtLength(Math.min(L, L * frac + 1));
+    const ang = Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * 180 / Math.PI;
+    $("#tmNeedle").setAttribute("transform", `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)}) rotate(${ang.toFixed(0)})`);
+    const hp = line.getPointAtLength(L * .5);
+    $("#tmHalf").setAttribute("transform", `translate(${hp.x.toFixed(1)} ${hp.y.toFixed(1)})`);
+    $("#tmHalf").classList.toggle("on", tgt && frac >= .5);
+    const msg = !t.running ? "Pause – tippe auf „Weiter“, wenn du weiterliest." : tgt ? TM_MSG.filter(([f]) => frac >= f).pop()[1] : `Freies Lesen – schon ${Math.floor(el / 60000)} Min. 📖`;
+    if ($("#tmMsg").textContent !== msg) { $("#tmMsg").textContent = msg; $("#tmMsg").classList.remove("pop"); void $("#tmMsg").offsetWidth; $("#tmMsg").classList.add("pop"); }
+    if (tgt && el >= tgt && t.running) tmFinish(true);
+  }
+  function tmLoop() { clearInterval(tmTick); if (state.timer?.running) tmTick = setInterval(() => { if (tab === "lesen") renderTimer(); else if (tmElapsed() >= (state.timer?.target || 1e9) * 60000) renderTimer(); }, 500); }
+  $("#tmChips").addEventListener("click", (e) => { const c = e.target.closest("[data-tm]"); if (c) { tmPick = +c.dataset.tm; renderTimer(); } });
+  $("#tmBook").addEventListener("click", () => {
+    if (state.timer || state.books.length < 2) return;
+    const i = state.books.findIndex((b) => b.id === cur()?.id); state.curId = state.books[(i + 1) % state.books.length].id; save(); renderTimer();
+  });
+  $("#tmStart").addEventListener("click", () => {
+    if (!state.books.length && isPages()) { toast("Leg zuerst dein Buch an. 📖"); openBook(); return; }
+    state.timer = { startedAt: Date.now(), acc: 0, running: true, target: tmPick ?? 20, bookId: cur()?.id || null };
+    save(); renderTimer(); tmLoop(); try { navigator.vibrate?.(30); } catch {}
+  });
+  $("#tmPause").addEventListener("click", () => {
+    const t = state.timer; if (!t) return;
+    if (t.running) { t.acc += Date.now() - t.startedAt; t.running = false; } else { t.startedAt = Date.now(); t.running = true; }
+    save(); renderTimer(); tmLoop();
+  });
+  $("#tmStop").addEventListener("click", () => tmFinish(false));
+  function chime() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)(), now = ac.currentTime;
+      [523.25, 659.25, 783.99].forEach((f, i) => { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = f; o.type = "sine"; g.gain.setValueAtTime(0, now + i * .18); g.gain.linearRampToValueAtTime(.18, now + i * .18 + .02); g.gain.exponentialRampToValueAtTime(.001, now + i * .18 + .9); o.connect(g).connect(ac.destination); o.start(now + i * .18); o.stop(now + i * .18 + 1); });
+    } catch {}
+    try { navigator.vibrate?.([120, 80, 120]); } catch {}
+  }
+  function tmFinish(auto) {
+    const t = state.timer; if (!t) return;
+    const ms = auto ? t.target * 60000 : tmElapsed(), minutes = Math.round(ms / 60000);
+    state.timer = null; save(); clearInterval(tmTick); renderTimer();
+    if (ms < 60000) { toast("Unter einer Minute – das zählt noch nicht. 😉"); return; }
+    if (auto) { chime(); toast(`⏱ ${minutes} Min. geschafft! Wie viele Seiten waren es?`); }
+    openLog({ minutes, bookId: t.bookId });
+  }
+
   function render() {
-    if (tab === "lesen") renderLesen();
+    if (tab === "lesen") { renderLesen(); renderTimer(); }
     if (tab === "buch") renderBuch();
     if (tab === "sammlung") renderSammlung();
   }
-  render();
+  if (hadOld) save();
+  render(); tmLoop();
   if (!state.profile) openSetup();
 })();
