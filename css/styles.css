@@ -400,7 +400,11 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 
 /* ---------- Aktuelle Bücher ---------- */
 .current-list { display: grid; gap: .3rem; }
-.current { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: .9rem; align-items: center; padding: .6rem .4rem; border-radius: 6px; transition: background .2s; cursor: pointer; border: 0; background: none; text-align: left; width: 100%; }
+.current { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: .9rem; align-items: center; padding: .6rem .4rem; border-radius: 6px; transition: background .2s; text-align: left; width: 100%; }
+.current .mini-cover { border: 0; cursor: pointer; }
+.current-main { border: 0; background: none; padding: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; min-width: 0; }
+.current-side { display: grid; justify-items: end; gap: .4rem; }
+.btn.small { padding: .35rem .7rem; font-size: .8rem; min-height: 0; }
 .current + .current { border-top: 1px solid var(--rule); border-radius: 0; }
 .current:hover { background: var(--paper); }
 .current h3 { font-size: 1.3rem; margin: 0; }
@@ -412,7 +416,7 @@ main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto;
 .since { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 40%, transparent); padding: .2rem .5rem; border-radius: 4px; white-space: nowrap; }
 .empty { text-align: center; padding: 1.4rem 1rem; color: var(--ink-soft); }
 .empty .em { font-family: var(--font-read); font-size: 1.1rem; display: block; color: var(--ink); margin-bottom: .2rem; }
-@media (max-width: 520px) { .current { grid-template-columns: 44px minmax(0, 1fr); } .current .since { grid-column: 2; justify-self: start; } }
+@media (max-width: 520px) { .current { grid-template-columns: 44px minmax(0, 1fr); } .current-side { grid-column: 2; grid-auto-flow: column; justify-content: space-between; align-items: center; } }
 
 /* ---------- Wochen-Diagramm ---------- */
 .bars { display: flex; align-items: flex-end; gap: .55rem; height: 170px; padding-top: 1.3rem; border-bottom: 1px solid var(--ink); }
@@ -799,3 +803,12 @@ body.intro-on { overflow: hidden; }
 .patch-svg.knit.perfect .k-line { stroke: var(--gold); stroke-width: 2.6; }
 .patch-svg.knit.still .k-goal, .patch-svg.knit.still .k-read, .patch-svg.knit.still .k-miss { animation: none; opacity: 1; }
 .q-cell em { display: block; font-style: normal; font-size: .62rem; color: var(--ink-soft); }
+/* Seiten eintragen: gemeinsamer Baustein */
+.page-pair { display: grid; gap: .35rem; }
+.pp-last { margin: 0; font-family: var(--font-mono); font-size: .74rem; letter-spacing: .04em; color: var(--ink-soft); }
+.pp-last:empty, .pp-calc:empty { display: none; }
+.pp-calc { margin: 0; font-size: .88rem; }
+.pp-calc.ok { color: var(--green); font-weight: 700; }
+.pp-calc.warn { color: color-mix(in srgb, var(--gold) 70%, var(--ink)); font-weight: 700; }
+.finish-pages .page-pair input { font-size: 1.15rem; font-weight: 700; }
+.field[hidden] { display: none !important; }

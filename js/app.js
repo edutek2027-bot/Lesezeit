@@ -289,15 +289,15 @@
     const cur = state.books.filter((b) => b.status === "lesen");
     $("#currentList").innerHTML = cur.length
       ? cur.map((b) => `
-        <button class="current" data-edit="${b.id}">
-          <div class="mini-cover" style="--c:${coverColor(b.title)}">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</div>
-          <div>
+        <div class="current">
+          <button type="button" class="mini-cover" data-edit="${b.id}" style="--c:${coverColor(b.title)}" aria-label="${esc(t("Buch bearbeiten"))}">${b.emoji || GENRE_EMOJI[b.genre] || "📘"}</button>
+          <button type="button" class="current-main" data-edit="${b.id}">
             <h3>${esc(b.title)}</h3>
             <p>${esc(b.author || t("Unbekannt"))} · ${b.pages ? t("Seite {a} von {b}", { a: b.currentPage || 0, b: b.pages }) : t("Seitenzahl offen")} · ${t("{d} gelesen", { d: fmtDuration(bookMinutes(b.id)) })}</p>
             <div class="progress"><i data-w="${pct(b)}"></i></div>
-          </div>
-          <span class="since">${esc(sinceText(b))}</span>
-        </button>`).join("")
+          </button>
+          <div class="current-side"><span class="since">${esc(sinceText(b))}</span><button type="button" class="btn small" data-pages="${b.id}">＋ ${esc(t("Seiten"))}</button></div>
+        </div>`).join("")
       : `<div class="empty"><span class="em">${t("Gerade kein Buch auf dem Nachttisch.")}</span><button class="link" data-nav="entdecken">${t("Empfehlungen ansehen →")}</button></div>`;
     animateProgress($("#currentList"));
 
@@ -1028,6 +1028,7 @@
     $("#fPages").value = b?.pages || "";
     $("#fCurrent").value = b?.currentPage || 0;
     $("#fFirst").value = firstPage(b);
+    $("#fCurrentHint").hidden = !b;
     $("#fStatus").value = b?.status || "lesen";
     $("#fGenre").value = b?.genre || (group() === "kinder" ? "Kinderbuch" : group() === "jugend" ? "Jugendbuch" : "Roman");
     $("#fStart").value = b?.startDate || dateKey();
@@ -1078,11 +1079,15 @@
     if (!data.title) return;
     if (editingId) {
       const b = bookById(editingId);
-      const wasDone = b.status === "gelesen";
+      const wasDone = b.status === "gelesen", before = Math.max(b.currentPage || 0, firstPage(b) - 1);
+      const readOn = status === "lesen" && data.currentPage > before ? data.currentPage : null;
+      if (readOn != null) data.currentPage = before; // die neuen Seiten trägt logSession unten ein
       Object.assign(b, data, { updated: Date.now() });
       if (status === "gelesen" && !wasDone) { b.endDate = dateKey(); if (b.pages) b.currentPage = b.pages; celebrateFinish(b); }
       if (status !== "gelesen") b.endDate = null;
-      save(); checkBadges(); toast(t("Gespeichert ✓"));
+      save();
+      if (readOn != null) { bookDialog.close(); logSession({ bookId: b.id, minutes: 0, toPage: readOn }); fillBookSelects(); return; }
+      checkBadges(); toast(t("Gespeichert ✓"));
     } else {
       const b = addBook({ ...data, endDate: status === "gelesen" ? dateKey() : null });
       if (status === "gelesen") celebrateFinish(b); else toast("📚 " + t("„{t}“ steht jetzt in deinem Regal.", { t: b.title }));
@@ -1091,15 +1096,51 @@
   });
   function celebrateFinish(b) { confetti(); toast("🎉 " + t("„{t}“ ausgelesen – Glückwunsch!", { t: b.title })); }
 
+  // ---------- Seiten eintragen: überall gleich ----------
+  // Zwei verbundene Felder: „Gelesene Seiten“ und „Jetzt auf Seite“. Eines ausfüllen, das andere rechnet sich selbst.
+  // Gespeichert wird immer über logSession → Buch (aktuelle Seite), Heute, Lesefaden und Statistik bleiben gleich.
+  function pagePair(px, getBook) {
+    const rd = $("#" + px + "Read"), to = $("#" + px + "To"), last = $("#" + px + "Last"), calc = $("#" + px + "Calc");
+    const clampTo = (b, v) => (b.pages ? Math.min(b.pages, v) : v);
+    const sync = (src) => {
+      const b = getBook(), from = b ? Math.max(b.currentPage || 0, firstPage(b) - 1) : 0;
+      to.closest(".field").hidden = !b;
+      calc.classList.remove("warn", "ok"); calc.textContent = "";
+      if (!b) { last.textContent = ""; return; }
+      last.textContent = b.pages ? t("Zuletzt gelesen: Seite {n} von {m}", { n: from, m: b.pages }) : t("Zuletzt gelesen: Seite {n}", { n: from });
+      to.placeholder = t("z. B. {n}", { n: clampTo(b, from + 10) });
+      if (src === "read") to.value = rd.value === "" ? "" : clampTo(b, from + Math.max(0, parseInt(rd.value) || 0));
+      if (src === "to") rd.value = to.value === "" ? "" : Math.max(0, clampTo(b, parseInt(to.value) || 0) - from);
+      if (to.value === "") return;
+      const tv = clampTo(b, parseInt(to.value) || 0);
+      if (tv < from) { calc.textContent = t("Seite {b} liegt vor deiner letzten Seite ({a}). Dann wird nur die Seite korrigiert.", { a: from, b: tv }); calc.classList.add("warn"); }
+      else if (b.pages && tv >= b.pages) { calc.textContent = t("Damit ist das Buch fertig! 🎉"); calc.classList.add("ok"); }
+    };
+    rd.addEventListener("input", () => sync("read"));
+    to.addEventListener("input", () => sync("to"));
+    return {
+      refresh() { rd.value = ""; to.value = ""; sync(); },
+      // für logSession: mit Buch zählt die Seite, ohne Buch die Anzahl
+      value() {
+        const b = getBook(), tv = parseInt(to.value), r = parseInt(rd.value);
+        if (b && Number.isFinite(tv)) return { toPage: tv };
+        if (Number.isFinite(r) && r > 0) return b ? { toPage: Math.max(b.currentPage || 0, firstPage(b) - 1) + r } : { pagesRead: r };
+        return {};
+      },
+      readCount() { const r = parseInt(rd.value); return Number.isFinite(r) ? r : 0; },
+      focus() { (getBook() ? to : rd).focus(); },
+    };
+  }
+  const hasPages = (pv) => Number.isFinite(pv.toPage) || pv.pagesRead > 0;
+
   // ---------- Timer ----------
   let preset = 20, tickHandle = null, booting = true; // während des Intros keine Dialoge öffnen
   const CIRC = 578;
   function fillBookSelects() {
-    const reading = state.books.filter((b) => b.status === "lesen");
+    const reading = state.books.filter((b) => b.status === "lesen").sort((a, b) => (b.updated || 0) - (a.updated || 0));
     const opts = reading.map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("") + `<option value="">${t("Ohne bestimmtes Buch")}</option>`;
     for (const sel of [$("#timerBook"), $("#manualBook")]) {
-      const v = sel.value; sel.innerHTML = opts;
-      if (v && [...sel.options].some((o) => o.value === v)) sel.value = v;
+      sel.innerHTML = opts; // immer das zuletzt benutzte Buch vorauswählen
     }
     if (state.timer?.bookId != null) $("#timerBook").value = state.timer.bookId;
     $("#manualBook").dispatchEvent(new Event("change"));
@@ -1207,52 +1248,21 @@
       + (patchOk ? " " + t("Damit flickst du {day}.", { day: longDay(tm.patchFor) }) : pendingSession.patchCandidate ? " " + t("Mit mindestens {len} flickst du {day}.", { len: goalLen(goalPg()), day: longDay(tm.patchFor) }) : tm.patchFor ? " " + t("Zum Flicken fehlten {len}, das zählt für heute.", { len: goalLen(goalMin() - minutes) }) : "");
     $("#finishStampMin").textContent = t("{n} Min.", { n: minutes });
     $("#finishNote").value = ""; $("#finishWord").value = "";
-    finishBook = b; finishMode = b ? "page" : "count";
-    $("#finishPage").value = "";
-    renderFinishPages();
+    finishBook = b;
+    finishPair.refresh();
     $("#finishDialog").showModal();
+    setTimeout(() => finishPair.focus(), 50);
   }
-  // Seiten nach dem Lesen: aktuelle Seite (mit Live-Rechnung) oder direkt die Zahl gelesener Seiten
-  let finishBook = null, finishMode = "page";
-  function renderFinishPages() {
-    const b = finishBook, from = b ? b.currentPage || 0 : 0;
-    $("#finishPageLbl").textContent = finishMode === "page" ? t("Auf welcher Seite bist du jetzt?") : t("Wie viele Seiten hast du gelesen?");
-    $("#finishPage").placeholder = finishMode === "page" ? t("z. B. {n}", { n: from + 10 }) : t("z. B. 12");
-    $("#finishMode").hidden = !b;
-    $("#finishMode").textContent = finishMode === "page" ? t("Stattdessen gelesene Seiten eingeben") : t("Stattdessen aktuelle Seite eingeben");
-    updateFinishCalc();
-  }
-  function updateFinishCalc() {
-    const b = finishBook, from = b ? b.currentPage || 0 : 0, raw = $("#finishPage").value.trim(), v = parseInt(raw);
-    const el = $("#finishCalc");
-    el.classList.remove("warn", "ok");
-    if (!b) { el.textContent = raw && v >= 0 ? t("{len} gelesen.", { len: tn(v, "{n} Seite", "{n} Seiten") }) : ""; if (raw) el.classList.add("ok"); return; }
-    if (finishMode === "count") {
-      if (!raw) { el.textContent = t("Zuletzt warst du auf Seite {n}.", { n: from }); return; }
-      const to = b.pages ? Math.min(b.pages, from + v) : from + v;
-      el.textContent = t("Neue aktuelle Seite: {n}.", { n: to }); el.classList.add("ok"); return;
-    }
-    if (!raw) { el.textContent = t("Zuletzt warst du auf Seite {n}.", { n: from }); return; }
-    const to = b.pages ? Math.min(b.pages, v) : v;
-    if (to < from) { el.textContent = t("Seite {b} liegt vor deiner letzten Seite ({a}). Stimmt das? Sonst gelesene Seiten direkt eingeben.", { a: from, b: to }); el.classList.add("warn"); return; }
-    const n = to - from;
-    el.textContent = t("Von Seite {a} bis {b}: {len} gelesen.", { a: from, b: to, len: tn(n, "{n} Seite", "{n} Seiten") }) + (b.pages && to >= b.pages ? " 🎉" : "");
-    el.classList.add(n ? "ok" : "warn");
-  }
-  $("#finishPage").addEventListener("input", updateFinishCalc);
-  $("#finishMode").addEventListener("click", () => { finishMode = finishMode === "page" ? "count" : "page"; $("#finishPage").value = ""; renderFinishPages(); $("#finishPage").focus(); });
+  let finishBook = null;
+  const finishPair = pagePair("finish", () => finishBook);
   function submitFinish() {
     if (pendingSession) {
-      const v = parseInt($("#finishPage").value);
+      const pv = finishPair.value();
       // Seitenziel + Flicken per Timer: erst jetzt steht fest, ob genug Seiten gelesen wurden
       const pc = pendingSession.patchCandidate; delete pendingSession.patchCandidate;
-      if (pc) {
-        const b0 = finishBook, from = b0 ? b0.currentPage || 0 : 0;
-        const read = finishBook && finishMode === "page" ? Math.max(0, (b0.pages ? Math.min(v, b0.pages) : v) - from) : v || 0;
-        if (read >= goalPg()) Object.assign(pendingSession, { date: pc, patched: true });
-      }
+      if (pc && finishPair.readCount() >= goalPg()) Object.assign(pendingSession, { date: pc, patched: true });
       const extra = { note: $("#finishNote").value, word: $("#finishWord").value };
-      logSession(finishBook && finishMode === "page" ? { ...pendingSession, ...extra, toPage: v } : { ...pendingSession, ...extra, pagesRead: v });
+      logSession({ ...pendingSession, ...extra, ...pv });
     }
     pendingSession = null; $("#finishDialog").close();
   }
@@ -1291,22 +1301,38 @@
   }
   $("#manualForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const minutes = Math.max(0, parseInt($("#manualMin").value) || 0);
-    const pgIn = parseInt($("#manualPage").value);
-    if (!minutes && !(pgIn > 0)) { toast(t("Bitte Seiten oder Minuten eintragen.")); return; }
+    const minutes = Math.max(0, parseInt($("#manualMin").value) || 0), pv = manualPair.value();
+    if (!minutes && !hasPages(pv)) { toast(t("Bitte Seiten oder Minuten eintragen.")); return; }
     const date = $("#manualDate").value || dateKey();
     if (date > dateKey()) { toast(t("Das Datum liegt in der Zukunft.")); return; }
-    const bookId = $("#manualBook").value, v = parseInt($("#manualPage").value);
-    const note = $("#manualNote").value;
-    logSession(bookById(bookId) ? { bookId, minutes, toPage: v, note, date } : { bookId, minutes, pagesRead: v, note, date });
-    $("#manualPage").value = ""; $("#manualNote").value = "";
+    logSession({ bookId: $("#manualBook").value, minutes, note: $("#manualNote").value, date, ...pv });
+    $("#manualMin").value = ""; $("#manualNote").value = ""; manualPair.refresh();
   });
 
-  $("#manualBook").addEventListener("change", () => {
-    const b = bookById($("#manualBook").value);
-    $("#manualPageLbl").textContent = t(b ? "Bis Seite" : "Gelesene Seiten");
-    $("#manualPage").placeholder = b ? t("jetzt S. {n}", { n: b.currentPage || 0 }) : t("z. B. 12");
+  const manualPair = pagePair("manual", () => bookById($("#manualBook").value));
+  $("#manualBook").addEventListener("change", () => manualPair.refresh());
+
+  // Schnell eintragen direkt bei „Gerade lese ich“
+  let quickBookId = null;
+  const quickPair = pagePair("quick", () => bookById(quickBookId));
+  function openQuickPages(id) {
+    const b = bookById(id); if (!b) return;
+    quickBookId = id;
+    $("#pageBookTitle").textContent = b.title;
+    $("#quickMin").value = "";
+    quickPair.refresh();
+    $("#pageDialog").showModal();
+    setTimeout(() => quickPair.focus(), 50);
+  }
+  $("#pageCancel").addEventListener("click", () => $("#pageDialog").close());
+  $("#pageForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const pv = quickPair.value(), minutes = Math.max(0, parseInt($("#quickMin").value) || 0);
+    if (!minutes && !hasPages(pv)) { toast(t("Bitte Seiten oder Minuten eintragen.")); return; }
+    $("#pageDialog").close();
+    logSession({ bookId: quickBookId, minutes, ...pv });
   });
+  document.addEventListener("click", (e) => { const q = e.target.closest("[data-pages]"); if (q) openQuickPages(q.dataset.pages); });
 
   function chime() {
     try {
