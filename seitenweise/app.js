@@ -44,9 +44,18 @@
   }
   // Feier-Grafik: ein Faden läuft durch, in der Mitte wird ein Knoten geknüpft
   function knotArt() {
-    const sparks = Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return `<circle class="ka-spark" cx="${(60 + Math.cos(a) * 30).toFixed(1)}" cy="${(40 + Math.sin(a) * 30).toFixed(1)}" r="2.4" style="--dx:${(Math.cos(a) * 12).toFixed(1)}px;--dy:${(Math.sin(a) * 12).toFixed(1)}px"/>`; }).join("");
-    return `<svg class="knot-art" viewBox="0 0 120 80" aria-hidden="true"><path class="ka-thread" d="M2 40C30 24 44 56 60 40S92 24 118 40"/>
-      <g class="ka-knot"><circle cx="60" cy="40" r="15"/><path d="M50 36q10-6 20 0M48.5 42q11.5-6.5 23 0"/></g>${sparks}</svg>`;
+    // Fäden schießen sternförmig aus dem Knoten, ein gestickter Kreis schließt sich darum
+    const cols = ["var(--green)", "var(--orange)", "var(--gold)", "var(--green-2)"];
+    const rays = Array.from({ length: 12 }, (_, i) => {
+      const a = (i / 12) * Math.PI * 2, r1 = 22, r2 = 40 + (i % 2) * 8;
+      const x1 = 80 + Math.cos(a) * r1, y1 = 60 + Math.sin(a) * r1, x2 = 80 + Math.cos(a) * r2, y2 = 60 + Math.sin(a) * r2;
+      const cx = 80 + Math.cos(a + .35) * (r1 + r2) / 2, cy = 60 + Math.sin(a + .35) * (r1 + r2) / 2;
+      return `<path class="ka-ray" style="stroke:${cols[i % 4]};animation-delay:${(.75 + i * .03).toFixed(2)}s" d="M${x1.toFixed(1)} ${y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}"/><circle class="ka-dot" style="fill:${cols[i % 4]};animation-delay:${(1.05 + i * .03).toFixed(2)}s" cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="2.6"/>`;
+    }).join("");
+    return `<svg class="knot-art" viewBox="0 0 160 120" aria-hidden="true">
+      <circle class="ka-ring" cx="80" cy="60" r="56"/>
+      <path class="ka-thread" d="M4 60C36 40 52 80 80 60S124 40 156 60"/>${rays}
+      <g class="ka-knot"><circle cx="80" cy="60" r="17"/><path d="M69 55.5q11-6.5 22 0M67.5 62.5q12.5-7 25 0"/></g></svg>`;
   }
   const celQueue = [];
   function celebrate(ico, title, text) { celQueue.push({ ico, title, text }); if (!$("#celDlg").open) nextCel(); }
@@ -54,7 +63,7 @@
     const c = celQueue.shift(); if (!c) return;
     if (c.ico === "knot") $("#celIco").innerHTML = knotArt(); else if (c.ico.startsWith("<svg")) $("#celIco").innerHTML = c.ico; else $("#celIco").textContent = c.ico;
     $("#celTitle").textContent = c.title; $("#celText").textContent = c.text;
-    $("#celDlg").showModal(); confetti();
+    $("#celDlg").showModal(); if (c.ico !== "knot") confetti();
   }
   $("#celOk").addEventListener("click", () => { $("#celDlg").close(); setTimeout(nextCel, 250); });
 
@@ -134,7 +143,8 @@
   }
   function renderLog() {
     const b = state.book, main = isPages() ? PAGE_CHIPS : MIN_CHIPS, opt = isPages() ? MIN_CHIPS : PAGE_CHIPS;
-    const sv = $("#stepVal"); if (sv.textContent !== String(stepV)) { sv.textContent = stepV; sv.classList.remove("bump"); void sv.offsetWidth; sv.classList.add("bump"); }
+    const sv = $("#stepIn");
+    if (document.activeElement !== sv && sv.value !== String(stepV)) { sv.value = stepV; sv.classList.remove("bump"); void sv.offsetWidth; sv.classList.add("bump"); }
     $("#stepUnit").textContent = unit(stepV);
     $("#mainChips").innerHTML = main.map((n) => `<button type="button" class="chip ${n === stepV ? "on" : ""}" data-main="${n}">${n}${isPages() ? "" : " Min"}</button>`).join("");
     $("#optChips").hidden = !isPages() && !b;
@@ -162,6 +172,11 @@
     b.addEventListener("pointerdown", () => { holdT = setTimeout(go, 450); });
     ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => clearTimeout(holdT)));
   });
+  // Zahl direkt eintippen (z. B. 37 Seiten, wenn man mehr als das Ziel gelesen hat)
+  $("#stepIn").addEventListener("input", (e) => { stepV = Math.max(0, Math.min(999, parseInt(e.target.value) || 0)); renderLog(); });
+  $("#stepIn").addEventListener("focus", (e) => { if (e.target.value === "0") e.target.value = ""; else e.target.select(); });
+  $("#stepIn").addEventListener("blur", (e) => { e.target.value = stepV; });
+  $("#stepIn").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
   $("#logCancel").addEventListener("click", () => $("#logDlg").close());
   $("#logForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -306,7 +321,7 @@
       let cells = "<i class=\"pad\"></i>".repeat(lead);
       for (let d = 1; d <= n; d++) {
         const k = `${y}-${pad(m + 1)}-${pad(d)}`, cls = k > today ? "f" : dayValue(k) >= goal() ? "g" : dayRead(k) ? "o" : "e";
-        cells += `<i class="${cls}${k === today ? " t" : ""}"${cls !== "f" ? ` data-day="${k}"` : ""}></i>`;
+        cells += `<i class="${cls}${k === today ? " t" : ""}"${cls !== "f" ? ` data-day="${k}"` : ""}>${d}</i>`;
       }
       const pg = inYear.filter((x) => +x.date.slice(5, 7) === m + 1).reduce((a, x) => a + (x.pages || 0), 0);
       return `<div class="ymon${m > curM ? " fut" : ""}"><b>${mn}${pg ? `<em>${pg} S.</em>` : ""}</b><div class="ygrid">${cells}</div></div>`;

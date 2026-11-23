@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <div class="app">
@@ -94,8 +94,9 @@
     <form method="dialog" id="logForm">
       <p class="small" id="logBook"></p>
       <h2 class="q" id="logQ">Wie viele Seiten hast du gelesen?</h2>
-      <div class="step"><button type="button" data-step="-1" aria-label="weniger">−</button><div class="v"><b id="stepVal">0</b><small id="stepUnit">Seiten</small></div><button type="button" data-step="1" aria-label="mehr">+</button></div>
+      <div class="step"><button type="button" data-step="-1" aria-label="weniger">−</button><label class="v"><input id="stepIn" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Anzahl"><small id="stepUnit">Seiten</small></label><button type="button" data-step="1" aria-label="mehr">+</button></div>
       <div class="chips" id="mainChips"></div>
+      <p class="small type-hint">Mehr gelesen? Tippe auf die Zahl und schreib sie einfach hin.</p>
       <p class="note" id="logCalc"></p>
       <p class="small opt" id="optLbl">Wie lange? <span>(nicht nötig)</span></p>
       <div class="chips" id="optChips"></div>
@@ -133,7 +134,7 @@
   </dialog>
 
   <!-- Feier -->
-  <dialog id="celDlg" class="sheet cel">
+  <dialog id="celDlg" class="pop cel">
     <div class="cel-ico" id="celIco">🎉</div>
     <h2 class="q" id="celTitle"></h2>
     <p id="celText"></p>
@@ -141,6 +142,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
