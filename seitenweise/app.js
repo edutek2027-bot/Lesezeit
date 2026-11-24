@@ -158,12 +158,54 @@
   }
 
   // Tag antippen (Woche oder Jahreskalender) → Seiten und Minuten dieses Tages
-  function dayInfo(k) {
-    const t = dayTotals(k), d = new Date(k + "T12:00");
-    const name = k === dateKey() ? "Heute" : d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" });
-    toast(t.pages || t.minutes ? `${name}: ${[t.pages ? `${t.pages} ${t.pages === 1 ? "Seite" : "Seiten"}` : "", t.minutes ? `${t.minutes} Min.` : ""].filter(Boolean).join(" · ")}${dayValue(k) >= goal() ? " · Ziel ✓" : ""}` : `${name}: nicht gelesen`);
+
+  document.addEventListener("click", (e) => { const h = e.target.closest("[data-day]"); if (h) openDay(h.dataset.day); });
+
+  // ---------- Tag ansehen und bearbeiten ----------
+  let dayK = null, editSid = null;
+  function openDay(k) {
+    dayK = k; editSid = null; renderDay();
+    if (!$("#dayDlg").open) $("#dayDlg").showModal();
   }
-  document.addEventListener("click", (e) => { const h = e.target.closest("[data-day]"); if (h) dayInfo(h.dataset.day); });
+  const bookTitle = (id) => bookById(id)?.title || state.finished.find((f) => f.id === id)?.title || (id ? "Buch (fertig)" : "Ohne Buch");
+  function renderDay() {
+    const k = dayK, list = state.sessions.filter((x) => x.date === k), t = dayTotals(k), done = dayValue(k) >= goal();
+    $("#dayTitle").textContent = longDate(k);
+    $("#daySum").innerHTML = list.length ? `${t.pages} Seiten · ${t.minutes} Min.${done ? " · <b>Ziel ✓</b>" : ` · noch ${Math.max(0, goal() - dayValue(k))} ${unit(goal() - dayValue(k))} bis zum Ziel`}` : "An diesem Tag ist noch nichts eingetragen.";
+    $("#dayList").innerHTML = list.map((x) => x.id === editSid ? `
+      <li class="dl-item edit" data-sid="${x.id}">
+        <div class="dl-title">${esc(bookTitle(x.bookId))}</div>
+        <div class="dl-edit"><label>Seiten<input type="number" inputmode="numeric" min="0" max="999" data-f="pages" value="${x.pages || 0}"></label><label>Minuten<input type="number" inputmode="numeric" min="0" max="600" data-f="minutes" value="${x.minutes || 0}"></label></div>
+        <div class="dl-btns"><button type="button" class="btn" data-dcancel>Abbrechen</button><button type="button" class="btn ok" data-dsave="${x.id}">Speichern</button></div>
+      </li>` : `
+      <li class="dl-item" data-sid="${x.id}">
+        <div><div class="dl-title">${esc(bookTitle(x.bookId))}</div><div class="small">${[x.pages ? `${x.pages} S.` : "", x.minutes ? `${x.minutes} Min.` : ""].filter(Boolean).join(" · ") || "–"}${x.late ? " · nachgetragen" : ""}</div></div>
+        <div class="dl-acts"><button type="button" class="icon sm" data-dedit="${x.id}" aria-label="Bearbeiten">✎</button><button type="button" class="icon sm del" data-ddel="${x.id}" aria-label="Löschen">🗑</button></div>
+      </li>`).join("");
+  }
+  $("#dayClose").addEventListener("click", () => $("#dayDlg").close());
+  let reopenDay = null;
+  $("#dayAdd").addEventListener("click", () => { const k = dayK; reopenDay = k; $("#dayDlg").close(); openLog({ date: k }); });
+  $("#logCancel").addEventListener("click", () => { if (reopenDay) { const k = reopenDay; reopenDay = null; openDay(k); } });
+  $("#dayList").addEventListener("click", (e) => {
+    const ed = e.target.closest("[data-dedit]"), de = e.target.closest("[data-ddel]"), sv = e.target.closest("[data-dsave]");
+    if (e.target.closest("[data-dcancel]")) { editSid = null; renderDay(); return; }
+    if (ed) { editSid = ed.dataset.dedit; renderDay(); $(`#dayList [data-f="pages"]`)?.focus(); return; }
+    if (de) {
+      const x = state.sessions.find((y) => y.id === de.dataset.ddel); if (!x || !confirm("Diesen Eintrag löschen?")) return;
+      const b = bookById(x.bookId); if (b && x.pages) b.page = Math.max(b.start || 0, b.page - x.pages);
+      state.sessions = state.sessions.filter((y) => y !== x); save(); renderDay(); render(); toast("Eintrag gelöscht.");
+      return;
+    }
+    if (sv) {
+      const x = state.sessions.find((y) => y.id === sv.dataset.dsave), li = sv.closest("li"); if (!x) return;
+      const pg = Math.max(0, Math.min(999, parseInt(li.querySelector('[data-f="pages"]').value) || 0)), mn = Math.max(0, Math.min(600, parseInt(li.querySelector('[data-f="minutes"]').value) || 0));
+      if (!pg && !mn) { toast("Seiten oder Minuten eintragen – oder den Eintrag löschen."); return; }
+      const b = bookById(x.bookId);
+      if (b) { let np = b.page + (pg - (x.pages || 0)); if (b.pages) np = Math.min(b.pages, np); b.page = Math.max(b.start || 0, np); }
+      x.pages = pg; x.minutes = mn; editSid = null; save(); checkWeek(); checkStickers(); renderDay(); render(); toast("Gespeichert ✓");
+    }
+  });
 
   $("#undoBtn").addEventListener("click", () => {
     const k = dateKey(), last = [...state.sessions].reverse().find((s) => s.date === k);
@@ -175,10 +217,17 @@
 
   // ---------- Eintragen ----------
   const PAGE_CHIPS = [5, 10, 15, 20], MIN_CHIPS = [10, 15, 20, 30];
-  let stepV = 0, optV = 0, logBookId = null, fromTimer = 0;
+  let stepV = 0, optV = 0, logBookId = null, fromTimer = 0, logDateK = null;
+  const longDate = (k) => (k === dateKey() ? "Heute" : k === dateKey(addDays(new Date(), -1)) ? "Gestern" : new Date(k + "T12:00").toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" }));
+  function renderDates() {
+    const t = dateKey(), y = dateKey(addDays(new Date(), -1)), v = dateKey(addDays(new Date(), -2)), custom = ![t, y, v].includes(logDateK);
+    $("#logDates").innerHTML = [[t, "Heute"], [y, "Gestern"], [v, "Vorgestern"]].map(([k, l]) => `<button type="button" class="dchip ${k === logDateK ? "on" : ""}" data-date="${k}">${l}</button>`).join("")
+      + `<label class="dchip pick ${custom ? "on" : ""}"><span>${custom ? new Date(logDateK + "T12:00").toLocaleDateString("de-AT", { day: "numeric", month: "short" }) : "📅 Datum"}</span><input type="date" id="logDateIn" max="${t}" value="${logDateK}"></label>`;
+  }
   function openLog(pre = {}) {
     if (!state.books.length && isPages()) { toast("Leg zuerst dein Buch an. 📖"); openBook(); return; }
-    stepV = 0; optV = 0; fromTimer = pre.minutes || 0;
+    stepV = 0; optV = 0; fromTimer = pre.minutes || 0; logDateK = pre.date && pre.date <= dateKey() ? pre.date : dateKey();
+    renderDates();
     if (fromTimer) { if (isPages()) optV = fromTimer; else stepV = fromTimer; }
     logBookId = (pre.bookId && bookById(pre.bookId) ? pre.bookId : cur()?.id) || null;
     logHead();
@@ -202,13 +251,13 @@
     $("#optChips").hidden = !isPages() && !b;
     const optList = optV && !opt.includes(optV) ? [...opt.slice(0, 3), optV] : opt;
     $("#optChips").innerHTML = optList.map((n) => `<button type="button" class="chip ${n === optV ? "on" : ""}" data-opt="${n}">${n}${isPages() ? " Min" : ""}</button>`).join("");
-    const pages = isPages() ? stepV : optV, k = dateKey(), after = dayValue(k) + stepV;
+    const pages = isPages() ? stepV : optV, k = logDateK, after = dayValue(k) + stepV;
     let note = "";
     if (b && pages) {
       const to = b.pages ? Math.min(b.pages, b.page + pages) : b.page + pages;
       note = b.pages && to >= b.pages ? `Du bist auf der <b>letzten Seite</b> – Buch fertig! 🏁` : `Du bist jetzt auf <b>Seite ${to}</b>.`;
     }
-    if (stepV && after >= goal() && dayValue(k) < goal()) note += (note ? " " : "") + "Heute grün! 🎉";
+    if (stepV && after >= goal() && dayValue(k) < goal()) note += (note ? " " : "") + (k === dateKey() ? "Heute grün! 🎉" : `${longDate(k)} wird grün! 🎉`);
     $("#logCalc").innerHTML = note;
   }
   $("#logForm").addEventListener("click", (e) => {
@@ -216,9 +265,16 @@
     if (s) stepV = Math.max(0, Math.min(999, stepV + +s.dataset.step));
     if (m) stepV = +m.dataset.main;
     if (o) optV = optV === +o.dataset.opt ? 0 : +o.dataset.opt;
+    const dt = e.target.closest("[data-date]");
+    if (dt) { logDateK = dt.dataset.date; renderDates(); }
     const lbk = e.target.closest("[data-logbook]");
     if (lbk) { logBookId = lbk.dataset.logbook; logHead(); }
-    if (s || m || o || lbk) renderLog();
+    if (s || m || o || lbk || dt) renderLog();
+  });
+  $("#logForm").addEventListener("change", (e) => {
+    if (e.target.id !== "logDateIn" || !e.target.value) return;
+    if (e.target.value > dateKey()) { toast("Das Datum liegt in der Zukunft."); renderDates(); return; }
+    logDateK = e.target.value; renderDates(); renderLog();
   });
   // langes Drücken auf +/− zählt schneller
   let holdT;
@@ -236,7 +292,7 @@
   $("#logForm").addEventListener("submit", (e) => {
     e.preventDefault();
     if (!stepV) { toast(isPages() ? "Wie viele Seiten? Tippe auf eine Zahl." : "Wie lange? Tippe auf eine Zahl."); return; }
-    const pagesIn = isPages() ? stepV : optV, minutes = isPages() ? optV : stepV, k = dateKey(), before = dayValue(k), wasRead = dayRead(k);
+    const pagesIn = isPages() ? stepV : optV, minutes = isPages() ? optV : stepV, k = logDateK || dateKey(), isToday = k === dateKey(), before = dayValue(k), wasRead = dayRead(k);
     const b = bookById(logBookId);
     if (b) state.curId = b.id; // zuletzt gelesenes Buch merken
     let pages = pagesIn, finished = false;
@@ -246,15 +302,17 @@
       finished = !!b.pages && to >= b.pages;
     }
     if (isPages() && !pages && pagesIn) pages = pagesIn;
-    state.sessions.push({ id: uid(), date: k, pages, minutes, bookId: b?.id || null, hour: new Date().getHours(), ts: Date.now() });
+    state.sessions.push({ id: uid(), date: k, pages, minutes, bookId: b?.id || null, hour: isToday ? new Date().getHours() : null, ts: Date.now(), ...(isToday ? {} : { late: true }) });
     if (!wasRead || (before < goal() && dayValue(k) >= goal())) sewKey = k; // heutiges Feld wird neu gestickt
     save(); $("#logDlg").close();
     const after = dayValue(k);
-    if (before < goal() && after >= goal()) celebrate("knot", "Knoten geknüpft!", `${after} ${unit(after)} heute – dein Tagesziel ist geschafft. Das Feld für heute wird grün gestickt.`);
+    if (!isToday) toast(`✓ Für ${longDate(k)} eingetragen.${before < goal() && after >= goal() ? " Ziel erreicht – das Feld wird grün. 🎉" : ""}`);
+    else if (before < goal() && after >= goal()) celebrate("knot", "Knoten geknüpft!", `${after} ${unit(after)} heute – dein Tagesziel ist geschafft. Das Feld für heute wird grün gestickt.`);
     else if (!wasRead) toast(`✓ Eingetragen. ${streak() > 1 ? `${streak()} Tage in Folge! 🔥` : "Guter Start!"}`);
     else toast("✓ Eingetragen.");
     if (finished) finishBook(true, b.id);
     checkWeek(); checkStickers(); render();
+    if (reopenDay) { reopenDay = null; setTimeout(() => openDay(k), 350); }
   });
 
   // ---------- 2 · Mein Buch ----------

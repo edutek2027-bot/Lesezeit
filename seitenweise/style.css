@@ -505,3 +505,25 @@ dialog:not([open]) { display: none !important; }
 .rs-st { stroke: #ffffff59; stroke-width: 1.1; }
 .rs-bigx { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 46; stroke-dashoffset: 0; filter: drop-shadow(0 1px 0 #0002); }
 .rs-bigx.sew { stroke-dashoffset: 46; animation: draw .7s ease-out 1.3s forwards; }
+
+/* Datum beim Eintragen */
+.date-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.dchip { position: relative; border: 2px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13.5px; color: var(--ink-soft); cursor: pointer; }
+.dchip.on { border-color: var(--green); background: var(--wash); color: var(--green); }
+.dchip.pick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+/* Tag ansehen und bearbeiten */
+.day-sheet { padding: 22px 18px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.day-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+#daySum b { color: var(--green); }
+.day-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dl-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; padding: 12px 12px 12px 14px; }
+.dl-item.edit { display: grid; border-color: var(--green); }
+.dl-title { font-weight: 700; }
+.dl-acts { display: flex; gap: 6px; }
+.icon.del { color: #b3462e; }
+.dl-edit { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dl-edit label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.dl-edit input { font: 700 20px var(--sans); padding: 10px 12px; border-radius: 12px; border: 2px solid var(--rule); background: var(--paper); color: var(--ink); width: 100%; }
+.dl-edit input:focus { outline: none; border-color: var(--green); }
+.dl-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn.ok { background: var(--green); color: #fff; border-color: var(--green); }

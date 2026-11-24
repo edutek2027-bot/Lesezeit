@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
   <div class="app">
@@ -122,6 +122,7 @@
   <!-- Eintragen -->
   <dialog id="logDlg" class="sheet">
     <form method="dialog" id="logForm">
+      <div class="date-chips" id="logDates"></div>
       <div class="book-chips" id="logBooks"></div>
       <p class="small" id="logBook"></p>
       <h2 class="q" id="logQ">Wie viele Seiten hast du gelesen?</h2>
@@ -133,6 +134,16 @@
       <div class="chips" id="optChips"></div>
       <div class="actions"><button type="button" class="btn" id="logCancel">Abbrechen</button><button class="big" id="logSave">Speichern ✓</button></div>
     </form>
+  </dialog>
+
+  <!-- Tag ansehen und bearbeiten -->
+  <dialog id="dayDlg" class="sheet">
+    <div class="day-sheet">
+      <div class="day-head"><h2 class="q" id="dayTitle">Tag</h2><button class="icon sm" id="dayClose" type="button" aria-label="Schließen">✕</button></div>
+      <p class="small" id="daySum"></p>
+      <ul class="day-list" id="dayList"></ul>
+      <button class="big" id="dayAdd" type="button">＋ Für diesen Tag eintragen</button>
+    </div>
   </dialog>
 
   <!-- Start / Einstellungen -->
@@ -173,6 +184,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
