@@ -105,22 +105,58 @@
     }));
     $("#readBtn").classList.toggle("nudge", !dayRead(k));
     const mon = addDays(now, -((now.getDay() + 6) % 7)); // Montag dieser Woche
-    const wk = Array.from({ length: 7 }, (_, i) => { const d = addDays(mon, i), dk = dateKey(d); return { d, isT: dk === k, fut: dk > k, cls: dk > k ? "" : dayValue(dk) >= g ? "g" : dayRead(dk) ? "o" : "" }; });
-    const X = (i) => 25 + i * 50;
-    let thread = `<path class="w-guide" d="M${X(0)} 22H${X(6)}"/>`;
-    wk.forEach((w, i) => { if (i && w.cls && wk[i - 1].cls) thread += `<path class="w-thread" style="animation-delay:${(.15 + i * .08).toFixed(2)}s" d="M${X(i - 1)} 22H${X(i)}"/>`; });
-    const knots = wk.map((w, i) => {
-      const x = X(i), dv = dayValue(dateKey(w.d));
-      const lbl = `<text x="${x}" y="54">${DAYS[w.d.getDay()]}</text>${dv ? `<text class="w-num ${w.cls}" x="${x}" y="72">${dv}</text>` : ""}${w.fut ? "" : `<circle class="w-hit" cx="${x}" cy="38" r="24" data-day="${dateKey(w.d)}"/>`}`;
-      if (!w.cls) return `<g class="w-day${w.isT ? " today" : ""}${w.fut ? " fut" : ""}"><circle class="w-hole" cx="${x}" cy="22" r="${w.isT ? 12 : 4}"/>${w.isT ? `<text class="w-q" x="${x}" y="26.5">?</text>` : ""}${lbl}</g>`;
-      return `<g class="w-day${w.isT ? " today" : ""}"><g class="w-knot ${w.cls}" style="animation-delay:${(.1 + i * .08).toFixed(2)}s"><circle cx="${x}" cy="22" r="12"/><path d="M${x - 7.5} 19.5q7.5-4.6 15 0M${x - 8.5} 24q8.5-5 17 0"/></g>${lbl}</g>`;
-    }).join("");
-    $("#week").innerHTML = thread + knots;
-    $("#week").setAttribute("aria-label", `Die letzten 7 Tage, Zahlen = ${isPages() ? "Seiten" : "Minuten"}`);
+    $("#week").innerHTML = ribbonSvg(mon, { labels: true, sew: sewKey });
+    sewKey = null;
+    const wd = weekDays(mon), readN = wd.filter((w) => w.cls).length, past = wd.filter((w) => !w.fut).length;
+    $("#weekNote").innerHTML = readN === 7 ? (wd.every((w) => w.cls === "g") ? "Dein Wochen-Lesezeichen ist fertig – mit <b>goldener Quaste</b>! ✨" : "Dein Wochen-Lesezeichen ist <b>fertig gestickt</b>! 🎉")
+      : `Wochen-Lesezeichen: <b>${readN} von 7</b> Feldern gestickt${past - readN > 0 && readN ? "" : ""}${7 - readN ? ` – noch ${7 - readN}` : ""}`;
     const left = g - v;
     $("#todayHint").innerHTML = done ? "Heute ist grün. Stark! 💪" : v ? `Noch <b>${left} ${unit(left)}</b> – dann ist heute grün.` : `Heute: <b>${g} ${unit(g)}</b>. Du schaffst das!`;
     $("#undoBtn").hidden = !state.sessions.some((s) => s.date === k);
   }
+  // ---------- Wochen-Lesezeichen ----------
+  // Die Woche ist ein gesticktes Lesezeichen mit 7 Feldern (Mo–So). Jeder Lesetag stickt ein Feld:
+  // grün = Ziel, orange = gelesen. Sind alle 7 Felder gestickt, ist das Lesezeichen fertig und die Quaste schwingt.
+  let sewKey = null;
+  function weekDays(mon) {
+    const k = dateKey();
+    return Array.from({ length: 7 }, (_, i) => { const d = addDays(mon, i), dk = dateKey(d); return { d, dk, isT: dk === k, fut: dk > k, cls: dk > k ? "" : dayValue(dk) >= goal() ? "g" : dayRead(dk) ? "o" : "" }; });
+  }
+  let rbUid = 0;
+  function ribbonSvg(mon, { labels = false, sew = null, big = false } = {}) {
+    const wd = weekDays(mon), id = "rb" + ++rbUid, x0 = 4, x1 = 320, y0 = 6, y1 = 42, sw = (x1 - x0) / 7, X = (i) => x0 + sw * (i + .5);
+    const full = wd.every((w) => w.cls), gold = full && wd.every((w) => w.cls === "g");
+    const shape = `M${x0} ${y0}H${x1}V${y1}H${x0}L${x0 + 10} ${(y0 + y1) / 2}Z`;
+    let segs = "", hits = "", lbls = "";
+    wd.forEach((w, i) => {
+      const x = x0 + i * sw, cls = w.cls || (w.fut ? "f" : w.isT ? "t" : "e"), sewing = sew && w.dk === sew && w.cls;
+      segs += `<g class="rs ${cls}${sewing ? " sew" : ""}"${w.cls && !big ? ` style="animation-delay:${(.05 + i * .06).toFixed(2)}s"` : ""}><rect x="${x.toFixed(1)}" y="${y0}" width="${(sw + .4).toFixed(1)}" height="${y1 - y0}"/>${w.cls ? `<rect class="rs-x" x="${x.toFixed(1)}" y="${y0}" width="${(sw + .4).toFixed(1)}" height="${y1 - y0}" fill="url(#${id}x)"/>` : ""}</g>`;
+      if (w.cls) { const cx = X(i), cy = (y0 + y1) / 2; segs += `<path class="rs-bigx${sewing ? " sew" : ""}" d="M${(cx - 8).toFixed(1)} ${cy - 8}l16 16M${(cx + 8).toFixed(1)} ${cy - 8}l-16 16"/>`; }
+      if (!w.cls && w.isT) segs += `<text class="rs-q" x="${X(i).toFixed(1)}" y="${(y0 + y1) / 2 + 5}">?</text>`;
+      if (i) segs += `<path class="rs-sep" d="M${x.toFixed(1)} ${y0 + 4}V${y1 - 4}"/>`;
+      if (labels) {
+        const dv = dayValue(w.dk);
+        lbls += `<text class="rl${w.isT ? " now" : ""}${w.fut ? " fut" : ""}" x="${X(i).toFixed(1)}" y="60">${DAYS[w.d.getDay()]}</text>${dv ? `<text class="w-num ${w.cls}" x="${X(i).toFixed(1)}" y="77">${dv}</text>` : ""}`;
+        if (!w.fut) hits += `<rect class="w-hit" x="${x.toFixed(1)}" y="0" width="${sw.toFixed(1)}" height="84" data-day="${w.dk}"/>`;
+      }
+    });
+    const inset = `M${x0 + 4} ${y0 + 3.5}H${x1 - 3.5}V${y1 - 3.5}H${x0 + 4}L${x0 + 12.5} ${(y0 + y1) / 2}Z`;
+    const tassel = `<g class="tassel${full ? " done" : ""}${gold ? " gold" : ""}"><path class="ts-cord" d="M${x1} ${(y0 + y1) / 2}C${x1 + 12} ${(y0 + y1) / 2} ${x1 + 16} 34 ${x1 + 16} 46"/><circle class="ts-cap" cx="${x1 + 16}" cy="48" r="4"/><path class="ts-str" d="M${x1 + 13} 51l-2.5 13M${x1 + 15} 51l-1 14M${x1 + 17} 51l1 14M${x1 + 19} 51l2.5 13"/></g>`;
+    return `<defs><clipPath id="${id}c"><path d="${shape}"/></clipPath><pattern id="${id}x" width="7.5" height="7.5" patternUnits="userSpaceOnUse"><path d="M1.5 1.5l4.5 4.5M6 1.5l-4.5 4.5" class="rs-st"/></pattern></defs>
+      ${tassel}<g clip-path="url(#${id}c)"><rect class="rb-base" x="0" y="0" width="${x1 + 2}" height="50"/>${segs}</g>
+      <path class="rb-edge" d="${shape}"/><path class="rb-inset" d="${inset}"/>${lbls}${hits}`;
+  }
+  function checkWeek() {
+    state.weeks ||= [];
+    const now = new Date(), mon = addDays(now, -((now.getDay() + 6) % 7)), mk = dateKey(mon), wd = weekDays(mon);
+    if (wd.every((w) => w.cls) && !state.weeks.includes(mk)) {
+      state.weeks.push(mk); save();
+      const gold = wd.every((w) => w.cls === "g");
+      setTimeout(() => celebrate(`<svg class="week ribbon cel-rb" viewBox="0 0 350 70">${ribbonSvg(mon, { big: true })}</svg>`, gold ? "Goldenes Lesezeichen!" : "Wochen-Lesezeichen fertig!",
+        gold ? "Jeden Tag dein Ziel geschafft – dein Lesezeichen bekommt eine goldene Quaste." : "An allen 7 Tagen gelesen – dein Wochen-Lesezeichen ist fertig gestickt."), 700);
+    }
+  }
+
   // Tag antippen (Woche oder Jahreskalender) → Seiten und Minuten dieses Tages
   function dayInfo(k) {
     const t = dayTotals(k), d = new Date(k + "T12:00");
@@ -211,13 +247,14 @@
     }
     if (isPages() && !pages && pagesIn) pages = pagesIn;
     state.sessions.push({ id: uid(), date: k, pages, minutes, bookId: b?.id || null, hour: new Date().getHours(), ts: Date.now() });
+    if (!wasRead || (before < goal() && dayValue(k) >= goal())) sewKey = k; // heutiges Feld wird neu gestickt
     save(); $("#logDlg").close();
     const after = dayValue(k);
-    if (before < goal() && after >= goal()) celebrate("knot", "Knoten geknüpft!", `${after} ${unit(after)} heute – dein Tagesziel ist geschafft. Der Knoten für heute ist grün.`);
+    if (before < goal() && after >= goal()) celebrate("knot", "Knoten geknüpft!", `${after} ${unit(after)} heute – dein Tagesziel ist geschafft. Das Feld für heute wird grün gestickt.`);
     else if (!wasRead) toast(`✓ Eingetragen. ${streak() > 1 ? `${streak()} Tage in Folge! 🔥` : "Guter Start!"}`);
     else toast("✓ Eingetragen.");
     if (finished) finishBook(true, b.id);
-    checkStickers(); render();
+    checkWeek(); checkStickers(); render();
   });
 
   // ---------- 2 · Mein Buch ----------

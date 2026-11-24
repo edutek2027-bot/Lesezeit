@@ -468,3 +468,40 @@ dialog:not([open]) { display: none !important; }
 .best-grid div > b { font-size: 32px; }
 .best-grid .b-gr { background: none; padding: 0; border-radius: 0; animation: none; }
 .best-grid .b-gr::after { content: none; }
+
+/* ---------- Wochen-Lesezeichen ---------- */
+.ribbon { overflow: visible; }
+.rb-base { fill: color-mix(in srgb, var(--paper-2) 70%, var(--sheet)); }
+.rs rect { fill: transparent; }
+.rs.g rect:first-child { fill: var(--green); } .rs.o rect:first-child { fill: var(--orange); }
+.rs.t rect:first-child { fill: var(--sheet); }
+.rs.f rect:first-child { fill: color-mix(in srgb, var(--sheet) 60%, transparent); }
+.rs-st { fill: none; stroke: #ffffff7a; stroke-width: 1.3; stroke-linecap: round; }
+.rs.g, .rs.o { transform-box: fill-box; transform-origin: left; animation: sewIn2 .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes sewIn2 { from { transform: scaleX(0); } }
+.rs.sew { animation: sewNow 1.3s cubic-bezier(.4,0,.2,1) .3s both; }
+@keyframes sewNow { 0% { transform: scaleX(0); } 70% { transform: scaleX(1.02); } 100% { transform: scaleX(1); } }
+.rs.sew .rs-x { animation: stitchBlink .5s ease 1.4s 3 alternate; }
+@keyframes stitchBlink { to { opacity: .35; } }
+.rs-sep { stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: 1.2; stroke-dasharray: 2.5 2.5; }
+.rs-q { font: 700 15px var(--sans); fill: var(--green); text-anchor: middle; animation: breathe 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.rb-edge { fill: none; stroke: color-mix(in srgb, var(--ink) 35%, var(--rule)); stroke-width: 1.4; }
+.rb-inset { fill: none; stroke: #ffffffb0; stroke-width: 1.1; stroke-dasharray: 3 2.6; }
+.rl { font-family: var(--mono); font-size: 11px; fill: var(--ink-soft); text-anchor: middle; }
+.rl.now { fill: var(--ink); font-weight: 600; } .rl.fut { opacity: .45; }
+.tassel { transform-box: view-box; transform-origin: 320px 24px; }
+.ts-cord { fill: none; stroke: var(--rule); stroke-width: 2; stroke-linecap: round; }
+.ts-cap { fill: var(--rule); }
+.ts-str { stroke: var(--rule); stroke-width: 1.8; stroke-linecap: round; }
+.tassel.done .ts-cord, .tassel.done .ts-str { stroke: var(--green); } .tassel.done .ts-cap { fill: var(--green); }
+.tassel.gold .ts-cord, .tassel.gold .ts-str { stroke: var(--gold); } .tassel.gold .ts-cap { fill: var(--gold); }
+.tassel.done { animation: swing 2.2s ease-in-out .8s 3; }
+@keyframes swing { 25% { transform: rotate(9deg); } 75% { transform: rotate(-7deg); } }
+.rb-note { text-align: center; margin: 2px 0 0; font-size: 13.5px; }
+.rb-note b { color: var(--green); }
+.cel-rb { width: 290px; height: auto; }
+.cel-rb .tassel.done { animation: swing 1.8s ease-in-out .6s infinite; }
+.week-card { display: grid; gap: 2px; }
+.rs-st { stroke: #ffffff59; stroke-width: 1.1; }
+.rs-bigx { fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 46; stroke-dashoffset: 0; filter: drop-shadow(0 1px 0 #0002); }
+.rs-bigx.sew { stroke-dashoffset: 46; animation: draw .7s ease-out 1.3s forwards; }

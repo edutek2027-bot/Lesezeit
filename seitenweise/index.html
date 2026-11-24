@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
   <div class="app">
@@ -64,7 +64,8 @@
         </div>
       </section>
       <section class="card week-card">
-        <svg class="week" id="week" viewBox="0 0 350 78" role="img" aria-label="Die letzten 7 Tage"></svg>
+        <svg class="week ribbon" id="week" viewBox="0 0 350 84" role="img" aria-label="Diese Woche"></svg>
+        <p class="small rb-note" id="weekNote"></p>
       </section>
       <p class="hint" id="todayHint"></p>
       <button class="link undo" id="undoBtn" hidden>Letzten Eintrag löschen</button>
@@ -172,6 +173,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>
