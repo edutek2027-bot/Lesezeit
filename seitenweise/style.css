@@ -527,3 +527,47 @@ dialog:not([open]) { display: none !important; }
 .dl-edit input:focus { outline: none; border-color: var(--green); }
 .dl-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .btn.ok { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* ---------- Profil: Lesekranz, Bilder, Stile ---------- */
+.profile-card { display: grid; justify-items: center; gap: 2px; text-align: center; padding: 4px 0 8px; }
+.wreath { width: 170px; height: auto; overflow: visible; }
+.wr-stem { fill: none; stroke: color-mix(in srgb, var(--green) 45%, var(--rule)); stroke-width: 2; stroke-linecap: round; }
+.lf { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 2; }
+.lf.on { fill: var(--green); stroke: none; transform-box: fill-box; transform-origin: center; animation: leafPop .5s cubic-bezier(.3,1.6,.5,1) both; }
+.lf.on.l2 { fill: var(--green-2); }
+@keyframes leafPop { from { transform: scale(0); opacity: 0; } }
+.star { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 2; }
+.star.on { fill: var(--gold); stroke: none; transform-box: fill-box; transform-origin: center; animation: leafPop .6s cubic-bezier(.3,1.8,.5,1) both, twinkle 3s ease-in-out 2s infinite; }
+@keyframes twinkle { 50% { opacity: .65; transform: scale(.88); } }
+.wr-face { fill: var(--sheet); stroke: var(--green); stroke-width: 3; }
+.wr-emo { font-size: 44px; text-anchor: middle; }
+.wr-ini { font-family: var(--font-display, var(--serif)); font-size: 46px; text-anchor: middle; fill: var(--green); }
+.wr-badge circle { fill: var(--gold); stroke: var(--sheet); stroke-width: 3; }
+.wr-badge text { font: 700 13px var(--font-body, var(--sans)); fill: #fff; text-anchor: middle; }
+.pc-name { font-family: var(--font-display, var(--serif)); font-size: 30px; line-height: 1.05; }
+.pc-sub { font-size: 14px; color: var(--ink-soft); }
+.pc-hint { font-size: 12.5px; color: var(--ink-soft); max-width: 30ch; }
+.av-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.av { aspect-ratio: 1; border: 2px solid var(--rule); background: var(--sheet); border-radius: 50%; font-size: 22px; display: grid; place-items: center; cursor: pointer; transition: transform .15s; padding: 0; }
+.av.ini { font-family: var(--font-display, var(--serif)); font-size: 17px; color: var(--green); }
+.av.on { border-color: var(--green); background: var(--green-wash, var(--wash)); transform: scale(1.08); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent); }
+.sty-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.sty { display: grid; justify-items: center; gap: 4px; border: 2px solid var(--rule); background: var(--sheet); border-radius: 14px; padding: 8px 2px 6px; font-weight: 700; font-size: 12px; color: var(--ink-soft); cursor: pointer; }
+.sty i { width: 26px; height: 26px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 2px #ffffff55; }
+.sty.on { border-color: var(--green); color: var(--green); }
+.avatar-btn { font-size: 21px; padding: 0; overflow: hidden; }
+
+.ini-btn { font-family: var(--serif); font-size: 21px; color: var(--green); }
+.cel-wreath { width: 190px; }
+dialog.sheet { overflow-y: auto; }
+/* Dunkler Stil „Nacht“ auch ohne System-Dunkelmodus */
+:root[data-theme="dark"] { --paper: #151d18; --paper-2: #243029; --sheet: #1c2620; --ink: #e7ebe3; --ink-soft: #9caf9f; --rule: #2e3d33; --green: #5fbf8e; --green-d: #2c7a55; --green-2: #86cda6; --wash: #1f3428; }
+:root[data-style="meer"] { --green: #2f6c9a; --green-2: #5b92bd; --green-wash: #e1ecf4; --wash: #e1ecf4; --mint: #a9c9e3; --stamp: #2f6c9a; --green-d: #22557a; }
+@media (prefers-color-scheme: dark) { :root[data-style="meer"]:not([data-theme="light"]) { --green: #8fbfe6; --green-2: #5f9cc9; --green-wash: #18283a; --wash: #18283a; --mint: #8fbfe6; --stamp: #8fbfe6; --green-d: #5f9cc9; } }
+:root[data-theme="dark"][data-style="meer"] { --green: #8fbfe6; --green-2: #5f9cc9; --green-wash: #18283a; --wash: #18283a; --mint: #8fbfe6; --stamp: #8fbfe6; --green-d: #5f9cc9; }
+:root[data-style="beere"] { --green: #7d4a94; --green-2: #a174b5; --green-wash: #efe6f3; --wash: #efe6f3; --mint: #cdb4da; --stamp: #7d4a94; --green-d: #5e3572; }
+@media (prefers-color-scheme: dark) { :root[data-style="beere"]:not([data-theme="light"]) { --green: #c9a2dc; --green-2: #a77fbd; --green-wash: #2a1f33; --wash: #2a1f33; --mint: #c9a2dc; --stamp: #c9a2dc; --green-d: #a77fbd; } }
+:root[data-theme="dark"][data-style="beere"] { --green: #c9a2dc; --green-2: #a77fbd; --green-wash: #2a1f33; --wash: #2a1f33; --mint: #c9a2dc; --stamp: #c9a2dc; --green-d: #a77fbd; }
+:root[data-style="rose"] { --green: #b0465f; --green-2: #cf7086; --green-wash: #f6e5e9; --wash: #f6e5e9; --mint: #e8b5c2; --stamp: #b0465f; --green-d: #8a3248; }
+@media (prefers-color-scheme: dark) { :root[data-style="rose"]:not([data-theme="light"]) { --green: #eaa0b2; --green-2: #cf7086; --green-wash: #351c24; --wash: #351c24; --mint: #eaa0b2; --stamp: #eaa0b2; --green-d: #cf7086; } }
+:root[data-theme="dark"][data-style="rose"] { --green: #eaa0b2; --green-2: #cf7086; --green-wash: #351c24; --wash: #351c24; --mint: #eaa0b2; --stamp: #eaa0b2; --green-d: #cf7086; }

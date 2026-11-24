@@ -1110,7 +1110,11 @@
     }
     bookDialog.close(); render(); fillBookSelects();
   });
-  function celebrateFinish(b) { confetti(); toast("🎉 " + t("„{t}“ ausgelesen – Glückwunsch!", { t: b.title })); }
+  function celebrateFinish(b) {
+    confetti();
+    const n = booksDone();
+    toast("🎉 " + t("„{t}“ ausgelesen – Glückwunsch!", { t: b.title }) + " " + (n % 5 === 0 && n ? t("Dein Lesekranz bekommt einen Stern! ⭐") : t("An deinem Lesekranz wächst ein neues Blatt. 🌿")));
+  }
 
   // ---------- Seiten eintragen: überall gleich ----------
   // Zwei verbundene Felder: „Gelesene Seiten“ und „Jetzt auf Seite“. Eines ausfüllen, das andere rechnet sich selbst.
@@ -1374,6 +1378,59 @@
     $("#profileTitle").textContent = t(p ? "Dein Profil" : "Willkommen bei Lesezeit");
     $("#profileIntro").textContent = t(p ? "Name, Sprache, Altersgruppe und Tagesziele ändern." : "Ein paar Minuten am Tag machen den Unterschied. Richte kurz dein Profil ein:");
   }
+
+  // ---------- Persönliches Profil: Bild, Stil, Lesekranz ----------
+  const AVATARS = ["🦊", "🐼", "🦉", "🐢", "🐱", "🐻", "🦁", "🐸", "🐧", "🦄", "🐙", "🐝", "🐬", "🌟", "📚", "🚀"];
+  const STYLES = [["wald", "Wald", "#2c7a55"], ["meer", "Meer", "#2f6c9a"], ["beere", "Beere", "#7d4a94"], ["rose", "Rose", "#b0465f"], ["nacht", "Nacht", "#1c2620"]];
+  function applyStyle(st) {
+    const v = st || state.profile?.style || "wald", root = document.documentElement;
+    root.dataset.style = v;
+    if (v === "nacht") root.dataset.theme = "dark"; else if (root.dataset.theme === "dark" && root.dataset.styleDark) delete root.dataset.theme;
+    root.dataset.styleDark = v === "nacht" ? "1" : "";
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = (STYLES.find((x) => x[0] === v) || STYLES[0])[2];
+  }
+  // Lesekranz: links und rechts je 12 Blätter (von unten nach oben), über dem Bild Sterne
+  function wreathSvg(nBooks, avatar, name, anim = true) {
+    const cx = 90, cy = 86, R = 64, slots = [];
+    for (let i = 0; i < 12; i++) { const t = i / 11; slots.push(115 + t * 125); slots.push(65 - t * 125); }
+    const leaves = slots.map((deg, i) => {
+      const a = deg * Math.PI / 180, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a), on = i < nBooks, out = i % 4 < 2 ? 1 : -1;
+      const rot = deg + 90 + (i % 2 ? -30 : 30) * (i % 4 < 2 ? 1 : -1);
+      const ox = x + Math.cos(a) * 5 * out, oy = y + Math.sin(a) * 5 * out;
+      return `<g transform="rotate(${rot.toFixed(0)} ${ox.toFixed(1)} ${oy.toFixed(1)})"><ellipse class="lf${on ? " on" : ""}${on && i % 3 === 1 ? " l2" : ""}" cx="${ox.toFixed(1)}" cy="${oy.toFixed(1)}" rx="9.5" ry="4.6"${on && anim ? ` style="animation-delay:${(.25 + i * .05).toFixed(2)}s"` : ""}/></g>`;
+    }).join("");
+    const nStars = Math.min(5, Math.floor(nBooks / 5));
+    const stars = Array.from({ length: 5 }, (_, i) => {
+      const deg = -90 + (i - 2) * 17, a = deg * Math.PI / 180, x = cx + (R + 10) * Math.cos(a), y = cy + (R + 10) * Math.sin(a), on = i < nStars;
+      const pts = Array.from({ length: 10 }, (_, k) => { const rr = k % 2 ? 3.4 : 8, aa = (k * 36 - 90) * Math.PI / 180; return `${(x + rr * Math.cos(aa)).toFixed(1)},${(y + rr * Math.sin(aa)).toFixed(1)}`; }).join(" ");
+      return `<polygon class="star${on ? " on" : ""}" points="${pts}"${on && anim ? ` style="animation-delay:${(1 + i * .12).toFixed(2)}s"` : ""}/>`;
+    }).join("");
+    const stem = (side) => { const a0 = side < 0 ? 115 : 65, a1 = side < 0 ? 240 : -60, p0 = [cx + R * Math.cos(a0 * Math.PI / 180), cy + R * Math.sin(a0 * Math.PI / 180)], p1 = [cx + R * Math.cos(a1 * Math.PI / 180), cy + R * Math.sin(a1 * Math.PI / 180)];
+      return `<path class="wr-stem" d="M${p0[0].toFixed(1)} ${p0[1].toFixed(1)}A${R} ${R} 0 0 ${side < 0 ? 1 : 0} ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}"/>`; };
+    const face = avatar ? `<text class="wr-emo" x="${cx}" y="${cy + 15}">${avatar}</text>` : `<text class="wr-ini" x="${cx}" y="${cy + 15}">${esc((name || "?").trim()[0]?.toUpperCase() || "?")}</text>`;
+    return `<svg class="wreath" viewBox="0 0 180 172" aria-hidden="true">${stem(-1)}${stem(1)}${leaves}${stars}
+      <circle class="wr-face" cx="${cx}" cy="${cy}" r="44"/>${face}
+      <g class="wr-badge"><circle cx="${cx}" cy="${cy + R + 6}" r="14"/><text x="${cx}" y="${cy + R + 11}">${nBooks}</text></g></svg>`;
+  }
+  const avatarGrid = (sel) => AVATARS.map((a) => `<button type="button" class="av ${a === sel ? "on" : ""}" data-av="${a}">${a}</button>`).join("") + `<button type="button" class="av ini ${!sel ? "on" : ""}" data-av="">Aa</button>`;
+  const styleGrid = (sel, tr = (x) => x) => STYLES.map(([id, n, c]) => `<button type="button" class="sty ${id === (sel || "wald") ? "on" : ""}" data-sty="${id}"><i style="background:${c}"></i>${tr(n)}</button>`).join("");
+
+  let pickAv = null, pickSty = null;
+  const booksDone = () => state.books.filter((b) => b.status === "gelesen").length;
+  function renderProfilePickers() {
+    $("#avGrid").innerHTML = avatarGrid(pickAv); $("#styGrid").innerHTML = styleGrid(pickSty, t);
+    const p = state.profile, n = booksDone(), stars = Math.floor(n / 5);
+    $("#profileCard").hidden = !p; $("#onboardStamp").hidden = !!p;
+    if (p) $("#profileCard").innerHTML = wreathSvg(n, pickAv, $("#pName").value || p.name) + `<div class="pc-name">${esc($("#pName").value || p.name)}</div><div class="pc-sub">${tn(n, "{n} Buch gelesen", "{n} Bücher gelesen")} · ${tn(stars, "{n} Stern", "{n} Sterne")}</div><div class="pc-hint">${t("Jedes gelesene Buch lässt ein Blatt wachsen – alle 5 Bücher gibt es einen Stern.")}</div>`;
+  }
+  function renderAvatarBtn() {
+    const a = state.profile?.avatar, b = $("#profileBtn");
+    if (a) { b.innerHTML = `<span class="av-emo">${a}</span>`; b.classList.add("avatar-btn"); }
+    else if (state.profile?.name) { b.innerHTML = `<span class="ini-btn">${esc(state.profile.name[0].toUpperCase())}</span>`; b.classList.add("avatar-btn"); }
+  }
+  $("#avGrid").addEventListener("click", (e) => { const a = e.target.closest("[data-av]"); if (a) { pickAv = a.dataset.av || null; renderProfilePickers(); } });
+  $("#styGrid").addEventListener("click", (e) => { const x = e.target.closest("[data-sty]"); if (x) { pickSty = x.dataset.sty; applyStyle(pickSty); renderProfilePickers(); } });
+  $("#pName").addEventListener("input", () => { if (state.profile && !pickAv) renderProfilePickers(); });
   function openProfile() {
     const p = state.profile;
     profileTexts();
@@ -1387,6 +1444,7 @@
     setGoalSlider(p?.goalType === "minutes" ? p?.goal || 20 : p?.goalPages || PAGE_DEFAULT[p?.group || "erwachsene"]);
     $("#resetAll").hidden = !p;
     $("#demoData").hidden = state.books.length > 0;
+    pickAv = p?.avatar || null; pickSty = p?.style || "wald"; renderProfilePickers();
     profileDialog.showModal();
   }
   $("#profileBtn").addEventListener("click", openProfile);
@@ -1409,7 +1467,7 @@
     }
   });
   function readProfile() {
-    return { name: $("#pName").value.trim(), group: $("#pGroup input:checked")?.value || "erwachsene", goalType: pGoalType(), autoMin: $("#pAutoMin").checked,
+    return { name: $("#pName").value.trim(), group: $("#pGroup input:checked")?.value || "erwachsene", goalType: pGoalType(), autoMin: $("#pAutoMin").checked, avatar: pickAv, style: pickSty || "wald",
       goal: pGoalType() === "minutes" ? +$("#pGoal").value : state.profile?.goal || 20,
       goalPages: pGoalType() === "pages" ? +$("#pGoal").value : state.profile?.goalPages || PAGE_DEFAULT[$("#pGroup input:checked")?.value || "erwachsene"] };
   }
@@ -1417,10 +1475,13 @@
     e.preventDefault();
     const first = !state.profile;
     state.profile = readProfile(); chartMode = wkMode = null; save();
+    applyStyle(); renderAvatarBtn();
     profileDialog.close(); render();
     if (first) { confetti(); toast(t("Alles bereit, {name}. Viel Freude beim Lesen!", { name: state.profile.name })); }
   });
   profileDialog.addEventListener("cancel", (e) => { if (!state.profile) e.preventDefault(); });
+  profileDialog.addEventListener("close", () => applyStyle());
+  applyStyle(); renderAvatarBtn();
   $("#resetAll").addEventListener("click", async () => {
     if (!(await askConfirm(t("Wirklich alle Bücher, Lesezeiten und Erfolge löschen?")))) return;
     state = { ...defaultState(), lang }; save(); profileDialog.close(); render(); openProfile();

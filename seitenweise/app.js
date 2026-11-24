@@ -385,7 +385,9 @@
     const b = bookById(id) || cur(); if (!b) return;
     state.finished.push({ title: b.title, pages: b.pages, end: dateKey(), began: b.began, words: (b.words || []).length, quote: b.quote || "" });
     state.books = state.books.filter((x) => x.id !== b.id); state.curId = state.books[0]?.id || null; save();
-    celebrate("🏁", "Buch fertig!", `„${b.title}“ steht jetzt in deinem Regal.${state.books.length ? "" : " Welches Buch kommt als Nächstes?"}`);
+    const nF = state.finished.length;
+    celebrate(wreathSvg(nF, state.profile?.avatar, state.profile?.name).replace('class="wreath"', 'class="wreath cel-wreath"'), nF % 5 === 0 ? "Ein neuer Stern! ⭐" : "Buch fertig – ein neues Blatt!",
+      `„${b.title}“ steht jetzt in deinem Regal.${nF % 5 === 0 ? ` ${nF} Bücher – dein Lesekranz bekommt einen Stern.` : " An deinem Lesekranz wächst ein neues Blatt."}`);
     checkStickers(); render();
     if (!auto) show("sammlung");
   }
@@ -631,6 +633,57 @@
   }
   $("#goalChips").addEventListener("click", (e) => { const c = e.target.closest("[data-goal]"); if (c) { setupGoal = +c.dataset.goal; renderGoalChips(); } });
   $$("#setupForm input[name=gtype]").forEach((r) => r.addEventListener("change", renderGoalChips));
+
+  // ---------- Persönliches Profil: Bild, Stil, Lesekranz ----------
+  const AVATARS = ["🦊", "🐼", "🦉", "🐢", "🐱", "🐻", "🦁", "🐸", "🐧", "🦄", "🐙", "🐝", "🐬", "🌟", "📚", "🚀"];
+  const STYLES = [["wald", "Wald", "#2c7a55"], ["meer", "Meer", "#2f6c9a"], ["beere", "Beere", "#7d4a94"], ["rose", "Rose", "#b0465f"], ["nacht", "Nacht", "#1c2620"]];
+  function applyStyle(st) {
+    const v = st || state.profile?.style || "wald", root = document.documentElement;
+    root.dataset.style = v;
+    if (v === "nacht") root.dataset.theme = "dark"; else if (root.dataset.theme === "dark" && root.dataset.styleDark) delete root.dataset.theme;
+    root.dataset.styleDark = v === "nacht" ? "1" : "";
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = (STYLES.find((x) => x[0] === v) || STYLES[0])[2];
+  }
+  // Lesekranz: links und rechts je 12 Blätter (von unten nach oben), über dem Bild Sterne
+  function wreathSvg(nBooks, avatar, name, anim = true) {
+    const cx = 90, cy = 86, R = 64, slots = [];
+    for (let i = 0; i < 12; i++) { const t = i / 11; slots.push(115 + t * 125); slots.push(65 - t * 125); }
+    const leaves = slots.map((deg, i) => {
+      const a = deg * Math.PI / 180, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a), on = i < nBooks, out = i % 4 < 2 ? 1 : -1;
+      const rot = deg + 90 + (i % 2 ? -30 : 30) * (i % 4 < 2 ? 1 : -1);
+      const ox = x + Math.cos(a) * 5 * out, oy = y + Math.sin(a) * 5 * out;
+      return `<g transform="rotate(${rot.toFixed(0)} ${ox.toFixed(1)} ${oy.toFixed(1)})"><ellipse class="lf${on ? " on" : ""}${on && i % 3 === 1 ? " l2" : ""}" cx="${ox.toFixed(1)}" cy="${oy.toFixed(1)}" rx="9.5" ry="4.6"${on && anim ? ` style="animation-delay:${(.25 + i * .05).toFixed(2)}s"` : ""}/></g>`;
+    }).join("");
+    const nStars = Math.min(5, Math.floor(nBooks / 5));
+    const stars = Array.from({ length: 5 }, (_, i) => {
+      const deg = -90 + (i - 2) * 17, a = deg * Math.PI / 180, x = cx + (R + 10) * Math.cos(a), y = cy + (R + 10) * Math.sin(a), on = i < nStars;
+      const pts = Array.from({ length: 10 }, (_, k) => { const rr = k % 2 ? 3.4 : 8, aa = (k * 36 - 90) * Math.PI / 180; return `${(x + rr * Math.cos(aa)).toFixed(1)},${(y + rr * Math.sin(aa)).toFixed(1)}`; }).join(" ");
+      return `<polygon class="star${on ? " on" : ""}" points="${pts}"${on && anim ? ` style="animation-delay:${(1 + i * .12).toFixed(2)}s"` : ""}/>`;
+    }).join("");
+    const stem = (side) => { const a0 = side < 0 ? 115 : 65, a1 = side < 0 ? 240 : -60, p0 = [cx + R * Math.cos(a0 * Math.PI / 180), cy + R * Math.sin(a0 * Math.PI / 180)], p1 = [cx + R * Math.cos(a1 * Math.PI / 180), cy + R * Math.sin(a1 * Math.PI / 180)];
+      return `<path class="wr-stem" d="M${p0[0].toFixed(1)} ${p0[1].toFixed(1)}A${R} ${R} 0 0 ${side < 0 ? 1 : 0} ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}"/>`; };
+    const face = avatar ? `<text class="wr-emo" x="${cx}" y="${cy + 15}">${avatar}</text>` : `<text class="wr-ini" x="${cx}" y="${cy + 15}">${esc((name || "?").trim()[0]?.toUpperCase() || "?")}</text>`;
+    return `<svg class="wreath" viewBox="0 0 180 172" aria-hidden="true">${stem(-1)}${stem(1)}${leaves}${stars}
+      <circle class="wr-face" cx="${cx}" cy="${cy}" r="44"/>${face}
+      <g class="wr-badge"><circle cx="${cx}" cy="${cy + R + 6}" r="14"/><text x="${cx}" y="${cy + R + 11}">${nBooks}</text></g></svg>`;
+  }
+  const avatarGrid = (sel) => AVATARS.map((a) => `<button type="button" class="av ${a === sel ? "on" : ""}" data-av="${a}">${a}</button>`).join("") + `<button type="button" class="av ini ${!sel ? "on" : ""}" data-av="">Aa</button>`;
+  const styleGrid = (sel, tr = (x) => x) => STYLES.map(([id, n, c]) => `<button type="button" class="sty ${id === (sel || "wald") ? "on" : ""}" data-sty="${id}"><i style="background:${c}"></i>${tr(n)}</button>`).join("");
+
+  let pickAv = null, pickSty = null;
+  function renderProfilePickers() {
+    $("#avGrid").innerHTML = avatarGrid(pickAv); $("#styGrid").innerHTML = styleGrid(pickSty);
+    const p = state.profile, n = state.finished.length, stars = Math.floor(n / 5);
+    $("#profileCard").hidden = !p;
+    if (p) $("#profileCard").innerHTML = wreathSvg(n, pickAv, $("#sName").value || p.name) + `<div class="pc-name">${esc($("#sName").value || p.name)}</div><div class="pc-sub">${n} ${n === 1 ? "Buch" : "Bücher"} gelesen · ${stars} ${stars === 1 ? "Stern" : "Sterne"}</div><div class="pc-hint">Jedes fertige Buch lässt ein Blatt wachsen – alle 5 Bücher gibt es einen Stern.</div>`;
+  }
+  function renderAvatarBtn() {
+    const a = state.profile?.avatar, b = $("#settingsBtn");
+    b.innerHTML = a ? a : `<span class="ini-btn">${esc((state.profile?.name || "?")[0].toUpperCase())}</span>`;
+  }
+  $("#avGrid").addEventListener("click", (e) => { const a = e.target.closest("[data-av]"); if (a) { pickAv = a.dataset.av || null; renderProfilePickers(); } });
+  $("#styGrid").addEventListener("click", (e) => { const t = e.target.closest("[data-sty]"); if (t) { pickSty = t.dataset.sty; applyStyle(pickSty); renderProfilePickers(); } });
+  $("#sName").addEventListener("input", () => { if (state.profile && !pickAv) renderProfilePickers(); });
   function openSetup() {
     const p = state.profile;
     $("#setupTitle").textContent = p ? "Einstellungen" : "Willkommen bei Seitenweise";
@@ -639,16 +692,18 @@
     $("#sName").value = p?.name || "";
     $$("#setupForm input[name=gtype]").forEach((r) => (r.checked = r.value === (p?.goalType || "pages")));
     setupGoal = p?.goal || 10; renderGoalChips();
+    pickAv = p?.avatar || null; pickSty = p?.style || "wald"; renderProfilePickers();
     $("#setupDlg").showModal();
   }
   $("#settingsBtn").addEventListener("click", openSetup);
-  $("#setupCancel").addEventListener("click", () => $("#setupDlg").close());
+  $("#setupCancel").addEventListener("click", () => { $("#setupDlg").close(); applyStyle(); });
   $("#setupDlg").addEventListener("cancel", (e) => { if (!state.profile) e.preventDefault(); });
   $("#setupForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const name = $("#sName").value.trim(); if (!name) return;
     const first = !state.profile;
-    state.profile = { name, goalType: $("#setupForm input[name=gtype]:checked").value, goal: setupGoal };
+    state.profile = { name, goalType: $("#setupForm input[name=gtype]:checked").value, goal: setupGoal, avatar: pickAv, style: pickSty || "wald" };
+    applyStyle(); renderAvatarBtn();
     save(); $("#setupDlg").close(); render();
     if (first) { toast(`Hi ${name}! Jetzt noch dein Buch.`); setTimeout(() => openBook(), 400); }
     else toast("Gespeichert ✓");
@@ -733,6 +788,7 @@
     if (tab === "sammlung") renderSammlung();
   }
   if (hadOld) save();
+  applyStyle(); renderAvatarBtn();
   render(); tmLoop(); if (state.profile) checkPieces();
   if (!state.profile) openSetup();
 })();

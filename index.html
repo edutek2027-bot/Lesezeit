@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=45">
+  <link rel="stylesheet" href="css/styles.css?v=46">
 </head>
 <body class="intro-on">
   <!-- Intro: das Lesebuch wird aufgeschlagen -->
@@ -408,11 +408,14 @@
   <!-- Profil-Dialog / Onboarding -->
   <dialog id="profileDialog" class="modal">
     <form method="dialog" id="profileForm" class="form">
-      <div class="stamp onboard-stamp" aria-hidden="true"><span data-t>Lese</span><b data-t>pass</b></div>
+      <div class="stamp onboard-stamp" id="onboardStamp" aria-hidden="true"><span data-t>Lese</span><b data-t>pass</b></div>
+      <div class="profile-card" id="profileCard" hidden></div>
       <h2 id="profileTitle" data-t>Dein Profil</h2>
       <p class="muted" id="profileIntro" data-t>Ein paar Minuten am Tag machen den Unterschied. Richte kurz dein Profil ein:</p>
       <label class="field"><span data-t>Sprache</span><select id="pLang"><option value="de">Deutsch</option><option value="en">English</option><option value="tr">Türkçe</option><option value="bs">Bosanski</option></select></label>
       <label class="field"><span data-t>Wie heißt du?</span><input id="pName" maxlength="40" required autocomplete="given-name" placeholder="Vorname"></label>
+      <div class="field"><span data-t>Dein Bild</span><div class="av-grid" id="avGrid"></div></div>
+      <div class="field"><span data-t>Dein Stil</span><div class="sty-grid" id="styGrid"></div></div>
       <div class="field">
         <span data-t>Ich bin …</span>
         <div class="seg" id="pGroup">
@@ -576,8 +579,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="js/data.js?v=45"></script>
-  <script src="js/i18n.js?v=45"></script>
-  <script src="js/app.js?v=45"></script>
+  <script src="js/data.js?v=46"></script>
+  <script src="js/i18n.js?v=46"></script>
+  <script src="js/app.js?v=46"></script>
 </body>
 </html>

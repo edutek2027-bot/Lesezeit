@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <div class="app">
@@ -23,7 +23,7 @@
     <main class="view" id="v-lesen">
       <div class="top">
         <p class="date" id="date"></p>
-        <button class="icon" id="settingsBtn" aria-label="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+        <button class="icon avatar-btn" id="settingsBtn" aria-label="Mein Profil"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </div>
       <h1 class="hi" id="hello">Hi 👋</h1>
       <svg class="hi-thread" viewBox="0 0 240 14" aria-hidden="true"><path d="M2 8C30 1 52 14 82 7S134 1 160 8 214 13 238 6"/><circle cx="238" cy="6" r="3.2"/></svg>
@@ -43,7 +43,7 @@
         <div class="tm-idle" id="tmIdle">
           <div class="chips tm-chips" id="tmChips"></div>
           <div class="tm-own">
-            <label class="tm-in"><span>Eigene Zeit</span><input id="tmMin" type="number" inputmode="numeric" min="1" max="240" placeholder="z. B. 25"><b>Min.</b></label>
+            <label class="tm-in"><span>Eigene Zeit</span><input id="tmMin" type="number" inputmode="numeric" min="1" max="240" placeholder="25"><b>Min.</b></label>
             <button class="btn tm-start" id="tmStart" type="button">▶ Los</button>
           </div>
         </div>
@@ -149,6 +149,7 @@
   <!-- Start / Einstellungen -->
   <dialog id="setupDlg" class="sheet">
     <form method="dialog" id="setupForm">
+      <div class="profile-card" id="profileCard" hidden></div>
       <h2 class="q" id="setupTitle">Willkommen bei Seitenweise</h2>
       <p class="small" id="setupIntro">Seite für Seite zum Lesen. Drei kurze Fragen:</p>
       <label class="field"><span>Wie heißt du?</span><input id="sName" maxlength="24" autocomplete="off" required placeholder="Vorname"></label>
@@ -156,7 +157,9 @@
         <div class="seg"><label><input type="radio" name="gtype" value="pages" checked><span>📄 Seiten</span></label><label><input type="radio" name="gtype" value="minutes"><span>⏱ Minuten</span></label></div>
       </div>
       <div class="field"><span id="goalLbl">Wie viele Seiten am Tag?</span><div class="chips" id="goalChips"></div></div>
-      <p class="small">Du kannst dein Ziel jederzeit über ⚙ ändern.</p>
+      <div class="field"><span>Dein Bild</span><div class="av-grid" id="avGrid"></div></div>
+      <div class="field"><span>Dein Stil</span><div class="sty-grid" id="styGrid"></div></div>
+      <p class="small">Du kannst alles jederzeit über dein Profilbild oben rechts ändern.</p>
       <div class="actions"><button type="button" class="btn" id="setupCancel" hidden>Abbrechen</button><button class="big">Los geht’s</button></div>
     </form>
   </dialog>
@@ -184,6 +187,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
